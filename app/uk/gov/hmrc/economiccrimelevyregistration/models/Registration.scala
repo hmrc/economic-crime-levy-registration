@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.config
+package uk.gov.hmrc.economiccrimelevyregistration.models
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
+import java.time.Instant
 
-@Singleton
-class AppConfig @Inject() (config: Configuration) {
-
-  val appName: String = config.get[String]("appName")
-}
+final case class Registration(
+  id: String,
+  lastUpdated: Instant = Instant.now
+)
