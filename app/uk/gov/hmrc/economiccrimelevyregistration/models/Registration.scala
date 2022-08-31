@@ -16,9 +16,18 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
+import play.api.libs.json.{Format, Json, OFormat}
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
 import java.time.Instant
 
 final case class Registration(
-  id: String,
+  internalId: String,
   lastUpdated: Instant = Instant.now
 )
+
+object Registration {
+  implicit val instantFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
+
+  implicit val format: OFormat[Registration] = Json.format[Registration]
+}
