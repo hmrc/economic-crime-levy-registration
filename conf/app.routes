@@ -1,6 +1,5 @@
 # microservice specific routes
 
-POST          /registrations            uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.createRegistration()
 GET           /registrations/:id        uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.getRegistration(id)
-PUT           /registrations/:id        uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.updateRegistration(id)
+PUT           /registrations            uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.upsertRegistration
 DELETE        /registrations/:id        uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.deleteRegistration(id)

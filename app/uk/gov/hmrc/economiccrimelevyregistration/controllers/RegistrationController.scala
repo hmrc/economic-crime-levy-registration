@@ -35,7 +35,7 @@ class RegistrationController @Inject() (
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def createRegistration(): Action[JsValue] = authorise(parse.json).async { implicit request =>
+  def upsertRegistration: Action[JsValue] = authorise(parse.json).async { implicit request =>
     withJsonBody[Registration] { registration =>
       registrationRepository.upsert(registration).map(_ => Ok(Json.toJson(registration)))
     }
@@ -48,12 +48,8 @@ class RegistrationController @Inject() (
     }
   }
 
-  def updateRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
-    ???
-  }
-
   def deleteRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
-    ???
+    registrationRepository.clear(id).map(_ => NoContent)
   }
 
 }

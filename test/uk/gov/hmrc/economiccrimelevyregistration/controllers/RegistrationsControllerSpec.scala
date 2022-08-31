@@ -36,12 +36,14 @@ class RegistrationsControllerSpec extends SpecBase {
     fakeAuthorisedAction
   )
 
-  "createRegistration" should {
-    "create a new registration and return OK with the registration that was created" in {
+  "upsertRegistration" should {
+    "return 200 OK with the registration that was upserted" in {
       when(mockRegistrationRepository.upsert(any())).thenReturn(Future.successful(true))
 
       val result: Future[Result] =
-        controller.createRegistration()(fakeRequestWithJsonBody(Json.toJson(emptyRegistration)))
+        controller.upsertRegistration()(
+          fakeRequestWithJsonBody(Json.toJson(emptyRegistration))
+        )
 
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(emptyRegistration)
@@ -49,7 +51,7 @@ class RegistrationsControllerSpec extends SpecBase {
   }
 
   "getRegistration" should {
-    "return an existing registration when there is one for the id" in {
+    "return 200 OK with an existing registration when there is one for the id" in {
       when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(emptyRegistration)))
 
       val result: Future[Result] =
@@ -59,7 +61,7 @@ class RegistrationsControllerSpec extends SpecBase {
       contentAsJson(result) shouldBe Json.toJson(emptyRegistration)
     }
 
-    "return 404 not found when there is no registration for the id" in {
+    "return 404 NOT_FOUND when there is no registration for the id" in {
       when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(None))
 
       val result: Future[Result] =
@@ -70,12 +72,15 @@ class RegistrationsControllerSpec extends SpecBase {
     }
   }
 
-  "updateRegistration" should {
-    "???" in {}
-  }
-
   "deleteRegistration" should {
-    "???" in {}
+    "return 204 NO_CONTENT when a registration is deleted" in {
+      when(mockRegistrationRepository.clear(any())).thenReturn(Future.successful(true))
+
+      val result: Future[Result] =
+        controller.deleteRegistration("id")(fakeRequest)
+
+      status(result) shouldBe NO_CONTENT
+    }
   }
 
 }
