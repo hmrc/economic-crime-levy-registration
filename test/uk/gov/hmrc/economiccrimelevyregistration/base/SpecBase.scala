@@ -22,9 +22,11 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.http.{HeaderNames, Status}
+import play.api.libs.json.JsValue
 import play.api.mvc._
-import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import play.api.test.{DefaultAwaitTimeout, FakeHeaders, FakeRequest, ResultExtractors}
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.FakeAuthorisedAction
@@ -40,6 +42,10 @@ trait SpecBase
     with OptionValues
     with ScalaFutures
     with Results
+    with DefaultAwaitTimeout
+    with ResultExtractors
+    with Status
+    with HeaderNames
     with GuiceOneAppPerSuite
     with MockitoSugar
     with EclTestData {
@@ -51,6 +57,8 @@ trait SpecBase
   val appConfig: AppConfig                             = app.injector.instanceOf[AppConfig]
   val bodyParsers: PlayBodyParsers                     = app.injector.instanceOf[PlayBodyParsers]
   val fakeAuthorisedAction                             = new FakeAuthorisedAction(bodyParsers)
+
+  def fakeRequestWithJsonBody(json: JsValue): FakeRequest[JsValue] = FakeRequest("", "/", FakeHeaders(), json)
 
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
   implicit val hc: HeaderCarrier    = HeaderCarrier()

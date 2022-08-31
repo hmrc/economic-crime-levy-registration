@@ -19,7 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.repositories
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model._
-import play.api.libs.json.Format
+import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.mongo.MongoComponent
@@ -40,7 +40,7 @@ class RegistrationRepository @Inject() (
     extends PlayMongoRepository[Registration](
       collectionName = "registrations",
       mongoComponent = mongoComponent,
-      domainFormat = Registration.format,
+      domainFormat = RegistrationRepository.format,
       indexes = Seq(
         IndexModel(
           Indexes.ascending("lastUpdated"),
@@ -51,8 +51,6 @@ class RegistrationRepository @Inject() (
         IndexModel(ascending("internalId"), IndexOptions().name("internalIdIdx").unique(true))
       )
     ) {
-
-  implicit val instantFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
 
   private def byId(id: String): Bson = Filters.equal("internalId", id)
 
@@ -90,4 +88,10 @@ class RegistrationRepository @Inject() (
       .deleteOne(byId(id))
       .toFuture
       .map(_ => true)
+}
+
+object RegistrationRepository {
+  implicit val instantFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
+
+  val format: Format[Registration] = Json.format[Registration]
 }

@@ -16,27 +16,36 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
+import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
 
 @Singleton()
 class RegistrationController @Inject() (
   cc: ControllerComponents,
   registrationRepository: RegistrationRepository,
   authorise: AuthorisedAction
-) extends BackendController(cc) {
+)(implicit ec: ExecutionContext)
+    extends BackendController(cc) {
 
   def createRegistration(): Action[JsValue] = authorise(parse.json).async { implicit request =>
-    ???
+    withJsonBody[Registration] { registration =>
+      registrationRepository.upsert(registration).map(_ => Ok(Json.toJson(registration)))
+    }
   }
 
   def getRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
-    ???
+    registrationRepository.get(id).map {
+      case Some(registration) => Ok(Json.toJson(registration))
+      case None               => NotFound(Json.toJson(ErrorResponse(NOT_FOUND, "Registration not found")))
+    }
   }
 
   def updateRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
