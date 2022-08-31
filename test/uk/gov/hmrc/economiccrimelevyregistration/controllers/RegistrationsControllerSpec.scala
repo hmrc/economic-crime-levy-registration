@@ -16,15 +16,33 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 
-@Singleton()
-class MicroserviceHelloWorldController @Inject() (cc: ControllerComponents) extends BackendController(cc) {
+class RegistrationsControllerSpec extends SpecBase {
 
-  def hello(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Ok("Hello world"))
+  val mockRegistrationRepository: RegistrationRepository = mock[RegistrationRepository]
+
+  val controller = new RegistrationController(
+    cc,
+    mockRegistrationRepository,
+    fakeAuthorisedAction
+  )
+
+  "createRegistration" should {
+    "???" in {}
   }
+
+  "getRegistration" should {
+    "???" in {}
+  }
+
+  "updateRegistration" should {
+    "???" in {}
+  }
+
+  "deleteRegistration" should {
+    "???" in {}
+  }
+
 }

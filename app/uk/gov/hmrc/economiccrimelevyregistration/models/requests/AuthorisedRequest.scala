@@ -14,17 +14,8 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.config
+package uk.gov.hmrc.economiccrimelevyregistration.models.requests
 
-import com.google.inject.AbstractModule
-import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.{AuthorisedAction, BaseAuthorisedAction}
+import play.api.mvc.{Request, WrappedRequest}
 
-import java.time.{Clock, ZoneOffset}
-
-class Module extends AbstractModule {
-
-  override def configure(): Unit = {
-    bind(classOf[AuthorisedAction]).to(classOf[BaseAuthorisedAction]).asEagerSingleton()
-    bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
-  }
-}
+case class AuthorisedRequest[A](request: Request[A], internalId: String) extends WrappedRequest[A](request)
