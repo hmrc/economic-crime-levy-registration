@@ -26,7 +26,7 @@ import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
 import scala.concurrent.Future
 
-class RegistrationsControllerSpec extends SpecBase {
+class RegistrationControllerSpec extends SpecBase {
 
   val mockRegistrationRepository: RegistrationRepository = mock[RegistrationRepository]
 

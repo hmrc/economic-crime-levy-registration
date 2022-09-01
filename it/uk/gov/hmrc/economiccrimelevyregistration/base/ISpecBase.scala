@@ -19,6 +19,7 @@ import play.api.test._
 import play.api.{Application, Mode}
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper._
+import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -54,9 +55,13 @@ abstract class ISpecBase
   implicit lazy val materializer: Materializer = Materializer(system)
   implicit def ec: ExecutionContext            = global
 
+  val internalId: String              = "test-id"
+  val emptyRegistration: Registration = Registration(internalId)
+
   val additionalAppConfig: Map[String, Any] = Map(
-    "metrics.enabled"  -> false,
-    "auditing.enabled" -> false
+    "metrics.enabled"    -> false,
+    "auditing.enabled"   -> false,
+    "application.router" -> "testOnlyDoNotUseInAppConf.Routes"
   ) ++ setWireMockPort(
     "auth"
   )
@@ -88,6 +93,10 @@ abstract class ISpecBase
 
   override protected def afterEach(): Unit = {
     resetWireMock()
+    callRoute(
+      FakeRequest(uk.gov.hmrc.economiccrimelevyregistration.controllers.test.routes.TestController.clearAllData),
+      requiresAuth = false
+    ).futureValue
     super.afterEach()
   }
 
@@ -97,7 +106,7 @@ abstract class ISpecBase
   ): Future[Result] = {
     val errorHandler = app.errorHandler
 
-    val req = if (requiresAuth) fakeRequest.withSession("authToken" -> "test") else fakeRequest
+    val req = if (requiresAuth) fakeRequest.withHeaders("Authorization" -> "test") else fakeRequest
 
     route(app, req) match {
       case None         => fail("Route does not exist")
