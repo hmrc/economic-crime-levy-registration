@@ -13,6 +13,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{Status => _, _}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http._
+import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.{Result, Results}
 import play.api.test._
@@ -21,6 +22,8 @@ import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper._
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 
+import java.time.temporal.ChronoUnit
+import java.time.{Clock, Instant, ZoneId}
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -57,6 +60,8 @@ abstract class ISpecBase
 
   val internalId: String              = "test-id"
   val emptyRegistration: Registration = Registration(internalId)
+  val now: Instant                    = Instant.now.truncatedTo(ChronoUnit.MILLIS)
+  private val stubClock: Clock        = Clock.fixed(now, ZoneId.systemDefault)
 
   val additionalAppConfig: Map[String, Any] = Map(
     "metrics.enabled"    -> false,
@@ -72,6 +77,7 @@ abstract class ISpecBase
     GuiceApplicationBuilder()
       .disable[com.kenshoo.play.metrics.PlayModule]
       .configure(additionalAppConfig)
+      .overrides(bind(classOf[Clock]).toInstance(stubClock))
       .in(Mode.Test)
       .build()
 

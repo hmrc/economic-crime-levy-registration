@@ -41,14 +41,14 @@ class RegistrationController @Inject() (
     }
   }
 
-  def getRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
+  def getRegistration(id: String): Action[AnyContent] = authorise.async { _ =>
     registrationRepository.get(id).map {
       case Some(registration) => Ok(Json.toJson(registration))
       case None               => NotFound(Json.toJson(ErrorResponse(NOT_FOUND, "Registration not found")))
     }
   }
 
-  def deleteRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
+  def deleteRegistration(id: String): Action[AnyContent] = authorise.async { _ =>
     registrationRepository.clear(id).map(_ => NoContent)
   }
 

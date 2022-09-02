@@ -26,7 +26,7 @@ class RegistrationRepositorySpec
 
   private val now              = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
-  private val registration     = Registration("id", Instant.ofEpochSecond(1))
+  private val registration     = Registration("test-id", Some(Instant.ofEpochSecond(1)))
   private val mockAppConfig    = mock[AppConfig]
 
   when(mockAppConfig.mongoTtl) thenReturn 1
@@ -39,7 +39,7 @@ class RegistrationRepositorySpec
 
   "upsert" should {
     "insert a new registration with the last updated time set to `now`" in {
-      val expectedResult = registration.copy(lastUpdated = now)
+      val expectedResult = registration.copy(lastUpdated = Some(now))
 
       val setResult     = repository.upsert(registration).futureValue
       val updatedRecord = find(Filters.equal("internalId", registration.internalId)).futureValue.headOption.value
@@ -51,7 +51,7 @@ class RegistrationRepositorySpec
     "update an existing registration with the last updated time set to `now`" in {
       insert(registration)
 
-      val expectedResult = registration.copy(lastUpdated = now)
+      val expectedResult = registration.copy(lastUpdated = Some(now))
 
       val setResult     = repository.upsert(registration).futureValue
       val updatedRecord = find(Filters.equal("internalId", registration.internalId)).futureValue.headOption.value
@@ -63,10 +63,10 @@ class RegistrationRepositorySpec
 
   "get" should {
     "update the lastUpdated time and get the record when there is a record for the id" in {
-      insert(registration).futureValue
+      insert(registration.copy(lastUpdated = Some(now))).futureValue
 
       val result         = repository.get(registration.internalId).futureValue
-      val expectedResult = registration.copy(lastUpdated = now)
+      val expectedResult = registration.copy(lastUpdated = Some(now))
 
       result.value shouldEqual expectedResult
     }
@@ -99,7 +99,7 @@ class RegistrationRepositorySpec
 
       val result = repository.keepAlive(registration.internalId).futureValue
 
-      val expectedRegistration = registration.copy(lastUpdated = now)
+      val expectedRegistration = registration.copy(lastUpdated = Some(now))
 
       result shouldEqual true
       val updatedRegistration = find(Filters.equal("internalId", registration.internalId)).futureValue.headOption.value

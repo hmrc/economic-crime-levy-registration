@@ -71,7 +71,7 @@ class RegistrationRepository @Inject() (
     }
 
   def upsert(registration: Registration): Future[Boolean] = {
-    val updatedRegistration = registration.copy(lastUpdated = Instant.now(clock))
+    val updatedRegistration = registration.copy(lastUpdated = Some(Instant.now(clock)))
 
     collection
       .replaceOne(

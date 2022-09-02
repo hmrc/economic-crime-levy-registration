@@ -22,7 +22,7 @@ import java.time.Instant
 
 final case class Registration(
   internalId: String,
-  lastUpdated: Instant = Instant.now
+  lastUpdated: Option[Instant] = None
 )
 
 object Registration {

@@ -38,7 +38,7 @@ class RegistrationISpec extends ISpecBase {
       status(putResult)        shouldBe OK
       contentAsJson(putResult) shouldBe Json.toJson(emptyRegistration)
       status(getResult)        shouldBe OK
-      contentAsJson(getResult) shouldBe Json.toJson(emptyRegistration)
+      contentAsJson(getResult) shouldBe Json.toJson(emptyRegistration.copy(lastUpdated = Some(now)))
     }
   }
 
@@ -54,7 +54,7 @@ class RegistrationISpec extends ISpecBase {
         callRoute(FakeRequest(routes.RegistrationController.getRegistration(emptyRegistration.internalId)))
 
       status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(emptyRegistration)
+      contentAsJson(result) shouldBe Json.toJson(emptyRegistration.copy(lastUpdated = Some(now)))
     }
 
     "return 404 NOT_FOUND when trying to get a registration that doesn't exist" in {
