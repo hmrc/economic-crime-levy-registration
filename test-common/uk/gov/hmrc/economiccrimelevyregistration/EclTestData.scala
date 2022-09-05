@@ -14,16 +14,6 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.config
+package uk.gov.hmrc.economiccrimelevyregistration
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-
-@Singleton
-class AppConfig @Inject() (configuration: Configuration) {
-
-  val appName: String = configuration.get[String]("appName")
-
-  val mongoTtl: Int = configuration.get[Int]("mongodb.timeToLiveInSeconds")
-
-}
+trait EclTestData {}

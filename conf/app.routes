@@ -1,3 +1,5 @@
 # microservice specific routes
 
-GET        /hello-world             uk.gov.hmrc.economiccrimelevyregistration.controllers.MicroserviceHelloWorldController.hello
+GET           /registrations/:id        uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.getRegistration(id)
+PUT           /registrations            uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.upsertRegistration
+DELETE        /registrations/:id        uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.deleteRegistration(id)
