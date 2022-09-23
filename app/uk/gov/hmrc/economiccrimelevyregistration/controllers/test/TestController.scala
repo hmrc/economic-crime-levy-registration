@@ -30,7 +30,7 @@ class TestController @Inject() (
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def clearAllData: Action[AnyContent] = Action.async { implicit request =>
+  def clearAllData: Action[AnyContent] = Action.async { _ =>
     registrationRepository.collection.drop().toFuture().map(_ => Ok("All data cleared"))
   }
 
