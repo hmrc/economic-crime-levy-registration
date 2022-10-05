@@ -28,10 +28,8 @@ object EntityType {
 
   val values: Seq[EntityType] = Seq(UkLimitedCompany, SoleTrader, Partnership)
 
-  implicit val format: OFormat[EntityType] = {
-    implicit val ukLimitedCompanyFormat: OFormat[UkLimitedCompany.type] = Json.format[UkLimitedCompany.type]
-    implicit val soleTraderFormat: OFormat[SoleTrader.type]             = Json.format[SoleTrader.type]
-    implicit val partnershipFormat: OFormat[Partnership.type]           = Json.format[Partnership.type]
-    Json.format[EntityType]
-  }
+  implicit val ukLimitedCompanyFormat: OFormat[UkLimitedCompany.type] = Json.format[UkLimitedCompany.type]
+  implicit val soleTraderFormat: OFormat[SoleTrader.type]             = Json.format[SoleTrader.type]
+  implicit val partnershipFormat: OFormat[Partnership.type]           = Json.format[Partnership.type]
+  implicit val format: OFormat[EntityType]                            = Json.format[EntityType]
 }
