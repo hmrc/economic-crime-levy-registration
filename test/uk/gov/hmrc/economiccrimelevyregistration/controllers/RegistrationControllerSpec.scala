@@ -41,23 +41,23 @@ class RegistrationControllerSpec extends SpecBase {
 
       val result: Future[Result] =
         controller.upsertRegistration()(
-          fakeRequestWithJsonBody(Json.toJson(emptyRegistration))
+          fakeRequestWithJsonBody(Json.toJson(testRegistration))
         )
 
       status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(emptyRegistration)
+      contentAsJson(result) shouldBe Json.toJson(testRegistration)
     }
   }
 
   "getRegistration" should {
     "return 200 OK with an existing registration when there is one for the id" in {
-      when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(emptyRegistration)))
+      when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(testRegistration)))
 
       val result: Future[Result] =
         controller.getRegistration("id")(fakeRequest)
 
       status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(emptyRegistration)
+      contentAsJson(result) shouldBe Json.toJson(testRegistration)
     }
 
     "return 404 NOT_FOUND when there is no registration for the id" in {

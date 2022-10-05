@@ -29,16 +29,16 @@ class RegistrationISpec extends ISpecBase {
       stubAuthorised()
 
       lazy val putResult = callRoute(
-        FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(Json.toJson(emptyRegistration))
+        FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(Json.toJson(testRegistration))
       )
 
       lazy val getResult =
-        callRoute(FakeRequest(routes.RegistrationController.getRegistration(emptyRegistration.internalId)))
+        callRoute(FakeRequest(routes.RegistrationController.getRegistration(testRegistration.internalId)))
 
       status(putResult)        shouldBe OK
-      contentAsJson(putResult) shouldBe Json.toJson(emptyRegistration)
+      contentAsJson(putResult) shouldBe Json.toJson(testRegistration)
       status(getResult)        shouldBe OK
-      contentAsJson(getResult) shouldBe Json.toJson(emptyRegistration.copy(lastUpdated = Some(now)))
+      contentAsJson(getResult) shouldBe Json.toJson(testRegistration.copy(lastUpdated = Some(now)))
     }
   }
 
@@ -47,20 +47,20 @@ class RegistrationISpec extends ISpecBase {
       stubAuthorised()
 
       callRoute(
-        FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(Json.toJson(emptyRegistration))
+        FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(Json.toJson(testRegistration))
       ).futureValue
 
       lazy val result =
-        callRoute(FakeRequest(routes.RegistrationController.getRegistration(emptyRegistration.internalId)))
+        callRoute(FakeRequest(routes.RegistrationController.getRegistration(testRegistration.internalId)))
 
       status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(emptyRegistration.copy(lastUpdated = Some(now)))
+      contentAsJson(result) shouldBe Json.toJson(testRegistration.copy(lastUpdated = Some(now)))
     }
 
     "return 404 NOT_FOUND when trying to get a registration that doesn't exist" in {
       stubAuthorised()
 
-      val result = callRoute(FakeRequest(routes.RegistrationController.getRegistration(emptyRegistration.internalId)))
+      val result = callRoute(FakeRequest(routes.RegistrationController.getRegistration(testRegistration.internalId)))
 
       status(result)        shouldBe NOT_FOUND
       contentAsJson(result) shouldBe Json.toJson(ErrorResponse(NOT_FOUND, "Registration not found"))
@@ -72,17 +72,17 @@ class RegistrationISpec extends ISpecBase {
       stubAuthorised()
 
       callRoute(
-        FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(Json.toJson(emptyRegistration))
+        FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(Json.toJson(testRegistration))
       ).futureValue
 
       lazy val getResultBeforeDelete =
-        callRoute(FakeRequest(routes.RegistrationController.getRegistration(emptyRegistration.internalId)))
+        callRoute(FakeRequest(routes.RegistrationController.getRegistration(testRegistration.internalId)))
 
       lazy val deleteResult =
-        callRoute(FakeRequest(routes.RegistrationController.deleteRegistration(emptyRegistration.internalId)))
+        callRoute(FakeRequest(routes.RegistrationController.deleteRegistration(testRegistration.internalId)))
 
       lazy val getResultAfterDelete =
-        callRoute(FakeRequest(routes.RegistrationController.getRegistration(emptyRegistration.internalId)))
+        callRoute(FakeRequest(routes.RegistrationController.getRegistration(testRegistration.internalId)))
 
       status(getResultBeforeDelete) shouldBe OK
       status(deleteResult)          shouldBe NO_CONTENT
