@@ -28,8 +28,22 @@ object EntityType {
 
   val values: Seq[EntityType] = Seq(UkLimitedCompany, SoleTrader, Partnership)
 
-  implicit val ukLimitedCompanyFormat: OFormat[UkLimitedCompany.type] = Json.format[UkLimitedCompany.type]
-  implicit val soleTraderFormat: OFormat[SoleTrader.type]             = Json.format[SoleTrader.type]
-  implicit val partnershipFormat: OFormat[Partnership.type]           = Json.format[Partnership.type]
-  implicit val format: OFormat[EntityType]                            = Json.format[EntityType]
+  implicit val format: Format[EntityType] = new Format[EntityType] {
+    override def reads(json: JsValue): JsResult[EntityType] = json.validate[String] match {
+      case JsSuccess(value, _) =>
+        value match {
+          case "UkLimitedCompany" => JsSuccess(UkLimitedCompany)
+          case "SoleTrader"       => JsSuccess(SoleTrader)
+          case "Partnership"      => JsSuccess(Partnership)
+          case s                  => JsError(s"$s is not a valid EntityType")
+        }
+      case e: JsError          => e
+    }
+
+    override def writes(o: EntityType): JsValue = o match {
+      case UkLimitedCompany => JsString(UkLimitedCompany.toString)
+      case SoleTrader       => JsString(SoleTrader.toString)
+      case Partnership      => JsString(Partnership.toString)
+    }
+  }
 }
