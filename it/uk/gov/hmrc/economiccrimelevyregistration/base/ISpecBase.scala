@@ -59,7 +59,7 @@ abstract class ISpecBase
   implicit def ec: ExecutionContext            = global
 
   val internalId: String             = "test-id"
-  val testRegistration: Registration = Registration(internalId, None, None)
+  val testRegistration: Registration = Registration(internalId, None, None, None)
   val now: Instant                   = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock       = Clock.fixed(now, ZoneId.systemDefault)
 
