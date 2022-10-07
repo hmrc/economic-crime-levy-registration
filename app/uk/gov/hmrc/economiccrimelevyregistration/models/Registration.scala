@@ -17,7 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, SoleTraderEntityJourneyData}
+import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
 
 import java.time.Instant
 
@@ -26,6 +26,7 @@ final case class Registration(
   entityType: Option[EntityType],
   incorporatedEntityJourneyData: Option[IncorporatedEntityJourneyData],
   soleTraderEntityJourneyData: Option[SoleTraderEntityJourneyData],
+  partnershipEntityJourneyData: Option[PartnershipEntityJourneyData],
   lastUpdated: Option[Instant] = None
 )
 
