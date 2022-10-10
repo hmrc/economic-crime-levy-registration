@@ -16,4 +16,14 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration
 
-trait EclTestData {}
+import org.scalacheck.Arbitrary
+
+import java.time.Instant
+
+trait EclTestData {
+
+  implicit val arbInstant: Arbitrary[Instant] = Arbitrary {
+    Instant.now()
+  }
+
+}

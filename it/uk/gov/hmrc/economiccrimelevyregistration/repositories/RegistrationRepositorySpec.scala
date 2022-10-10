@@ -48,7 +48,7 @@ class RegistrationRepositorySpec
     }
 
     "update an existing registration with the last updated time set to `now`" in {
-      insert(registration)
+      insert(registration).futureValue
 
       val expectedResult = registration.copy(lastUpdated = Some(now))
 
