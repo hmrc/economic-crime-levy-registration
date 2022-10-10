@@ -22,6 +22,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.http.{HeaderNames, Status}
 import play.api.libs.json.JsValue
 import play.api.mvc._
@@ -30,7 +31,6 @@ import play.api.test.{DefaultAwaitTimeout, FakeHeaders, FakeRequest, ResultExtra
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.FakeAuthorisedAction
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext
@@ -48,11 +48,10 @@ trait SpecBase
     with HeaderNames
     with GuiceOneAppPerSuite
     with MockitoSugar
+    with ScalaCheckPropertyChecks
     with EclTestData {
 
   val cc: ControllerComponents                         = stubControllerComponents()
-  val internalId: String                               = "test-id"
-  val emptyRegistration: Registration                  = Registration(internalId)
   val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   val appConfig: AppConfig                             = app.injector.instanceOf[AppConfig]
   val bodyParsers: PlayBodyParsers                     = app.injector.instanceOf[PlayBodyParsers]

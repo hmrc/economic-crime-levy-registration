@@ -20,8 +20,10 @@ import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
+import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 
 import scala.concurrent.Future
 
@@ -36,28 +38,28 @@ class RegistrationControllerSpec extends SpecBase {
   )
 
   "upsertRegistration" should {
-    "return 200 OK with the registration that was upserted" in {
+    "return 200 OK with the registration that was upserted" in forAll { registration: Registration =>
       when(mockRegistrationRepository.upsert(any())).thenReturn(Future.successful(true))
 
       val result: Future[Result] =
         controller.upsertRegistration()(
-          fakeRequestWithJsonBody(Json.toJson(emptyRegistration))
+          fakeRequestWithJsonBody(Json.toJson(registration))
         )
 
       status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(emptyRegistration)
+      contentAsJson(result) shouldBe Json.toJson(registration)
     }
   }
 
   "getRegistration" should {
-    "return 200 OK with an existing registration when there is one for the id" in {
-      when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(emptyRegistration)))
+    "return 200 OK with an existing registration when there is one for the id" in forAll { registration: Registration =>
+      when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
       val result: Future[Result] =
         controller.getRegistration("id")(fakeRequest)
 
       status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(emptyRegistration)
+      contentAsJson(result) shouldBe Json.toJson(registration)
     }
 
     "return 404 NOT_FOUND when there is no registration for the id" in {

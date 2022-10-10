@@ -58,10 +58,8 @@ abstract class ISpecBase
   implicit lazy val materializer: Materializer = Materializer(system)
   implicit def ec: ExecutionContext            = global
 
-  val internalId: String              = "test-id"
-  val emptyRegistration: Registration = Registration(internalId)
-  val now: Instant                    = Instant.now.truncatedTo(ChronoUnit.MILLIS)
-  private val stubClock: Clock        = Clock.fixed(now, ZoneId.systemDefault)
+  val now: Instant                   = Instant.now.truncatedTo(ChronoUnit.MILLIS)
+  private val stubClock: Clock       = Clock.fixed(now, ZoneId.systemDefault)
 
   val additionalAppConfig: Map[String, Any] = Map(
     "metrics.enabled"    -> false,
