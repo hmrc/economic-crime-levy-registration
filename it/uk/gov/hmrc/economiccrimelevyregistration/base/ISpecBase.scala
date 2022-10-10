@@ -58,8 +58,6 @@ abstract class ISpecBase
   implicit lazy val materializer: Materializer = Materializer(system)
   implicit def ec: ExecutionContext            = global
 
-  val internalId: String             = "test-id"
-  val testRegistration: Registration = Registration(internalId, None, None)
   val now: Instant                   = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock       = Clock.fixed(now, ZoneId.systemDefault)
 
