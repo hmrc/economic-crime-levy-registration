@@ -20,7 +20,6 @@ import play.api.test._
 import play.api.{Application, Mode}
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper._
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}

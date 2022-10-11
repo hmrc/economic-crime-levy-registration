@@ -25,7 +25,7 @@ class RegistrationRepositorySpec
 
   private val now              = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
-  private val registration     = Registration("test-id", None, None, Some(Instant.ofEpochSecond(1)))
+  private val registration     = Registration("test-id", None, None, None, Some(Instant.ofEpochSecond(1)))
   private val mockAppConfig    = mock[AppConfig]
 
   when(mockAppConfig.mongoTtl) thenReturn 1
@@ -48,7 +48,7 @@ class RegistrationRepositorySpec
     }
 
     "update an existing registration with the last updated time set to `now`" in {
-      insert(registration)
+      insert(registration).futureValue
 
       val expectedResult = registration.copy(lastUpdated = Some(now))
 

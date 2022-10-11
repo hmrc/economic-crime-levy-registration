@@ -14,21 +14,33 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.models
+package uk.gov.hmrc.economiccrimelevyregistration.models.grs
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, SoleTraderEntityJourneyData}
 
-import java.time.Instant
+import java.util.Date
 
-final case class Registration(
-  internalId: String,
-  entityType: Option[EntityType],
-  incorporatedEntityJourneyData: Option[IncorporatedEntityJourneyData],
-  soleTraderEntityJourneyData: Option[SoleTraderEntityJourneyData],
-  lastUpdated: Option[Instant] = None
+final case class SoleTraderEntityJourneyData(
+  fullName: FullName,
+  dateOfBirth: Date,
+  nino: String,
+  sautr: String,
+  identifiersMatch: Boolean,
+  businessVerification: BusinessVerificationResult,
+  registration: GrsRegistrationResult
 )
 
-object Registration {
-  implicit val format: OFormat[Registration] = Json.format[Registration]
+object SoleTraderEntityJourneyData {
+  implicit val format: OFormat[SoleTraderEntityJourneyData] =
+    Json.format[SoleTraderEntityJourneyData]
+}
+
+final case class FullName(
+  firstName: String,
+  lastName: String
+)
+
+object FullName {
+  implicit val format: OFormat[FullName] =
+    Json.format[FullName]
 }
