@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
+import com.danielasfregola.randomdatagenerator.RandomDataGenerator.{derivedArbitrary, random}
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase

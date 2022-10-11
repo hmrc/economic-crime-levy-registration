@@ -17,8 +17,6 @@
 package uk.gov.hmrc.economiccrimelevyregistration
 
 import org.scalacheck.{Arbitrary, Gen}
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 
 import java.time.Instant
 
@@ -28,10 +26,8 @@ trait EclTestData {
     Instant.now()
   }
 
-  implicit val arbRegistration: Arbitrary[Registration] = Arbitrary {
-    for {
-      registration <- Arbitrary.arbitrary[Registration]
-      internalId   <- Gen.alphaNumStr
-    } yield registration.copy(internalId = internalId)
+  implicit val nonEmptyString: Arbitrary[String] = Arbitrary {
+    Gen.alphaNumStr
   }
+
 }
