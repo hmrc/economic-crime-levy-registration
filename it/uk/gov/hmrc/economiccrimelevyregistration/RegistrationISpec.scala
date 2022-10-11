@@ -26,7 +26,7 @@ import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
 class RegistrationISpec extends ISpecBase {
 
-  s"PUT /$contextPath/registrations" should {
+  s"PUT /$contextPath/registrations"        should {
     "create or update a registration and return 200 OK with the registration" in {
       stubAuthorised()
 
@@ -46,7 +46,7 @@ class RegistrationISpec extends ISpecBase {
     }
   }
 
-  s"GET /$contextPath/registrations/:id" should {
+  s"GET /$contextPath/registrations/:id"    should {
     "return 200 OK with a registration that is already in the database" in {
       stubAuthorised()
 
