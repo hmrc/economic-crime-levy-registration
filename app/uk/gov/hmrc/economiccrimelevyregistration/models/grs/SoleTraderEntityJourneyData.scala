@@ -21,8 +21,7 @@ import play.api.libs.json.{Json, OFormat}
 import java.util.Date
 
 final case class SoleTraderEntityJourneyData(
-  firstName: String,
-  lastName: String,
+  fullName: FullName,
   dateOfBirth: Date,
   nino: String,
   sautr: String,
@@ -34,4 +33,14 @@ final case class SoleTraderEntityJourneyData(
 object SoleTraderEntityJourneyData {
   implicit val format: OFormat[SoleTraderEntityJourneyData] =
     Json.format[SoleTraderEntityJourneyData]
+}
+
+final case class FullName(
+  firstName: String,
+  lastName: String
+)
+
+object FullName {
+  implicit val format: OFormat[FullName] =
+    Json.format[FullName]
 }
