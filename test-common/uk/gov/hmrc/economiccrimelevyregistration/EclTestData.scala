@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration
 
-import org.scalacheck.Arbitrary
+import org.scalacheck.{Arbitrary, Gen}
 
 import java.time.Instant
 
@@ -24,6 +24,10 @@ trait EclTestData {
 
   implicit val arbInstant: Arbitrary[Instant] = Arbitrary {
     Instant.now()
+  }
+
+  implicit val nonEmptyString: Arbitrary[String] = Arbitrary {
+    Gen.alphaNumStr
   }
 
 }
