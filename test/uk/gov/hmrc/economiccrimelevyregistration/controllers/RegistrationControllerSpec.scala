@@ -23,7 +23,6 @@ import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 
 import scala.concurrent.Future
 
