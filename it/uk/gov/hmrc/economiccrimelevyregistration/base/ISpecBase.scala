@@ -20,7 +20,6 @@ import play.api.test._
 import play.api.{Application, Mode}
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper._
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}
@@ -58,10 +57,8 @@ abstract class ISpecBase
   implicit lazy val materializer: Materializer = Materializer(system)
   implicit def ec: ExecutionContext            = global
 
-  val internalId: String             = "test-id"
-  val testRegistration: Registration = Registration(internalId, None, None, None, None)
-  val now: Instant                   = Instant.now.truncatedTo(ChronoUnit.MILLIS)
-  private val stubClock: Clock       = Clock.fixed(now, ZoneId.systemDefault)
+  val now: Instant             = Instant.now.truncatedTo(ChronoUnit.MILLIS)
+  private val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
 
   val additionalAppConfig: Map[String, Any] = Map(
     "metrics.enabled"    -> false,

@@ -31,7 +31,6 @@ import play.api.test.{DefaultAwaitTimeout, FakeHeaders, FakeRequest, ResultExtra
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.FakeAuthorisedAction
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext
@@ -53,8 +52,6 @@ trait SpecBase
     with EclTestData {
 
   val cc: ControllerComponents                         = stubControllerComponents()
-  val internalId: String                               = "test-id"
-  val testRegistration: Registration                   = Registration(internalId, None, None, None, None)
   val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   val appConfig: AppConfig                             = app.injector.instanceOf[AppConfig]
   val bodyParsers: PlayBodyParsers                     = app.injector.instanceOf[PlayBodyParsers]
