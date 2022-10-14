@@ -24,7 +24,7 @@ final case class PartnershipEntityJourneyData(
   identifiersMatch: Boolean,
   businessVerification: BusinessVerificationResult,
   registration: GrsRegistrationResult,
-  companyProfile: CompanyProfile
+  companyProfile: Option[CompanyProfile]
 )
 
 object PartnershipEntityJourneyData {
