@@ -26,7 +26,7 @@ final case class SoleTraderEntityJourneyData(
   nino: String,
   sautr: String,
   identifiersMatch: Boolean,
-  businessVerification: BusinessVerificationResult,
+  businessVerification: Option[BusinessVerificationResult],
   registration: GrsRegistrationResult
 )
 

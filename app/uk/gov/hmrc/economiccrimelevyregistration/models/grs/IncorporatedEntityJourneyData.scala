@@ -24,7 +24,7 @@ final case class IncorporatedEntityJourneyData(
   companyProfile: CompanyProfile,
   ctutr: String,
   identifiersMatch: Boolean,
-  businessVerification: BusinessVerificationResult,
+  businessVerification: Option[BusinessVerificationResult],
   registration: GrsRegistrationResult
 )
 

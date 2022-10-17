@@ -22,7 +22,7 @@ final case class PartnershipEntityJourneyData(
   sautr: String,
   postcode: String,
   identifiersMatch: Boolean,
-  businessVerification: BusinessVerificationResult,
+  businessVerification: Option[BusinessVerificationResult],
   registration: GrsRegistrationResult,
   companyProfile: Option[CompanyProfile]
 )
