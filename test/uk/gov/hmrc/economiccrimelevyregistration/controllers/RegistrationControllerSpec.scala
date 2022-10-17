@@ -55,7 +55,7 @@ class RegistrationControllerSpec extends SpecBase {
       when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
       val result: Future[Result] =
-        controller.getRegistration("id")(fakeRequest)
+        controller.getRegistration(registration.internalId)(fakeRequest)
 
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(registration)
