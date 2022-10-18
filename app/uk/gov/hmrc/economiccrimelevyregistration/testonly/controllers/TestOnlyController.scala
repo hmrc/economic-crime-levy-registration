@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.controllers.test
+package uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers
 
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
@@ -24,7 +24,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton()
-class TestController @Inject() (
+class TestOnlyController @Inject() (
   cc: ControllerComponents,
   registrationRepository: RegistrationRepository
 )(implicit ec: ExecutionContext)
