@@ -23,8 +23,8 @@ import java.util.Date
 final case class SoleTraderEntityJourneyData(
   fullName: FullName,
   dateOfBirth: Date,
-  nino: String,
-  sautr: String,
+  nino: Option[String],
+  sautr: Option[String],
   identifiersMatch: Boolean,
   businessVerification: Option[BusinessVerificationResult],
   registration: GrsRegistrationResult
