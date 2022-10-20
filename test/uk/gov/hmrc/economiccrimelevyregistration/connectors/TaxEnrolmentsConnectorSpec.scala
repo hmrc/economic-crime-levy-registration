@@ -29,12 +29,11 @@ import scala.concurrent.Future
 class TaxEnrolmentsConnectorSpec extends SpecBase {
   val mockHttpClient: HttpClient = mock[HttpClient]
   val connector                  = new TaxEnrolmentsConnector(appConfig, mockHttpClient)
-  val taxEnrolmentsUrl           = s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$serviceName/enrolment"
 
-  "upsertEnrolment" should {
+  "enrol" should {
     "return unit when the http client successfully returns a http response" in forAll {
       taxEnrolment: CreateEnrolmentRequest =>
-        val expectedUrl = taxEnrolmentsUrl
+        val expectedUrl = s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$serviceName/enrolment"
 
         val response = HttpResponse(NO_CONTENT, "", Map.empty)
 
