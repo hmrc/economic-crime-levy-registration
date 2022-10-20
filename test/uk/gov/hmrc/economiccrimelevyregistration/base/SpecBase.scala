@@ -27,7 +27,7 @@ import play.api.http.{HeaderNames, Status}
 import play.api.libs.json.JsValue
 import play.api.mvc._
 import play.api.test.Helpers._
-import play.api.test.{DefaultAwaitTimeout, FakeHeaders, FakeRequest, ResultExtractors}
+import play.api.test.{DefaultAwaitTimeout, FakeHeaders, FakeRequest, FutureAwaits, ResultExtractors}
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.FakeAuthorisedAction
@@ -43,6 +43,7 @@ trait SpecBase
     with ScalaFutures
     with Results
     with DefaultAwaitTimeout
+    with FutureAwaits
     with ResultExtractors
     with Status
     with HeaderNames
