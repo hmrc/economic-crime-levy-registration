@@ -31,7 +31,7 @@ class TaxEnrolmentsConnectorSpec extends SpecBase {
   val connector                  = new TaxEnrolmentsConnector(appConfig, mockHttpClient)
   val taxEnrolmentsUrl           = s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$serviceName/enrolment"
 
-  "upsertEnrolment" should {
+  "enrol" should {
     "return unit when the http client successfully returns a http response" in forAll {
       taxEnrolment: CreateEnrolmentRequest =>
         val expectedUrl = taxEnrolmentsUrl
