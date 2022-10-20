@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.config
+package uk.gov.hmrc.economiccrimelevyregistration.models.eacd
 
-import javax.inject.{Inject, Singleton}
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.economiccrimelevyregistration.models.KeyValue
 
-@Singleton
-class AppConfig @Inject() (configuration: Configuration, servicesConfig: ServicesConfig) {
+final case class CreateEnrolmentRequest(
+  identifiers: Seq[KeyValue],
+  verifiers: Seq[KeyValue]
+)
 
-  val appName: String = configuration.get[String]("appName")
+object CreateEnrolmentRequest {
+  implicit val format: OFormat[CreateEnrolmentRequest] = Json.format[CreateEnrolmentRequest]
 
-  val mongoTtl: Int = configuration.get[Int]("mongodb.timeToLiveInSeconds")
-
-  val taxEnrolmentsBaseUrl: String = servicesConfig.baseUrl("tax-enrolments")
-
+  val serviceName: String = "HMRC-ECL-ORG"
 }

@@ -18,7 +18,6 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers.actions
 
 import org.mockito.ArgumentMatchers.any
 import play.api.mvc.{BodyParsers, Request, Result}
-import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.http.UnauthorizedException
