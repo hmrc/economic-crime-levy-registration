@@ -29,4 +29,11 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
 
   val taxEnrolmentsBaseUrl: String = servicesConfig.baseUrl("tax-enrolments")
 
+  val integrationFrameworkUrl: String = servicesConfig.baseUrl("integration-framework")
+
+  val integrationFrameworkBearerToken: String =
+    configuration.get[String]("microservice.services.integration-framework.bearerToken")
+
+  val integrationFrameworkEnvironment: String =
+    configuration.get[String]("microservice.services.integration-framework.environment")
 }
