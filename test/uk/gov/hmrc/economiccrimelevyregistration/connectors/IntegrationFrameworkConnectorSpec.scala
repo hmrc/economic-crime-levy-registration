@@ -36,12 +36,12 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
   "getSubscriptionStatus" should {
     "return a subscription status when the http client returns a subscription status" in forAll {
       (
-        eclRegistrationReference: String,
+        businessPartnerId: String,
         subscriptionStatusResponse: SubscriptionStatusResponse,
         correlationId: String
       ) =>
         val expectedUrl =
-          s"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$eclRegistrationReference/status"
+          s"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status"
 
         val expectedHeaders: Seq[(String, String)] = Seq(
           (HeaderNames.AUTHORIZATION, appConfig.integrationFrameworkBearerToken),
@@ -60,7 +60,7 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
         )
           .thenReturn(Future.successful(subscriptionStatusResponse))
 
-        val result = await(connector.getSubscriptionStatus(eclRegistrationReference))
+        val result = await(connector.getSubscriptionStatus(businessPartnerId))
 
         result shouldBe subscriptionStatusResponse
 

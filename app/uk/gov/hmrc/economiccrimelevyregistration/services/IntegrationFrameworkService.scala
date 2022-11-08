@@ -17,7 +17,8 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.IntegrationFrameworkConnector
-import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.Successful
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, NotSubscribed, Subscribed}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -32,10 +33,22 @@ class IntegrationFrameworkService @Inject() (
     businessPartnerId: String
   )(implicit hc: HeaderCarrier): Future[EclSubscriptionStatus] =
     integrationFrameworkConnector.getSubscriptionStatus(businessPartnerId).map { subscriptionStatusResponse =>
-      (subscriptionStatusResponse.idType, subscriptionStatusResponse.idValue) match {
-        case (Some("ZECL"), eclRegistrationReference) =>
-          EclSubscriptionStatus(subscriptionStatusResponse.subscriptionStatus, eclRegistrationReference)
-        case _                                        => EclSubscriptionStatus(subscriptionStatusResponse.subscriptionStatus, None)
+      (
+        subscriptionStatusResponse.subscriptionStatus,
+        subscriptionStatusResponse.idType,
+        subscriptionStatusResponse.idValue
+      ) match {
+        case (Successful, Some("ZECL"), Some(eclRegistrationReference))                           =>
+          EclSubscriptionStatus(Subscribed(eclRegistrationReference))
+        case (Successful, None, None) | (Successful, Some(_), None) | (Successful, None, Some(_)) =>
+          throw new IllegalStateException(
+            s"Subscription status is ${subscriptionStatusResponse.subscriptionStatus} but there is no id type or value"
+          )
+        case (subscriptionStatus, Some(idType), Some(idValue))                                    =>
+          throw new IllegalStateException(
+            s"Subscription status $subscriptionStatus returned with unexpected idType $idType and value $idValue"
+          )
+        case _                                                                                    => EclSubscriptionStatus(NotSubscribed)
       }
     }
 

@@ -18,7 +18,6 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.{Result, Results}
 import play.api.test._
 import play.api.{Application, Mode}
-import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper._
 
 import java.time.temporal.ChronoUnit
@@ -50,8 +49,7 @@ abstract class ISpecBase
     with ResultExtractors
     with WireMockHelper
     with WireMockStubs
-    with IntegrationPatience
-    with EclTestData {
+    with IntegrationPatience {
 
   implicit lazy val system: ActorSystem        = ActorSystem()
   implicit lazy val materializer: Materializer = Materializer(system)

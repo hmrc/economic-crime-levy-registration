@@ -16,11 +16,19 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
-import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.SubscriptionStatus
+import play.api.libs.json._
 
-final case class EclSubscriptionStatus(subscriptionStatus: SubscriptionStatus, eclRegistrationReference: Option[String])
+sealed trait SubscriptionStatus
+
+case class Subscribed(eclRegistrationReference: String) extends SubscriptionStatus
+
+case object NotSubscribed extends SubscriptionStatus
+
+final case class EclSubscriptionStatus(subscriptionStatus: SubscriptionStatus)
 
 object EclSubscriptionStatus {
-  implicit val format: OFormat[EclSubscriptionStatus] = Json.format[EclSubscriptionStatus]
+  implicit val subscribedFormat: OFormat[Subscribed]                 = Json.format[Subscribed]
+  implicit val notSubscribedFormat: Format[NotSubscribed.type]       = Json.format[NotSubscribed.type]
+  implicit val subscriptionStatusFormat: OFormat[SubscriptionStatus] = Json.format[SubscriptionStatus]
+  implicit val format: OFormat[EclSubscriptionStatus]                = Json.format[EclSubscriptionStatus]
 }
