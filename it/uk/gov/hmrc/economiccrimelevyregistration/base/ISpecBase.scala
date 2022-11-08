@@ -66,7 +66,8 @@ abstract class ISpecBase
     "application.router" -> "testOnlyDoNotUseInAppConf.Routes"
   ) ++ setWireMockPort(
     "auth",
-    "tax-enrolments"
+    "tax-enrolments",
+    "integration-framework"
   )
 
   val contextPath: String = "economic-crime-levy-registration"

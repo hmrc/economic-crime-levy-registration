@@ -35,4 +35,50 @@ trait WireMockStubs {
            """.stripMargin)
     )
 
+  def stubGetSuccessfulEclSubscriptionStatus(businessPartnerId: String, eclRegistrationReference: String): StubMapping =
+    stub(
+      get(urlEqualTo(s"/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status")),
+      aResponse()
+        .withStatus(200)
+        .withBody(s"""
+             |{
+             |  "subscriptionStatus": "SUCCESSFUL",
+             |  "idType": "ZECL",
+             |  "idValue": "$eclRegistrationReference",
+             |  "channel": "Online"
+             |}
+         """.stripMargin)
+    )
+
+  def stubGetSuccessfulNonEclSubscriptionStatus(
+    businessPartnerId: String,
+    otherRegimeRegistrationReference: String
+  ): StubMapping =
+    stub(
+      get(urlEqualTo(s"/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status")),
+      aResponse()
+        .withStatus(200)
+        .withBody(s"""
+             |{
+             |  "subscriptionStatus": "SUCCESSFUL",
+             |  "idType": "ZPPT",
+             |  "idValue": "$otherRegimeRegistrationReference",
+             |  "channel": "Online"
+             |}
+       """.stripMargin)
+    )
+
+  def stubGetUnsuccessfulEclSubscriptionStatus(businessPartnerId: String): StubMapping =
+    stub(
+      get(urlEqualTo(s"/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status")),
+      aResponse()
+        .withStatus(200)
+        .withBody(s"""
+             |{
+             |  "subscriptionStatus": "REJECTED",
+             |  "idType": "ZECL"
+             |}
+       """.stripMargin)
+    )
+
 }

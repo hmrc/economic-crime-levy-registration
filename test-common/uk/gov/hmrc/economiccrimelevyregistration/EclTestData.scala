@@ -36,4 +36,9 @@ trait EclTestData {
     } yield registration.copy(internalId = internalId)
   }
 
+  def alphaNumericString: String = Gen.alphaNumStr.sample.get
+
+  val testBusinessPartnerId: String                = alphaNumericString
+  val testEclRegistrationReference: String         = alphaNumericString
+  val testOtherRegimeRegistrationReference: String = alphaNumericString
 }
