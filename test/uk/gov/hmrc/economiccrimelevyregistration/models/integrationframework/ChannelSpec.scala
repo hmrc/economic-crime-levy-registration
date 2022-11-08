@@ -37,18 +37,16 @@ class ChannelSpec extends SpecBase {
   }
 
   "reads" should {
-    "return the channel deserialized from its JSON representation" in forAll {
-      (channel: Channel) =>
-        val json = Json.toJson(channel)
+    "return the channel deserialized from its JSON representation" in forAll { (channel: Channel) =>
+      val json = Json.toJson(channel)
 
-        json.as[Channel] shouldBe channel
+      json.as[Channel] shouldBe channel
     }
 
-    "return a '... is not a valid Channel' error when passed an invalid string value" in forAll {
-      (value: String) =>
-        val result = Json.fromJson[Channel](JsString(value))
+    "return a '... is not a valid Channel' error when passed an invalid string value" in forAll { (value: String) =>
+      val result = Json.fromJson[Channel](JsString(value))
 
-        result shouldBe JsError(s"$value is not a valid Channel")
+      result shouldBe JsError(s"$value is not a valid Channel")
     }
 
     "raise an error when passed a type that is not a string" in {

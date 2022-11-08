@@ -41,10 +41,10 @@ class IntegrationFrameworkConnector @Inject() (
   )
 
   def getSubscriptionStatus(
-    eclRegistrationReference: String
+    businessPartnerId: String
   )(implicit hc: HeaderCarrier): Future[SubscriptionStatusResponse] =
     httpClient.GET[SubscriptionStatusResponse](
-      s"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$eclRegistrationReference/status",
+      s"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status",
       headers = integrationFrameworkHeaders
     )
 
