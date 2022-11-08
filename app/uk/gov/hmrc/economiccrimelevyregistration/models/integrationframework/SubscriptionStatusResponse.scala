@@ -16,29 +16,29 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
-import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue, Json, OFormat}
+import play.api.libs.json._
 
-sealed trait SubscriptionStatus
+sealed trait EtmpSubscriptionStatus
 
-case object NoFormBundleFound extends SubscriptionStatus
-case object RegFormReceived extends SubscriptionStatus
-case object SentToDs extends SubscriptionStatus
-case object DsOutcomeInProgress extends SubscriptionStatus
-case object Successful extends SubscriptionStatus
-case object Rejected extends SubscriptionStatus
-case object InProcessing extends SubscriptionStatus
-case object CreateFailed extends SubscriptionStatus
-case object Withdrawal extends SubscriptionStatus
-case object SentToRcm extends SubscriptionStatus
-case object ApprovedWithConditions extends SubscriptionStatus
-case object Revoked extends SubscriptionStatus
-case object DeRegistered extends SubscriptionStatus
-case object ContractObjectInactive extends SubscriptionStatus
+case object NoFormBundleFound extends EtmpSubscriptionStatus
+case object RegFormReceived extends EtmpSubscriptionStatus
+case object SentToDs extends EtmpSubscriptionStatus
+case object DsOutcomeInProgress extends EtmpSubscriptionStatus
+case object Successful extends EtmpSubscriptionStatus
+case object Rejected extends EtmpSubscriptionStatus
+case object InProcessing extends EtmpSubscriptionStatus
+case object CreateFailed extends EtmpSubscriptionStatus
+case object Withdrawal extends EtmpSubscriptionStatus
+case object SentToRcm extends EtmpSubscriptionStatus
+case object ApprovedWithConditions extends EtmpSubscriptionStatus
+case object Revoked extends EtmpSubscriptionStatus
+case object DeRegistered extends EtmpSubscriptionStatus
+case object ContractObjectInactive extends EtmpSubscriptionStatus
 
-object SubscriptionStatus {
+object EtmpSubscriptionStatus {
 
-  implicit val format: Format[SubscriptionStatus] = new Format[SubscriptionStatus] {
-    override def reads(json: JsValue): JsResult[SubscriptionStatus] = json.validate[String] match {
+  implicit val format: Format[EtmpSubscriptionStatus] = new Format[EtmpSubscriptionStatus] {
+    override def reads(json: JsValue): JsResult[EtmpSubscriptionStatus] = json.validate[String] match {
       case JsSuccess(value, _) =>
         value match {
           case "NO_FORM_BUNDLE_FOUND"     => JsSuccess(NoFormBundleFound)
@@ -60,7 +60,7 @@ object SubscriptionStatus {
       case e: JsError          => e
     }
 
-    override def writes(o: SubscriptionStatus): JsValue = o match {
+    override def writes(o: EtmpSubscriptionStatus): JsValue = o match {
       case NoFormBundleFound      => JsString("NO_FORM_BUNDLE_FOUND")
       case RegFormReceived        => JsString("REG_FORM_RECEIVED")
       case SentToDs               => JsString("SENT_TO_DS")
@@ -104,7 +104,7 @@ object Channel {
 }
 
 final case class SubscriptionStatusResponse(
-  subscriptionStatus: SubscriptionStatus,
+  subscriptionStatus: EtmpSubscriptionStatus,
   idType: Option[String],
   idValue: Option[String],
   channel: Option[Channel]

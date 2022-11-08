@@ -20,7 +20,7 @@ import play.api.libs.json.{JsBoolean, JsError, JsString, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 
-class SubscriptionStatusSpec extends SpecBase {
+class EtmpSubscriptionStatusSpec extends SpecBase {
   "writes" should {
     "return the subscription status serialized to its JSON representation" in forAll(
       Table(
@@ -40,7 +40,7 @@ class SubscriptionStatusSpec extends SpecBase {
         (DeRegistered, "DE-REGISTERED"),
         (ContractObjectInactive, "CONTRACT_OBJECT_INACTIVE")
       )
-    ) { (subscriptionStatus: SubscriptionStatus, expectedResult: String) =>
+    ) { (subscriptionStatus: EtmpSubscriptionStatus, expectedResult: String) =>
       val result = Json.toJson(subscriptionStatus)
 
       result shouldBe JsString(expectedResult)
@@ -49,21 +49,21 @@ class SubscriptionStatusSpec extends SpecBase {
 
   "reads" should {
     "return the subscription status deserialized from its JSON representation" in forAll {
-      (subscriptionStatus: SubscriptionStatus) =>
+      (subscriptionStatus: EtmpSubscriptionStatus) =>
         val json = Json.toJson(subscriptionStatus)
 
-        json.as[SubscriptionStatus] shouldBe subscriptionStatus
+        json.as[EtmpSubscriptionStatus] shouldBe subscriptionStatus
     }
 
     "return a '... is not a valid SubscriptionStatus' error when passed an invalid string value" in forAll {
       (value: String) =>
-        val result = Json.fromJson[SubscriptionStatus](JsString(value))
+        val result = Json.fromJson[EtmpSubscriptionStatus](JsString(value))
 
         result shouldBe JsError(s"$value is not a valid SubscriptionStatus")
     }
 
     "raise an error when passed a type that is not a string" in {
-      val result = Json.fromJson[SubscriptionStatus](JsBoolean(true))
+      val result = Json.fromJson[EtmpSubscriptionStatus](JsBoolean(true))
 
       result shouldBe a[JsError]
     }

@@ -51,12 +51,17 @@ class IntegrationFrameworkServiceSpec extends SpecBase {
     }
 
     "return NotSubscribed when the subscription status is not Successful and there is no id type or value" in forAll(
-      Arbitrary.arbitrary[SubscriptionStatus].retryUntil(_ != Successful),
+      Arbitrary.arbitrary[EtmpSubscriptionStatus].retryUntil(_ != Successful),
       Arbitrary.arbitrary[String],
       Arbitrary.arbitrary[String],
       Arbitrary.arbitrary[Option[Channel]]
     ) {
-      (subscriptionStatus: SubscriptionStatus, businessPartnerId: String, idValue: String, channel: Option[Channel]) =>
+      (
+        subscriptionStatus: EtmpSubscriptionStatus,
+        businessPartnerId: String,
+        idValue: String,
+        channel: Option[Channel]
+      ) =>
         val subscriptionStatusResponse = SubscriptionStatusResponse(
           subscriptionStatus = subscriptionStatus,
           idType = None,
@@ -77,14 +82,14 @@ class IntegrationFrameworkServiceSpec extends SpecBase {
       Arbitrary.arbitrary[String],
       Arbitrary.arbitrary[String],
       Arbitrary.arbitrary[Option[Channel]],
-      Arbitrary.arbitrary[SubscriptionStatus]
+      Arbitrary.arbitrary[EtmpSubscriptionStatus]
     ) {
       (
         idType: String,
         businessPartnerId: String,
         idValue: String,
         channel: Option[Channel],
-        subscriptionStatus: SubscriptionStatus
+        subscriptionStatus: EtmpSubscriptionStatus
       ) =>
         val subscriptionStatusResponse = SubscriptionStatusResponse(
           subscriptionStatus = subscriptionStatus,
