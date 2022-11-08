@@ -105,9 +105,9 @@ object Channel {
 
 final case class SubscriptionStatusResponse(
   subscriptionStatus: SubscriptionStatus,
-  idType: String,
-  idValue: String,
-  channel: Channel
+  idType: Option[String],
+  idValue: Option[String],
+  channel: Option[Channel]
 )
 
 object SubscriptionStatusResponse {
