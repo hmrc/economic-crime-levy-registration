@@ -43,13 +43,13 @@ class ChannelSpec extends SpecBase {
       json.as[Channel] shouldBe channel
     }
 
-    "return a '... is not a valid Channel' error when passed an invalid string value" in forAll { (value: String) =>
-      val result = Json.fromJson[Channel](JsString(value))
+    "return a JsError when passed an invalid string value" in {
+      val result = Json.fromJson[Channel](JsString("Test"))
 
-      result shouldBe JsError(s"$value is not a valid Channel")
+      result shouldBe JsError(s"Test is not a valid Channel")
     }
 
-    "raise an error when passed a type that is not a string" in {
+    "return a JsError when passed a type that is not a string" in {
       val result = Json.fromJson[Channel](JsBoolean(true))
 
       result shouldBe a[JsError]

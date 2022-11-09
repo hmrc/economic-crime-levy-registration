@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
+import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 import play.api.libs.json.{JsBoolean, JsError, JsString, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 
 class EtmpSubscriptionStatusSpec extends SpecBase {
   "writes" should {
@@ -55,14 +55,13 @@ class EtmpSubscriptionStatusSpec extends SpecBase {
         json.as[EtmpSubscriptionStatus] shouldBe subscriptionStatus
     }
 
-    "return a '... is not a valid SubscriptionStatus' error when passed an invalid string value" in forAll {
-      (value: String) =>
-        val result = Json.fromJson[EtmpSubscriptionStatus](JsString(value))
+    "return a JsError when passed an invalid string value" in {
+      val result = Json.fromJson[EtmpSubscriptionStatus](JsString("Test"))
 
-        result shouldBe JsError(s"$value is not a valid SubscriptionStatus")
+      result shouldBe JsError("Test is not a valid SubscriptionStatus")
     }
 
-    "raise an error when passed a type that is not a string" in {
+    "return a JsError when passed a type that is not a string" in {
       val result = Json.fromJson[EtmpSubscriptionStatus](JsBoolean(true))
 
       result shouldBe a[JsError]

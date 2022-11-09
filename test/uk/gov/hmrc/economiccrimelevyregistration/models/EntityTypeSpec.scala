@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
+import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 import play.api.libs.json.{JsBoolean, JsError, JsString, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 
 class EntityTypeSpec extends SpecBase {
   "writes" should {
@@ -36,13 +36,13 @@ class EntityTypeSpec extends SpecBase {
       json.as[EntityType] shouldBe entityType
     }
 
-    "return a '... is not a valid EntityType' error when passed an invalid string value" in forAll { (value: String) =>
-      val result = Json.fromJson[EntityType](JsString(value))
+    "return a JsError when passed an invalid string value" in {
+      val result = Json.fromJson[EntityType](JsString("Test"))
 
-      result shouldBe JsError(s"$value is not a valid EntityType")
+      result shouldBe JsError(s"Test is not a valid EntityType")
     }
 
-    "raise an error when passed a type that is not a string" in {
+    "return a JsError when passed a type that is not a string" in {
       val result = Json.fromJson[EntityType](JsBoolean(true))
 
       result shouldBe a[JsError]

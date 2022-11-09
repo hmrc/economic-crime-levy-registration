@@ -27,8 +27,30 @@ case object NotSubscribed extends SubscriptionStatus
 final case class EclSubscriptionStatus(subscriptionStatus: SubscriptionStatus)
 
 object EclSubscriptionStatus {
-  implicit val subscribedFormat: OFormat[Subscribed]                 = Json.format[Subscribed]
-  implicit val notSubscribedFormat: Format[NotSubscribed.type]       = Json.format[NotSubscribed.type]
-  implicit val subscriptionStatusFormat: OFormat[SubscriptionStatus] = Json.format[SubscriptionStatus]
-  implicit val format: OFormat[EclSubscriptionStatus]                = Json.format[EclSubscriptionStatus]
+  implicit val subscriptionStatusFormat: Format[SubscriptionStatus] = new Format[SubscriptionStatus] {
+    override def reads(json: JsValue): JsResult[SubscriptionStatus] = json match {
+      case JsString(value) =>
+        value match {
+          case "NotSubscribed" => JsSuccess(NotSubscribed)
+          case s               => JsError(s"$s is not a valid SubscriptionStatus")
+        }
+      case json            =>
+        (json \ "status", json \ "eclRegistrationReference") match {
+          case (JsDefined(status), JsDefined(eclRegistrationReference)) =>
+            (status.as[String], eclRegistrationReference.as[String]) match {
+              case ("Subscribed", eclRegistrationReference) => JsSuccess(Subscribed(eclRegistrationReference))
+              case (s, _)                                   => JsError(s"$s is not a valid SubscriptionStatus")
+            }
+          case _                                                        => JsError(s"$json is not a valid SubscriptionStatus")
+        }
+    }
+
+    override def writes(o: SubscriptionStatus): JsValue = o match {
+      case Subscribed(eclRegistrationReference) =>
+        Json.obj("status" -> "Subscribed", "eclRegistrationReference" -> eclRegistrationReference)
+      case NotSubscribed                        => JsString("NotSubscribed")
+    }
+  }
+
+  implicit val format: OFormat[EclSubscriptionStatus] = Json.format[EclSubscriptionStatus]
 }
