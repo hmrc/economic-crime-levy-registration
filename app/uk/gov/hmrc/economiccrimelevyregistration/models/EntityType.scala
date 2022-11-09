@@ -29,17 +29,6 @@ case object ScottishLimitedPartnership extends EntityType
 case object LimitedLiabilityPartnership extends EntityType
 
 object EntityType {
-
-  val values: Seq[EntityType] = Seq(
-    UkLimitedCompany,
-    SoleTrader,
-    GeneralPartnership,
-    ScottishPartnership,
-    LimitedPartnership,
-    ScottishLimitedPartnership,
-    LimitedLiabilityPartnership
-  )
-
   implicit val format: Format[EntityType] = new Format[EntityType] {
     override def reads(json: JsValue): JsResult[EntityType] = json.validate[String] match {
       case JsSuccess(value, _) =>
