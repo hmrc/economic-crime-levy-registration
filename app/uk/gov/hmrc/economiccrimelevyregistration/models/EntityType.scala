@@ -45,14 +45,6 @@ object EntityType {
       case e: JsError          => e
     }
 
-    override def writes(o: EntityType): JsValue = o match {
-      case UkLimitedCompany            => JsString(UkLimitedCompany.toString)
-      case SoleTrader                  => JsString(SoleTrader.toString)
-      case GeneralPartnership          => JsString(GeneralPartnership.toString)
-      case ScottishPartnership         => JsString(ScottishPartnership.toString)
-      case LimitedPartnership          => JsString(LimitedPartnership.toString)
-      case ScottishLimitedPartnership  => JsString(ScottishLimitedPartnership.toString)
-      case LimitedLiabilityPartnership => JsString(LimitedLiabilityPartnership.toString)
-    }
+    override def writes(o: EntityType): JsValue = JsString(o.toString)
   }
 }

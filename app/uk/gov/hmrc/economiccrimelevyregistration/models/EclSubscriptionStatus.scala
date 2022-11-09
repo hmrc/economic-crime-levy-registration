@@ -48,7 +48,7 @@ object EclSubscriptionStatus {
     override def writes(o: SubscriptionStatus): JsValue = o match {
       case Subscribed(eclRegistrationReference) =>
         Json.obj("status" -> "Subscribed", "eclRegistrationReference" -> eclRegistrationReference)
-      case NotSubscribed                        => JsString("NotSubscribed")
+      case subscriptionStatus                   => JsString(subscriptionStatus.toString)
     }
   }
 

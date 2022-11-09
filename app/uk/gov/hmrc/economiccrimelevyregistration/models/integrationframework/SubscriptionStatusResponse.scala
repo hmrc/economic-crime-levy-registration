@@ -96,10 +96,7 @@ object Channel {
       case e: JsError          => e
     }
 
-    override def writes(o: Channel): JsValue = o match {
-      case Online  => JsString(Online.toString)
-      case Offline => JsString(Offline.toString)
-    }
+    override def writes(o: Channel): JsValue = JsString(o.toString)
   }
 }
 
