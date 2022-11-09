@@ -2,29 +2,29 @@
 
 Get the ECL subscription status for a given business partner ID.
 
-**URL** : `/economic-crime-levy-registration/subscription-status/:businessPartnerId`
+**URL**: `/economic-crime-levy-registration/subscription-status/:businessPartnerId`
 
-**Uri Parameters** :
+**Method**: `GET`
 
-| Parameter         | Description                                                                     |
-|-------------------|---------------------------------------------------------------------------------|
-| businessPartnerId | The business partner ID that you want to check the ECL subscription status for. |
+**Required URI Parameters**:
 
-**Method** : `GET`
+| Parameter         | Description                                                       |
+|-------------------|-------------------------------------------------------------------|
+| businessPartnerId | The business partner ID to check the ECL subscription status for. |
 
-**Request headers** :
+**Required Request Headers**:
 
-| Header Name   | Header Value |
-|---------------|--------------|
-| Authorization | Bearer xxx   |
+| Header Name | Header Value | Description |
+|---------------|--------------|--------------|
+| Authorization | Bearer {TOKEN} | A valid bearer token from the auth service |
 
 ## Success Response
 
-**Code** : `200 OK`
+**Code**: `200 OK`
 
-**Content examples**
+**Response Body Examples**
 
-For a business partner ID that holds an ECL subscription
+For a business partner ID that holds an ECL subscription:
 
 ```json
 {
@@ -35,7 +35,7 @@ For a business partner ID that holds an ECL subscription
 }
 ```
 
-For a business partner ID that does not hold an ECL subscription.
+For a business partner ID that does not hold an ECL subscription:
 
 ```json
 {
