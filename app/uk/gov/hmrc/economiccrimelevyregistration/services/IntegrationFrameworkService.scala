@@ -42,7 +42,7 @@ class IntegrationFrameworkService @Inject() (
           EclSubscriptionStatus(Subscribed(eclRegistrationReference))
         case (Successful, None, None) | (Successful, Some(_), None) | (Successful, None, Some(_)) =>
           throw new IllegalStateException(
-            s"Subscription status is ${subscriptionStatusResponse.subscriptionStatus} but there is no id type or value"
+            s"Subscription status is Successful but there is no id type or value"
           )
         case (subscriptionStatus, Some(idType), Some(idValue))                                    =>
           throw new IllegalStateException(
