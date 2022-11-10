@@ -41,9 +41,7 @@ class IntegrationFrameworkService @Inject() (
         case (Successful, Some("ZECL"), Some(eclRegistrationReference))                           =>
           EclSubscriptionStatus(Subscribed(eclRegistrationReference))
         case (Successful, None, None) | (Successful, Some(_), None) | (Successful, None, Some(_)) =>
-          throw new IllegalStateException(
-            s"Subscription status is Successful but there is no id type or value"
-          )
+          throw new IllegalStateException("Subscription status is Successful but there is no id type or value")
         case (subscriptionStatus, Some(idType), Some(idValue))                                    =>
           throw new IllegalStateException(
             s"Subscription status $subscriptionStatus returned with unexpected idType $idType and value $idValue"

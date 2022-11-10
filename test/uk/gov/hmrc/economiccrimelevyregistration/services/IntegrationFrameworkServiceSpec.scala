@@ -53,13 +53,11 @@ class IntegrationFrameworkServiceSpec extends SpecBase {
     "return NotSubscribed when the subscription status is not Successful and there is no id type or value" in forAll(
       Arbitrary.arbitrary[EtmpSubscriptionStatus].retryUntil(_ != Successful),
       Arbitrary.arbitrary[String],
-      Arbitrary.arbitrary[String],
       Arbitrary.arbitrary[Option[Channel]]
     ) {
       (
         subscriptionStatus: EtmpSubscriptionStatus,
         businessPartnerId: String,
-        idValue: String,
         channel: Option[Channel]
       ) =>
         val subscriptionStatusResponse = SubscriptionStatusResponse(
@@ -108,72 +106,33 @@ class IntegrationFrameworkServiceSpec extends SpecBase {
         result.getMessage shouldBe s"Subscription status $subscriptionStatus returned with unexpected idType $idType and value $idValue"
     }
 
-    "throw an IllegalStateException when the subscription status is successful but there is no id type or value" in forAll {
+    "throw an IllegalStateException when the subscription status is successful but there is no id type or value" in forAll(
+      Table(
+        ("idType", "idValue"),
+        (None, None),
+        (Some("ZECL"), None),
+        (None, Some(testEclRegistrationReference))
+      )
+    ) {
       (
-        businessPartnerId: String,
-        channel: Option[Channel]
+        idType: Option[String],
+        idValue: Option[String]
       ) =>
         val subscriptionStatusResponse = SubscriptionStatusResponse(
           subscriptionStatus = Successful,
-          idType = None,
-          idValue = None,
-          channel = channel
+          idType = idType,
+          idValue = idValue,
+          channel = Some(Online)
         )
 
-        when(mockIntegrationFrameworkConnector.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId))(any()))
+        when(mockIntegrationFrameworkConnector.getSubscriptionStatus(ArgumentMatchers.eq(testBusinessPartnerId))(any()))
           .thenReturn(Future.successful(subscriptionStatusResponse))
 
         val result = intercept[IllegalStateException] {
-          await(service.getSubscriptionStatus(businessPartnerId))
+          await(service.getSubscriptionStatus(testBusinessPartnerId))
         }
 
-        result.getMessage shouldBe s"Subscription status is ${subscriptionStatusResponse.subscriptionStatus} but there is no id type or value"
-    }
-
-    "throw an IllegalStateException when the subscription status is successful but there is an id type without an id value" in forAll {
-      (
-        businessPartnerId: String,
-        channel: Option[Channel]
-      ) =>
-        val subscriptionStatusResponse = SubscriptionStatusResponse(
-          subscriptionStatus = Successful,
-          idType = Some("ZECL"),
-          idValue = None,
-          channel = channel
-        )
-
-        when(mockIntegrationFrameworkConnector.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId))(any()))
-          .thenReturn(Future.successful(subscriptionStatusResponse))
-
-        val result = intercept[IllegalStateException] {
-          await(service.getSubscriptionStatus(businessPartnerId))
-        }
-
-        result.getMessage shouldBe s"Subscription status is ${subscriptionStatusResponse.subscriptionStatus} but there is no id type or value"
-    }
-
-    "throw an IllegalStateException when the subscription status is successful but there is an id value without an id type" in forAll {
-      (
-        businessPartnerId: String,
-        idValue: String,
-        channel: Option[Channel]
-      ) =>
-        val subscriptionStatusResponse = SubscriptionStatusResponse(
-          subscriptionStatus = Successful,
-          idType = None,
-          idValue = Some(idValue),
-          channel = channel
-        )
-
-        when(mockIntegrationFrameworkConnector.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId))(any()))
-          .thenReturn(Future.successful(subscriptionStatusResponse))
-
-        val result = intercept[IllegalStateException] {
-          await(service.getSubscriptionStatus(businessPartnerId))
-        }
-
-        result.getMessage shouldBe s"Subscription status is ${subscriptionStatusResponse.subscriptionStatus} but there is no id type or value"
+        result.getMessage shouldBe "Subscription status is Successful but there is no id type or value"
     }
   }
-
 }

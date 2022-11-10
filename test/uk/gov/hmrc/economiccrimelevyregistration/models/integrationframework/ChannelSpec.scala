@@ -23,21 +23,15 @@ import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitr
 class ChannelSpec extends SpecBase {
 
   "writes" should {
-    "return the channel serialized to its JSON representation" in forAll(
-      Table(
-        ("channel", "expectedResult"),
-        (Online, "Online"),
-        (Offline, "Offline")
-      )
-    ) { (channel: Channel, expectedResult: String) =>
+    "return the channel serialized to its JSON representation" in forAll { channel: Channel =>
       val result = Json.toJson(channel)
 
-      result shouldBe JsString(expectedResult)
+      result shouldBe JsString(channel.toString)
     }
   }
 
   "reads" should {
-    "return the channel deserialized from its JSON representation" in forAll { (channel: Channel) =>
+    "return the channel deserialized from its JSON representation" in forAll { channel: Channel =>
       val json = Json.toJson(channel)
 
       json.as[Channel] shouldBe channel
