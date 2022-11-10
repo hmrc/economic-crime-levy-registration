@@ -16,23 +16,14 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
+import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 import play.api.libs.json.{JsBoolean, JsError, JsString, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 
 class ChannelSpec extends SpecBase {
-
-  "writes" should {
-    "return the channel serialized to its JSON representation" in forAll { channel: Channel =>
-      val result = Json.toJson(channel)
-
-      result shouldBe JsString(channel.toString)
-    }
-  }
-
   "reads" should {
     "return the channel deserialized from its JSON representation" in forAll { channel: Channel =>
-      val json = Json.toJson(channel)
+      val json = JsString(channel.toString)
 
       json.as[Channel] shouldBe channel
     }

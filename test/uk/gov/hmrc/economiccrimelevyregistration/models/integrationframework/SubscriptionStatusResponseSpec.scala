@@ -14,27 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.services
+package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
-import org.mockito.ArgumentMatchers
-import org.mockito.ArgumentMatchers.any
 import org.scalacheck.Arbitrary
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.connectors.IntegrationFrameworkConnector
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, NotSubscribed, Subscribed}
 
-import scala.concurrent.Future
+class SubscriptionStatusResponseSpec extends SpecBase {
 
-class IntegrationFrameworkServiceSpec extends SpecBase {
-  val mockIntegrationFrameworkConnector: IntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
-
-  val service = new IntegrationFrameworkService(mockIntegrationFrameworkConnector)
-
-  "getSubscriptionStatus" should {
+  "toEclSubscriptionStatus" should {
     "return Subscribed with the ECL registration reference when the id type is ZECL" in forAll {
-      (businessPartnerId: String, idValue: String, channel: Option[Channel]) =>
+      (idValue: String, channel: Option[Channel]) =>
         val subscriptionStatusResponse = SubscriptionStatusResponse(
           subscriptionStatus = Successful,
           idType = Some("ZECL"),
@@ -42,22 +33,17 @@ class IntegrationFrameworkServiceSpec extends SpecBase {
           channel = channel
         )
 
-        when(mockIntegrationFrameworkConnector.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId))(any()))
-          .thenReturn(Future.successful(subscriptionStatusResponse))
-
-        val result = await(service.getSubscriptionStatus(businessPartnerId))
+        val result = subscriptionStatusResponse.toEclSubscriptionStatus
 
         result shouldBe EclSubscriptionStatus(Subscribed(idValue))
     }
 
     "return NotSubscribed when the subscription status is not Successful and there is no id type or value" in forAll(
       Arbitrary.arbitrary[EtmpSubscriptionStatus].retryUntil(_ != Successful),
-      Arbitrary.arbitrary[String],
       Arbitrary.arbitrary[Option[Channel]]
     ) {
       (
         subscriptionStatus: EtmpSubscriptionStatus,
-        businessPartnerId: String,
         channel: Option[Channel]
       ) =>
         val subscriptionStatusResponse = SubscriptionStatusResponse(
@@ -67,10 +53,7 @@ class IntegrationFrameworkServiceSpec extends SpecBase {
           channel = channel
         )
 
-        when(mockIntegrationFrameworkConnector.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId))(any()))
-          .thenReturn(Future.successful(subscriptionStatusResponse))
-
-        val result = await(service.getSubscriptionStatus(businessPartnerId))
+        val result = subscriptionStatusResponse.toEclSubscriptionStatus
 
         result shouldBe EclSubscriptionStatus(NotSubscribed)
     }
@@ -78,13 +61,11 @@ class IntegrationFrameworkServiceSpec extends SpecBase {
     "throw an IllegalStateException when the id type something other than ZECL" in forAll(
       Arbitrary.arbitrary[String].retryUntil(_ != "ZECL"),
       Arbitrary.arbitrary[String],
-      Arbitrary.arbitrary[String],
       Arbitrary.arbitrary[Option[Channel]],
       Arbitrary.arbitrary[EtmpSubscriptionStatus]
     ) {
       (
         idType: String,
-        businessPartnerId: String,
         idValue: String,
         channel: Option[Channel],
         subscriptionStatus: EtmpSubscriptionStatus
@@ -96,11 +77,8 @@ class IntegrationFrameworkServiceSpec extends SpecBase {
           channel = channel
         )
 
-        when(mockIntegrationFrameworkConnector.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId))(any()))
-          .thenReturn(Future.successful(subscriptionStatusResponse))
-
         val result = intercept[IllegalStateException] {
-          await(service.getSubscriptionStatus(businessPartnerId))
+          subscriptionStatusResponse.toEclSubscriptionStatus
         }
 
         result.getMessage shouldBe s"Subscription status $subscriptionStatus returned with unexpected idType $idType and value $idValue"
@@ -125,14 +103,12 @@ class IntegrationFrameworkServiceSpec extends SpecBase {
           channel = Some(Online)
         )
 
-        when(mockIntegrationFrameworkConnector.getSubscriptionStatus(ArgumentMatchers.eq(testBusinessPartnerId))(any()))
-          .thenReturn(Future.successful(subscriptionStatusResponse))
-
         val result = intercept[IllegalStateException] {
-          await(service.getSubscriptionStatus(testBusinessPartnerId))
+          subscriptionStatusResponse.toEclSubscriptionStatus
         }
 
         result.getMessage shouldBe "Subscription status is Successful but there is no id type or value"
     }
   }
+
 }

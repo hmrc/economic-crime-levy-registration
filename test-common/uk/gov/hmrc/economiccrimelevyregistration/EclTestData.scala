@@ -20,6 +20,7 @@ import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitr
 import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, EtmpSubscriptionStatus, SubscriptionStatusResponse, Successful}
 
 import java.time.Instant
 
@@ -34,6 +35,21 @@ trait EclTestData {
       registration <- MkArbitrary[Registration].arbitrary.arbitrary
       internalId   <- Gen.nonEmptyListOf(Arbitrary.arbitrary[Char]).map(_.mkString)
     } yield registration.copy(internalId = internalId)
+  }
+
+  implicit val arbSubscriptionStatusResponse: Arbitrary[SubscriptionStatusResponse] = Arbitrary {
+    for {
+      etmpSubscriptionStatus   <- Arbitrary.arbitrary[EtmpSubscriptionStatus]
+      idType                    = if (etmpSubscriptionStatus == Successful) Some("ZECL") else None
+      eclRegistrationReference <- Arbitrary.arbitrary[String]
+      idValue                   = if (etmpSubscriptionStatus == Successful) Some(eclRegistrationReference) else None
+      channel                  <- Arbitrary.arbitrary[Option[Channel]]
+    } yield SubscriptionStatusResponse(
+      etmpSubscriptionStatus,
+      idType,
+      idValue,
+      channel
+    )
   }
 
   def alphaNumericString: String = Gen.alphaNumStr.sample.get

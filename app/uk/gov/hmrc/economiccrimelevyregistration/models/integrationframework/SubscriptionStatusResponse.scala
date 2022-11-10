@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
 import play.api.libs.json._
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, NotSubscribed, Subscribed}
 
 sealed trait EtmpSubscriptionStatus
 
@@ -36,9 +37,8 @@ case object DeRegistered extends EtmpSubscriptionStatus
 case object ContractObjectInactive extends EtmpSubscriptionStatus
 
 object EtmpSubscriptionStatus {
-
-  implicit val format: Format[EtmpSubscriptionStatus] = new Format[EtmpSubscriptionStatus] {
-    override def reads(json: JsValue): JsResult[EtmpSubscriptionStatus] = json.validate[String] match {
+  implicit val reads: Reads[EtmpSubscriptionStatus] = (json: JsValue) =>
+    json.validate[String] match {
       case JsSuccess(value, _) =>
         value match {
           case "NO_FORM_BUNDLE_FOUND"     => JsSuccess(NoFormBundleFound)
@@ -59,24 +59,6 @@ object EtmpSubscriptionStatus {
         }
       case e: JsError          => e
     }
-
-    override def writes(o: EtmpSubscriptionStatus): JsValue = o match {
-      case NoFormBundleFound      => JsString("NO_FORM_BUNDLE_FOUND")
-      case RegFormReceived        => JsString("REG_FORM_RECEIVED")
-      case SentToDs               => JsString("SENT_TO_DS")
-      case DsOutcomeInProgress    => JsString("DS_OUTCOME_IN_PROGRESS")
-      case Successful             => JsString("SUCCESSFUL")
-      case Rejected               => JsString("REJECTED")
-      case InProcessing           => JsString("IN_PROCESSING")
-      case CreateFailed           => JsString("CREATE_FAILED")
-      case Withdrawal             => JsString("WITHDRAWAL")
-      case SentToRcm              => JsString("SENT_TO_RCM")
-      case ApprovedWithConditions => JsString("APPROVED_WITH_CONDITIONS")
-      case Revoked                => JsString("REVOKED")
-      case DeRegistered           => JsString("DE-REGISTERED")
-      case ContractObjectInactive => JsString("CONTRACT_OBJECT_INACTIVE")
-    }
-  }
 }
 
 sealed trait Channel
@@ -85,8 +67,8 @@ case object Online extends Channel
 case object Offline extends Channel
 
 object Channel {
-  implicit val format: Format[Channel] = new Format[Channel] {
-    override def reads(json: JsValue): JsResult[Channel] = json.validate[String] match {
+  implicit val reads: Reads[Channel] = (json: JsValue) =>
+    json.validate[String] match {
       case JsSuccess(value, _) =>
         value match {
           case "Online"  => JsSuccess(Online)
@@ -95,9 +77,6 @@ object Channel {
         }
       case e: JsError          => e
     }
-
-    override def writes(o: Channel): JsValue = JsString(o.toString)
-  }
 }
 
 final case class SubscriptionStatusResponse(
@@ -105,8 +84,25 @@ final case class SubscriptionStatusResponse(
   idType: Option[String],
   idValue: Option[String],
   channel: Option[Channel]
-)
+) {
+  def toEclSubscriptionStatus: EclSubscriptionStatus =
+    (
+      subscriptionStatus,
+      idType,
+      idValue
+    ) match {
+      case (Successful, Some("ZECL"), Some(eclRegistrationReference))                           =>
+        EclSubscriptionStatus(Subscribed(eclRegistrationReference))
+      case (Successful, None, None) | (Successful, Some(_), None) | (Successful, None, Some(_)) =>
+        throw new IllegalStateException("Subscription status is Successful but there is no id type or value")
+      case (subscriptionStatus, Some(idType), Some(idValue))                                    =>
+        throw new IllegalStateException(
+          s"Subscription status $subscriptionStatus returned with unexpected idType $idType and value $idValue"
+        )
+      case _                                                                                    => EclSubscriptionStatus(NotSubscribed)
+    }
+}
 
 object SubscriptionStatusResponse {
-  implicit val format: OFormat[SubscriptionStatusResponse] = Json.format[SubscriptionStatusResponse]
+  implicit val reads: Reads[SubscriptionStatusResponse] = Json.reads[SubscriptionStatusResponse]
 }

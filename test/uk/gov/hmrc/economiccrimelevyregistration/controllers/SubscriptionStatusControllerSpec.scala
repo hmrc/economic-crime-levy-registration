@@ -22,32 +22,32 @@ import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
-import uk.gov.hmrc.economiccrimelevyregistration.services.IntegrationFrameworkService
+import uk.gov.hmrc.economiccrimelevyregistration.connectors.IntegrationFrameworkConnector
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.SubscriptionStatusResponse
 
 import scala.concurrent.Future
 
 class SubscriptionStatusControllerSpec extends SpecBase {
 
-  val mockIntegrationFrameworkService: IntegrationFrameworkService = mock[IntegrationFrameworkService]
+  val mockIntegrationFrameworkConnector: IntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
 
   val controller = new SubscriptionStatusController(
     cc,
-    mockIntegrationFrameworkService,
+    mockIntegrationFrameworkConnector,
     fakeAuthorisedAction
   )
 
   "getSubscriptionStatus" should {
     "return 200 OK with the subscription status for a given business partner ID" in forAll {
-      (businessPartnerId: String, eclSubscriptionStatus: EclSubscriptionStatus) =>
-        when(mockIntegrationFrameworkService.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId))(any()))
-          .thenReturn(Future.successful(eclSubscriptionStatus))
+      (businessPartnerId: String, subscriptionStatusResponse: SubscriptionStatusResponse) =>
+        when(mockIntegrationFrameworkConnector.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId))(any()))
+          .thenReturn(Future.successful(subscriptionStatusResponse))
 
         val result: Future[Result] =
           controller.getSubscriptionStatus(businessPartnerId)(fakeRequest)
 
         status(result)        shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(eclSubscriptionStatus)
+        contentAsJson(result) shouldBe Json.toJson(subscriptionStatusResponse.toEclSubscriptionStatus)
     }
   }
 
