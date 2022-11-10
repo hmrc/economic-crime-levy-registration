@@ -14,36 +14,28 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.models
+package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 import play.api.libs.json.{JsBoolean, JsError, JsString, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 
-class EntityTypeSpec extends SpecBase {
-  "writes" should {
-    "return the entity type serialized to its JSON representation" in forAll { (entityType: EntityType) =>
-      val result = Json.toJson(entityType)
-
-      result shouldBe JsString(entityType.toString)
-    }
-  }
-
+class ChannelSpec extends SpecBase {
   "reads" should {
-    "return the entity type deserialized from its JSON representation" in forAll { (entityType: EntityType) =>
-      val json = Json.toJson(entityType)
+    "return the channel deserialized from its JSON representation" in forAll { channel: Channel =>
+      val json = JsString(channel.toString)
 
-      json.as[EntityType] shouldBe entityType
+      json.as[Channel] shouldBe channel
     }
 
     "return a JsError when passed an invalid string value" in {
-      val result = Json.fromJson[EntityType](JsString("Test"))
+      val result = Json.fromJson[Channel](JsString("Test"))
 
-      result shouldBe JsError(s"Test is not a valid EntityType")
+      result shouldBe JsError(s"Test is not a valid Channel")
     }
 
     "return a JsError when passed a type that is not a string" in {
-      val result = Json.fromJson[EntityType](JsBoolean(true))
+      val result = Json.fromJson[Channel](JsBoolean(true))
 
       result shouldBe a[JsError]
     }

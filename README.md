@@ -8,7 +8,8 @@ The service provides APIs to be consumed by [economic-crime-levy-registration-fr
 
 - Create/update registration: `PUT /economic-crime-levy-registration/registrations`  
 - Get registration: `GET /economic-crime-levy-registration/registrations/:id`  
-- Delete registration: `DELETE /economic-crime-levy-registration/registrations/:id`  
+- Delete registration: `DELETE /economic-crime-levy-registration/registrations/:id`
+- [Get subscription status](api-docs/get-subscription-status.md): `GET /economic-crime-levy-registration/subscription-status/:businessPartnerId`
 
 ## Running the service
 

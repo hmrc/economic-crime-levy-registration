@@ -29,17 +29,6 @@ case object ScottishLimitedPartnership extends EntityType
 case object LimitedLiabilityPartnership extends EntityType
 
 object EntityType {
-
-  val values: Seq[EntityType] = Seq(
-    UkLimitedCompany,
-    SoleTrader,
-    GeneralPartnership,
-    ScottishPartnership,
-    LimitedPartnership,
-    ScottishLimitedPartnership,
-    LimitedLiabilityPartnership
-  )
-
   implicit val format: Format[EntityType] = new Format[EntityType] {
     override def reads(json: JsValue): JsResult[EntityType] = json.validate[String] match {
       case JsSuccess(value, _) =>
@@ -56,14 +45,6 @@ object EntityType {
       case e: JsError          => e
     }
 
-    override def writes(o: EntityType): JsValue = o match {
-      case UkLimitedCompany            => JsString(UkLimitedCompany.toString)
-      case SoleTrader                  => JsString(SoleTrader.toString)
-      case GeneralPartnership          => JsString(GeneralPartnership.toString)
-      case ScottishPartnership         => JsString(ScottishPartnership.toString)
-      case LimitedPartnership          => JsString(LimitedPartnership.toString)
-      case ScottishLimitedPartnership  => JsString(ScottishLimitedPartnership.toString)
-      case LimitedLiabilityPartnership => JsString(LimitedLiabilityPartnership.toString)
-    }
+    override def writes(o: EntityType): JsValue = JsString(o.toString)
   }
 }
