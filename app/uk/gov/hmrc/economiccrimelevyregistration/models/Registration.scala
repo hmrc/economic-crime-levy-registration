@@ -24,6 +24,7 @@ import java.time.Instant
 final case class Registration(
   internalId: String,
   entityType: Option[EntityType],
+  meetsRevenueThreshold: Option[Boolean],
   incorporatedEntityJourneyData: Option[IncorporatedEntityJourneyData],
   soleTraderEntityJourneyData: Option[SoleTraderEntityJourneyData],
   partnershipEntityJourneyData: Option[PartnershipEntityJourneyData],
