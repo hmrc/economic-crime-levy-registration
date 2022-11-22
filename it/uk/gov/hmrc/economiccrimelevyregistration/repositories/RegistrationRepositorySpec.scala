@@ -25,8 +25,19 @@ class RegistrationRepositorySpec
 
   private val now              = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
-  private val registration     = Registration("test-id", None, None, None, None, None, Some(Instant.ofEpochSecond(1)))
-  private val mockAppConfig    = mock[AppConfig]
+
+  private val registration = Registration(
+    internalId = "test-id",
+    entityType = None,
+    meetsRevenueThreshold = None,
+    amlSupervisor = None,
+    incorporatedEntityJourneyData = None,
+    soleTraderEntityJourneyData = None,
+    partnershipEntityJourneyData = None,
+    lastUpdated = Some(Instant.ofEpochSecond(1))
+  )
+
+  private val mockAppConfig = mock[AppConfig]
 
   when(mockAppConfig.mongoTtl) thenReturn 1
 

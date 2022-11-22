@@ -25,6 +25,7 @@ final case class Registration(
   internalId: String,
   entityType: Option[EntityType],
   meetsRevenueThreshold: Option[Boolean],
+  amlSupervisor: Option[AmlSupervisor],
   incorporatedEntityJourneyData: Option[IncorporatedEntityJourneyData],
   soleTraderEntityJourneyData: Option[SoleTraderEntityJourneyData],
   partnershipEntityJourneyData: Option[PartnershipEntityJourneyData],
