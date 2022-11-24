@@ -20,15 +20,15 @@ import play.api.libs.json._
 
 sealed trait EntityType
 
-case object UkLimitedCompany extends EntityType
-case object SoleTrader extends EntityType
-case object GeneralPartnership extends EntityType
-case object ScottishPartnership extends EntityType
-case object LimitedPartnership extends EntityType
-case object ScottishLimitedPartnership extends EntityType
-case object LimitedLiabilityPartnership extends EntityType
-
 object EntityType {
+  case object UkLimitedCompany extends EntityType
+  case object SoleTrader extends EntityType
+  case object GeneralPartnership extends EntityType
+  case object ScottishPartnership extends EntityType
+  case object LimitedPartnership extends EntityType
+  case object ScottishLimitedPartnership extends EntityType
+  case object LimitedLiabilityPartnership extends EntityType
+
   implicit val format: Format[EntityType] = new Format[EntityType] {
     override def reads(json: JsValue): JsResult[EntityType] = json.validate[String] match {
       case JsSuccess(value, _) =>

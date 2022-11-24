@@ -19,7 +19,10 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 import org.scalacheck.Arbitrary
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, NotSubscribed, Subscribed}
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.Channel._
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 
 class SubscriptionStatusResponseSpec extends SpecBase {
 

@@ -19,6 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 import play.api.libs.json._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
 
 class SubscriptionStatusSpec extends SpecBase {
 

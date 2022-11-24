@@ -20,7 +20,8 @@ import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitr
 import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, EtmpSubscriptionStatus, SubscriptionStatusResponse, Successful}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, EtmpSubscriptionStatus, SubscriptionStatusResponse}
 
 import java.time.Instant
 

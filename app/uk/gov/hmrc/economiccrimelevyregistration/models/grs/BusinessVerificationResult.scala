@@ -16,10 +16,43 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.grs
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue, Json, OFormat}
+
+sealed trait VerificationStatus
+
+object VerificationStatus {
+  case object Pass extends VerificationStatus
+  case object Fail extends VerificationStatus
+  case object Unchallenged extends VerificationStatus
+  case object CtEnrolled extends VerificationStatus
+  case object SaEnrolled extends VerificationStatus
+
+  implicit val format: Format[VerificationStatus] = new Format[VerificationStatus] {
+    override def reads(json: JsValue): JsResult[VerificationStatus] = json.validate[String] match {
+      case JsSuccess(value, _) =>
+        value match {
+          case "PASS"         => JsSuccess(Pass)
+          case "FAIL"         => JsSuccess(Fail)
+          case "UNCHALLENGED" => JsSuccess(Unchallenged)
+          case "CT_ENROLLED"  => JsSuccess(CtEnrolled)
+          case "SA_ENROLLED"  => JsSuccess(SaEnrolled)
+          case s              => JsError(s"$s is not a valid VerificationStatus")
+        }
+      case e: JsError          => e
+    }
+
+    override def writes(o: VerificationStatus): JsValue = o match {
+      case Pass         => JsString("PASS")
+      case Fail         => JsString("FAIL")
+      case Unchallenged => JsString("UNCHALLENGED")
+      case CtEnrolled   => JsString("CT_ENROLLED")
+      case SaEnrolled   => JsString("SA_ENROLLED")
+    }
+  }
+}
 
 final case class BusinessVerificationResult(
-  verificationStatus: String
+  verificationStatus: VerificationStatus
 )
 
 object BusinessVerificationResult {
