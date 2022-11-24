@@ -4,7 +4,8 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, NotSubscribed, Subscribed}
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
 
 class SubscriptionStatusISpec extends ISpecBase {
 

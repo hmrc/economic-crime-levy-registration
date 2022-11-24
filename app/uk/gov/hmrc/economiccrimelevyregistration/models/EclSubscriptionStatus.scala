@@ -20,13 +20,12 @@ import play.api.libs.json._
 
 sealed trait SubscriptionStatus
 
-case class Subscribed(eclRegistrationReference: String) extends SubscriptionStatus
-
-case object NotSubscribed extends SubscriptionStatus
-
 final case class EclSubscriptionStatus(subscriptionStatus: SubscriptionStatus)
 
 object EclSubscriptionStatus {
+  case class Subscribed(eclRegistrationReference: String) extends SubscriptionStatus
+  case object NotSubscribed extends SubscriptionStatus
+
   implicit val subscriptionStatusFormat: Format[SubscriptionStatus] = new Format[SubscriptionStatus] {
     override def reads(json: JsValue): JsResult[SubscriptionStatus] = json match {
       case JsString(value) =>

@@ -16,10 +16,37 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.grs
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue, Json, OFormat}
+
+sealed trait RegistrationStatus
+
+object RegistrationStatus {
+  case object Registered extends RegistrationStatus
+  case object RegistrationFailed extends RegistrationStatus
+  case object RegistrationNotCalled extends RegistrationStatus
+
+  implicit val format: Format[RegistrationStatus] = new Format[RegistrationStatus] {
+    override def reads(json: JsValue): JsResult[RegistrationStatus] = json.validate[String] match {
+      case JsSuccess(value, _) =>
+        value match {
+          case "REGISTERED"              => JsSuccess(Registered)
+          case "REGISTRATION_FAILED"     => JsSuccess(RegistrationFailed)
+          case "REGISTRATION_NOT_CALLED" => JsSuccess(RegistrationNotCalled)
+          case s                         => JsError(s"$s is not a valid RegistrationStatus")
+        }
+      case e: JsError          => e
+    }
+
+    override def writes(o: RegistrationStatus): JsValue = o match {
+      case Registered            => JsString("REGISTERED")
+      case RegistrationFailed    => JsString("REGISTRATION_FAILED")
+      case RegistrationNotCalled => JsString("REGISTRATION_NOT_CALLED")
+    }
+  }
+}
 
 final case class GrsRegistrationResult(
-  registrationStatus: String,
+  registrationStatus: RegistrationStatus,
   registeredBusinessPartnerId: Option[String],
   failures: Option[Seq[GrsRegistrationResultFailures]]
 )

@@ -17,26 +17,28 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
 import play.api.libs.json._
-import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, NotSubscribed, Subscribed}
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 
 sealed trait EtmpSubscriptionStatus
 
-case object NoFormBundleFound extends EtmpSubscriptionStatus
-case object RegFormReceived extends EtmpSubscriptionStatus
-case object SentToDs extends EtmpSubscriptionStatus
-case object DsOutcomeInProgress extends EtmpSubscriptionStatus
-case object Successful extends EtmpSubscriptionStatus
-case object Rejected extends EtmpSubscriptionStatus
-case object InProcessing extends EtmpSubscriptionStatus
-case object CreateFailed extends EtmpSubscriptionStatus
-case object Withdrawal extends EtmpSubscriptionStatus
-case object SentToRcm extends EtmpSubscriptionStatus
-case object ApprovedWithConditions extends EtmpSubscriptionStatus
-case object Revoked extends EtmpSubscriptionStatus
-case object DeRegistered extends EtmpSubscriptionStatus
-case object ContractObjectInactive extends EtmpSubscriptionStatus
-
 object EtmpSubscriptionStatus {
+  case object NoFormBundleFound extends EtmpSubscriptionStatus
+  case object RegFormReceived extends EtmpSubscriptionStatus
+  case object SentToDs extends EtmpSubscriptionStatus
+  case object DsOutcomeInProgress extends EtmpSubscriptionStatus
+  case object Successful extends EtmpSubscriptionStatus
+  case object Rejected extends EtmpSubscriptionStatus
+  case object InProcessing extends EtmpSubscriptionStatus
+  case object CreateFailed extends EtmpSubscriptionStatus
+  case object Withdrawal extends EtmpSubscriptionStatus
+  case object SentToRcm extends EtmpSubscriptionStatus
+  case object ApprovedWithConditions extends EtmpSubscriptionStatus
+  case object Revoked extends EtmpSubscriptionStatus
+  case object DeRegistered extends EtmpSubscriptionStatus
+  case object ContractObjectInactive extends EtmpSubscriptionStatus
+
   implicit val reads: Reads[EtmpSubscriptionStatus] = (json: JsValue) =>
     json.validate[String] match {
       case JsSuccess(value, _) =>
@@ -63,10 +65,10 @@ object EtmpSubscriptionStatus {
 
 sealed trait Channel
 
-case object Online extends Channel
-case object Offline extends Channel
-
 object Channel {
+  case object Online extends Channel
+  case object Offline extends Channel
+
   implicit val reads: Reads[Channel] = (json: JsValue) =>
     json.validate[String] match {
       case JsSuccess(value, _) =>

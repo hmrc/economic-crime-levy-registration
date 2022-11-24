@@ -20,12 +20,11 @@ import play.api.libs.json._
 
 sealed trait AmlSupervisorType
 
-case object Hmrc extends AmlSupervisorType
-case object GamblingCommission extends AmlSupervisorType
-case object FinancialConductAuthority extends AmlSupervisorType
-case object Other extends AmlSupervisorType
-
 object AmlSupervisorType {
+  case object Hmrc extends AmlSupervisorType
+  case object GamblingCommission extends AmlSupervisorType
+  case object FinancialConductAuthority extends AmlSupervisorType
+  case object Other extends AmlSupervisorType
 
   implicit val format: Format[AmlSupervisorType] = new Format[AmlSupervisorType] {
     override def reads(json: JsValue): JsResult[AmlSupervisorType] = json.validate[String] match {
