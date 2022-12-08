@@ -23,12 +23,16 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, EtmpSubscriptionStatus, SubscriptionStatusResponse}
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 
 trait EclTestData {
 
   implicit val arbInstant: Arbitrary[Instant] = Arbitrary {
     Instant.now()
+  }
+
+  implicit val arbLocalDate: Arbitrary[LocalDate] = Arbitrary {
+    LocalDate.now()
   }
 
   implicit val arbRegistration: Arbitrary[Registration] = Arbitrary {
