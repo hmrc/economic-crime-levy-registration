@@ -34,8 +34,8 @@ class RegistrationRepositorySpec
     incorporatedEntityJourneyData = None,
     soleTraderEntityJourneyData = None,
     partnershipEntityJourneyData = None,
-    startedAmlRegulatedActivity = None,
-    amlStartDate = None,
+    startedAmlRegulatedActivityInCurrentFy = None,
+    amlRegulatedActivityStartDate = None,
     lastUpdated = Some(Instant.ofEpochSecond(1))
   )
 
