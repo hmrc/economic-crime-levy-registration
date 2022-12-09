@@ -57,7 +57,7 @@ trait EclTestData {
     )
   }
 
-  def alphaNumericString: String = Gen.alphaNumStr.sample.get
+  def alphaNumericString: String = Gen.alphaNumStr.retryUntil(_.nonEmpty).sample.get
 
   val testBusinessPartnerId: String                = alphaNumericString
   val testEclRegistrationReference: String         = alphaNumericString
