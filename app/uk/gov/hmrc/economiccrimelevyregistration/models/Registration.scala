@@ -31,6 +31,7 @@ final case class Registration(
   partnershipEntityJourneyData: Option[PartnershipEntityJourneyData],
   startedAmlRegulatedActivityInCurrentFy: Option[Boolean],
   amlRegulatedActivityStartDate: Option[LocalDate],
+  businessSector: Option[BusinessSector],
   lastUpdated: Option[Instant] = None
 )
 
