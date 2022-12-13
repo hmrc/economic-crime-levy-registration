@@ -36,6 +36,7 @@ class RegistrationRepositorySpec
     partnershipEntityJourneyData = None,
     startedAmlRegulatedActivityInCurrentFy = None,
     amlRegulatedActivityStartDate = None,
+    businessSector = None,
     lastUpdated = Some(Instant.ofEpochSecond(1))
   )
 
