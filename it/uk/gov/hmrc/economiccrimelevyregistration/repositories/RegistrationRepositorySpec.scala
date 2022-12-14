@@ -37,6 +37,9 @@ class RegistrationRepositorySpec
     startedAmlRegulatedActivityInCurrentFy = None,
     amlRegulatedActivityStartDate = None,
     businessSector = None,
+    firstContactDetails = None,
+    secondContact = None,
+    secondContactDetails = None,
     lastUpdated = Some(Instant.ofEpochSecond(1))
   )
 

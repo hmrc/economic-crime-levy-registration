@@ -32,6 +32,9 @@ final case class Registration(
   startedAmlRegulatedActivityInCurrentFy: Option[Boolean],
   amlRegulatedActivityStartDate: Option[LocalDate],
   businessSector: Option[BusinessSector],
+  firstContactDetails: Option[ContactDetails],
+  secondContact: Option[Boolean],
+  secondContactDetails: Option[ContactDetails],
   lastUpdated: Option[Instant] = None
 )
 
