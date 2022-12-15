@@ -18,11 +18,21 @@ package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import play.api.libs.json.{Json, OFormat}
 
+final case class Contacts(
+  firstContactDetails: ContactDetails,
+  secondContact: Option[Boolean],
+  secondContactDetails: Option[ContactDetails]
+)
+
+object Contacts {
+  implicit val format: OFormat[Contacts] = Json.format[Contacts]
+}
+
 final case class ContactDetails(
   name: String,
-  role: String,
-  emailAddress: String,
-  telephoneNumber: String
+  role: Option[String],
+  emailAddress: Option[String],
+  telephoneNumber: Option[String]
 )
 
 object ContactDetails {
