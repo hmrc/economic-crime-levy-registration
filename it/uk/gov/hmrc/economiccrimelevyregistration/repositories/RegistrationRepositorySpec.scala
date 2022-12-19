@@ -7,7 +7,7 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.models.{ContactDetails, Contacts, Registration}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import java.time.temporal.ChronoUnit
@@ -37,6 +37,7 @@ class RegistrationRepositorySpec
     startedAmlRegulatedActivityInCurrentFy = None,
     amlRegulatedActivityStartDate = None,
     businessSector = None,
+    contacts = Contacts(ContactDetails(None, None, None, None), None, ContactDetails(None, None, None, None)),
     lastUpdated = Some(Instant.ofEpochSecond(1))
   )
 
