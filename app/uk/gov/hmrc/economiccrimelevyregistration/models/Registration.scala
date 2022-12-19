@@ -33,6 +33,9 @@ final case class Registration(
   amlRegulatedActivityStartDate: Option[LocalDate],
   businessSector: Option[BusinessSector],
   contacts: Contacts,
+  useRegisteredOfficeAddressAsContactAddress: Option[Boolean],
+  contactAddressIsUk: Option[Boolean],
+  contactAddress: Option[EclAddress],
   lastUpdated: Option[Instant] = None
 )
 
