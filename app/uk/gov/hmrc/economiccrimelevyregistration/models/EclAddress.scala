@@ -19,9 +19,9 @@ package uk.gov.hmrc.economiccrimelevyregistration.models
 import play.api.libs.json.{Json, OFormat}
 
 final case class EclAddress(
-  addressLine1: Option[String],
+  addressLine1: String,
   addressLine2: Option[String],
-  townOrCity: Option[String],
+  townOrCity: String,
   region: Option[String],
   postCode: Option[String]
 )
