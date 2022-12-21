@@ -46,15 +46,14 @@ object CompanyProfile {
 }
 
 final case class IncorporatedEntityAddress(
-  address_line_1: String,
-  address_line_2: String,
-  care_of: String,
-  country: String,
-  locality: String,
-  po_box: String,
-  postal_code: String,
-  premises: String,
-  region: String
+  address_line_1: Option[String],
+  address_line_2: Option[String],
+  country: Option[String],
+  locality: Option[String],
+  po_box: Option[String],
+  postal_code: Option[String],
+  premises: Option[String],
+  region: Option[String]
 )
 
 object IncorporatedEntityAddress {

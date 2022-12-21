@@ -38,6 +38,9 @@ class RegistrationRepositorySpec
     amlRegulatedActivityStartDate = None,
     businessSector = None,
     contacts = Contacts(ContactDetails(None, None, None, None), None, ContactDetails(None, None, None, None)),
+    useRegisteredOfficeAddressAsContactAddress = None,
+    contactAddressIsUk = None,
+    contactAddress = None,
     lastUpdated = Some(Instant.ofEpochSecond(1))
   )
 
