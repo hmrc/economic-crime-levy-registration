@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import play.api.http.HeaderNames
