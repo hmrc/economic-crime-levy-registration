@@ -23,9 +23,10 @@ final case class EclAddress(
   addressLine1: Option[String],
   addressLine2: Option[String],
   addressLine3: Option[String],
-  townOrCity: Option[String],
+  addressLine4: Option[String],
   region: Option[String],
   postCode: Option[String],
+  poBox: Option[String],
   countryCode: String
 )
 
