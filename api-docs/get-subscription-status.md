@@ -18,7 +18,9 @@ Get the ECL subscription status for a given business partner ID.
 |---------------|--------------|--------------|
 | Authorization | Bearer {TOKEN} | A valid bearer token from the auth service |
 
-## Success Response
+## Responses
+
+### Subscription status is returned
 
 **Code**: `200 OK`
 
