@@ -19,11 +19,17 @@ package uk.gov.hmrc.economiccrimelevyregistration
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
 import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.UkLimitedCompany
+import uk.gov.hmrc.economiccrimelevyregistration.models._
+import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, EtmpSubscriptionStatus, SubscriptionStatusResponse}
 
 import java.time.{Instant, LocalDate}
+
+final case class ValidRegistration(registration: Registration)
 
 trait EclTestData {
 
@@ -54,6 +60,45 @@ trait EclTestData {
       idType,
       idValue,
       channel
+    )
+  }
+
+  implicit val arbValidRegistration: Arbitrary[ValidRegistration] = Arbitrary {
+    for {
+      registration                  <- MkArbitrary[Registration].arbitrary.arbitrary
+      internalId                    <- Arbitrary.arbitrary[String]
+      incorporatedEntityJourneyData <- Arbitrary.arbitrary[IncorporatedEntityJourneyData]
+      businessPartnerId             <- Arbitrary.arbitrary[String]
+      businessSector                <- Arbitrary.arbitrary[BusinessSector]
+      firstContactName              <- Arbitrary.arbitrary[String]
+      firstContactRole              <- Arbitrary.arbitrary[String]
+      firstContactEmail             <- Arbitrary.arbitrary[String]
+      firstContactNumber            <- Arbitrary.arbitrary[String]
+      eclAddress                    <- Arbitrary.arbitrary[EclAddress]
+    } yield ValidRegistration(
+      registration.copy(
+        internalId = internalId,
+        entityType = Some(UkLimitedCompany),
+        incorporatedEntityJourneyData = Some(
+          incorporatedEntityJourneyData.copy(registration =
+            incorporatedEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
+          )
+        ),
+        partnershipEntityJourneyData = None,
+        soleTraderEntityJourneyData = None,
+        amlSupervisor = Some(AmlSupervisor(Hmrc, None)),
+        businessSector = Some(businessSector),
+        contacts = Contacts.empty.copy(
+          firstContactDetails = ContactDetails(
+            name = Some(firstContactName),
+            role = Some(firstContactRole),
+            emailAddress = Some(firstContactEmail),
+            telephoneNumber = Some(firstContactNumber)
+          ),
+          secondContact = Some(false)
+        ),
+        contactAddress = Some(eclAddress)
+      )
     )
   }
 
