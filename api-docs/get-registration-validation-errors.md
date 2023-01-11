@@ -1,6 +1,7 @@
 # Get Registration Validation Errors
 
-Validates a registration that is held in mongo and returns any errors that mean the subscription cannot be submitted to the HoD.
+Validates a registration that is held in mongo and returns any errors that mean the subscription cannot be submitted to
+the HoD.
 
 **URL**: `/economic-crime-levy-registration/registrations/:id/validation-errors`
 
@@ -30,13 +31,15 @@ Validates a registration that is held in mongo and returns any errors that mean 
 
 **Response Body Example**
 
-Data validation error descriptions are returned in the body:
-
 ```json
 {
   "errors": [
-    "Data item 1 is missing",
-    "Data item 2 is missing"
+    {
+      "message": "Data item 1 is missing"
+    },
+    {
+      "message": "Data item 2 is missing"
+    }
   ]
 }
 ```

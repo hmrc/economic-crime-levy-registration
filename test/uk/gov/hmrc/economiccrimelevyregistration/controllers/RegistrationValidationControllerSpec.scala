@@ -63,7 +63,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
           controller.getValidationErrors(registration.internalId)(fakeRequest)
 
         status(result)        shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(DataValidationErrors(Seq("Invalid data")))
+        contentAsJson(result) shouldBe Json.toJson(DataValidationErrors(Seq(DataValidationError("Invalid data"))))
     }
 
     "return 404 NOT_FOUND when there is no registration data to validate" in forAll { registration: Registration =>

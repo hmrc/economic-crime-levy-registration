@@ -42,7 +42,7 @@ class RegistrationValidationController @Inject() (
       case Some(registration) =>
         registrationValidationService.validateRegistration(registration) match {
           case Valid(_)   => NoContent
-          case Invalid(e) => Ok(Json.toJson(DataValidationErrors(e.toNonEmptyList.toList.map(_.message))))
+          case Invalid(e) => Ok(Json.toJson(DataValidationErrors(e.toNonEmptyList.toList)))
         }
       case None               => NotFound
     }

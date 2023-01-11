@@ -22,7 +22,7 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
 
 class RegistrationValidationISpec extends ISpecBase {
 
@@ -63,15 +63,15 @@ class RegistrationValidationISpec extends ISpecBase {
         callRoute(FakeRequest(routes.RegistrationValidationController.getValidationErrors(internalId)))
 
       val expectedErrors = Seq(
-        "AML supervisor is missing",
-        "Business sector is missing",
-        "First contact name is missing",
-        "First contact role is missing",
-        "First contact email is missing",
-        "First contact number is missing",
-        "Contact address is missing",
-        "Entity type is missing",
-        "Second contact choice is missing"
+        DataValidationError("AML supervisor is missing"),
+        DataValidationError("Business sector is missing"),
+        DataValidationError("First contact name is missing"),
+        DataValidationError("First contact role is missing"),
+        DataValidationError("First contact email is missing"),
+        DataValidationError("First contact number is missing"),
+        DataValidationError("Contact address is missing"),
+        DataValidationError("Entity type is missing"),
+        DataValidationError("Second contact choice is missing")
       )
 
       status(validationResult)                                      shouldBe OK
