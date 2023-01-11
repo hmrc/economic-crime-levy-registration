@@ -21,7 +21,7 @@ import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
-import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.UkLimitedCompany
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
@@ -30,6 +30,8 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Ch
 import java.time.{Instant, LocalDate}
 
 final case class ValidRegistration(registration: Registration)
+
+final case class PartnershipType(entityType: EntityType)
 
 trait EclTestData {
 
@@ -100,6 +102,20 @@ trait EclTestData {
         contactAddress = Some(eclAddress)
       )
     )
+  }
+
+  implicit val arbPartnershipType: Arbitrary[PartnershipType] = Arbitrary {
+    for {
+      partnershipType <- Gen.oneOf(
+                           Seq(
+                             LimitedPartnership,
+                             LimitedLiabilityPartnership,
+                             GeneralPartnership,
+                             ScottishPartnership,
+                             ScottishLimitedPartnership
+                           )
+                         )
+    } yield PartnershipType(partnershipType)
   }
 
   def alphaNumericString: String = Gen.alphaNumStr.retryUntil(_.nonEmpty).sample.get
