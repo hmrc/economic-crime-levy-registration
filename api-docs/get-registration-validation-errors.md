@@ -1,10 +1,10 @@
-# Validate Registration
+# Get Registration Validation Errors
 
-Validate a registration that is held in mongo to ensure that is has no errors and can be submitted to the HoD.
+Validates a registration that is held in mongo and returns any errors that mean the subscription cannot be submitted to the HoD.
 
-**URL**: `/economic-crime-levy-registration/registrations/validate/:id`
+**URL**: `/economic-crime-levy-registration/registrations/:id/validation-errors`
 
-**Method**: `POST`
+**Method**: `GET`
 
 **Required URI Parameters**:
 
@@ -20,11 +20,11 @@ Validate a registration that is held in mongo to ensure that is has no errors an
 
 ## Responses
 
-### The registration is valid and can be submitted to the HoD
+### The registration is valid and no errors are returned
 
 **Code**: `204 NO_CONTENT`
 
-### The registration is not valid and therefore should not be submitted to the HoD
+### The registration is not valid and validations errors are returned
 
 **Code**: `200 OK`
 

@@ -26,7 +26,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErr
 
 class RegistrationValidationISpec extends ISpecBase {
 
-  s"POST ${routes.RegistrationValidationController.validateRegistration(":id").url}" should {
+  s"GET ${routes.RegistrationValidationController.getValidationErrors(":id").url}" should {
     "return 204 NO_CONTENT when the registration data is valid" in {
       stubAuthorised()
 
@@ -41,7 +41,7 @@ class RegistrationValidationISpec extends ISpecBase {
       lazy val validationResult =
         callRoute(
           FakeRequest(
-            routes.RegistrationValidationController.validateRegistration(validRegistration.registration.internalId)
+            routes.RegistrationValidationController.getValidationErrors(validRegistration.registration.internalId)
           )
         )
 
@@ -60,7 +60,7 @@ class RegistrationValidationISpec extends ISpecBase {
       ).futureValue
 
       lazy val validationResult =
-        callRoute(FakeRequest(routes.RegistrationValidationController.validateRegistration(internalId)))
+        callRoute(FakeRequest(routes.RegistrationValidationController.getValidationErrors(internalId)))
 
       val expectedErrors = Seq(
         "AML supervisor is missing",
@@ -84,7 +84,7 @@ class RegistrationValidationISpec extends ISpecBase {
       val internalId = random[String]
 
       lazy val validationResult =
-        callRoute(FakeRequest(routes.RegistrationValidationController.validateRegistration(internalId)))
+        callRoute(FakeRequest(routes.RegistrationValidationController.getValidationErrors(internalId)))
 
       status(validationResult) shouldBe NOT_FOUND
     }

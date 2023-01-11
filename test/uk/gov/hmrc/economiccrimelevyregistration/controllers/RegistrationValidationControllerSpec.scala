@@ -40,14 +40,14 @@ class RegistrationValidationControllerSpec extends SpecBase {
     mockRegistrationValidationService
   )
 
-  "validateRegistration" should {
+  "getValidationErrors" should {
     "return 204 NO_CONTENT when the registration data is valid" in forAll { registration: Registration =>
       when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
       when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(registration.validNec)
 
       val result: Future[Result] =
-        controller.validateRegistration(registration.internalId)(fakeRequest)
+        controller.getValidationErrors(registration.internalId)(fakeRequest)
 
       status(result) shouldBe NO_CONTENT
     }
@@ -60,7 +60,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
           .thenReturn(DataValidationError("Invalid data").invalidNec)
 
         val result: Future[Result] =
-          controller.validateRegistration(registration.internalId)(fakeRequest)
+          controller.getValidationErrors(registration.internalId)(fakeRequest)
 
         status(result)        shouldBe OK
         contentAsJson(result) shouldBe Json.toJson(DataValidationErrors(Seq("Invalid data")))
@@ -70,7 +70,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
       when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(None))
 
       val result: Future[Result] =
-        controller.validateRegistration(registration.internalId)(fakeRequest)
+        controller.getValidationErrors(registration.internalId)(fakeRequest)
 
       status(result) shouldBe NOT_FOUND
     }

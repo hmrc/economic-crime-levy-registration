@@ -37,7 +37,7 @@ class RegistrationValidationController @Inject() (
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def validateRegistration(id: String): Action[AnyContent] = authorise.async { _ =>
+  def getValidationErrors(id: String): Action[AnyContent] = authorise.async { _ =>
     registrationRepository.get(id).map {
       case Some(registration) =>
         registrationValidationService.validateRegistration(registration) match {
