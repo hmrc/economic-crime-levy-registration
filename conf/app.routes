@@ -4,4 +4,6 @@ GET           /registrations/:id                             uk.gov.hmrc.economi
 PUT           /registrations                                 uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.upsertRegistration
 DELETE        /registrations/:id                             uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.deleteRegistration(id)
 
+GET           /registrations/:id/validation-errors           uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationValidationController.getValidationErrors(id)
+
 GET           /subscription-status/:businessPartnerId        uk.gov.hmrc.economiccrimelevyregistration.controllers.SubscriptionStatusController.getSubscriptionStatus(businessPartnerId)
