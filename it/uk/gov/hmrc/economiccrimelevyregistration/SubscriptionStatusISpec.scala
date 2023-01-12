@@ -9,7 +9,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
 
 class SubscriptionStatusISpec extends ISpecBase {
 
-  s"GET /$contextPath/subscription-status/:businessPartnerId" should {
+  s"GET ${routes.SubscriptionStatusController.getSubscriptionStatus(":businessPartnerId").url}" should {
     "return 200 OK with a subscribed ECL subscription status and the ECL registration reference" in {
       stubAuthorised()
 

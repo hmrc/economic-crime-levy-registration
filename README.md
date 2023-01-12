@@ -10,6 +10,7 @@ The service provides APIs to be consumed by [economic-crime-levy-registration-fr
 - Get registration: `GET /economic-crime-levy-registration/registrations/:id`  
 - Delete registration: `DELETE /economic-crime-levy-registration/registrations/:id`
 - [Get subscription status](api-docs/get-subscription-status.md): `GET /economic-crime-levy-registration/subscription-status/:businessPartnerId`
+- [Get registration validation errors](api-docs/get-registration-validation-errors.md): `GET /economic-crime-levy-registration/registrations/:id/validation-errors`
 
 ## Running the service
 

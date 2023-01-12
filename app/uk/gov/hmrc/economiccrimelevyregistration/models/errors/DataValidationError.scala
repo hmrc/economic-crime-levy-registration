@@ -14,29 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.models
+package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 
 import play.api.libs.json.{Json, OFormat}
 
-final case class Contacts(
-  firstContactDetails: ContactDetails,
-  secondContact: Option[Boolean],
-  secondContactDetails: ContactDetails
-)
+final case class DataValidationError(message: String)
 
-object Contacts {
-  implicit val format: OFormat[Contacts] = Json.format[Contacts]
-
-  def empty: Contacts = Contacts(ContactDetails(None, None, None, None), None, ContactDetails(None, None, None, None))
+object DataValidationError {
+  implicit val format: OFormat[DataValidationError] = Json.format[DataValidationError]
 }
 
-final case class ContactDetails(
-  name: Option[String],
-  role: Option[String],
-  emailAddress: Option[String],
-  telephoneNumber: Option[String]
-)
+final case class DataValidationErrors(errors: Seq[DataValidationError])
 
-object ContactDetails {
-  implicit val format: OFormat[ContactDetails] = Json.format[ContactDetails]
+object DataValidationErrors {
+  implicit val format: OFormat[DataValidationErrors] = Json.format[DataValidationErrors]
 }
