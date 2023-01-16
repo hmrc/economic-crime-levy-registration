@@ -29,7 +29,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Ch
 
 import java.time.{Instant, LocalDate}
 
-final case class ValidRegistration(registration: Registration)
+final case class ValidRegistration(registration: Registration, expectedBusinessPartnerId: String)
 
 final case class PartnershipType(entityType: EntityType)
 
@@ -100,7 +100,8 @@ trait EclTestData {
           secondContact = Some(false)
         ),
         contactAddress = Some(eclAddress)
-      )
+      ),
+      businessPartnerId
     )
   }
 

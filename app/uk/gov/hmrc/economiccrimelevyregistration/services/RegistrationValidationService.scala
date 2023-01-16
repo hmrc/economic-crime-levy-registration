@@ -29,7 +29,7 @@ class RegistrationValidationService @Inject() () {
 
   type ValidationResult[A] = ValidatedNec[DataValidationError, A]
 
-  def validateRegistration(registration: Registration): ValidationResult[Registration] =
+  def validateRegistration(registration: Registration): ValidationResult[String] =
     (
       validateGrsJourneyData(registration),
       validateOptExists(registration.contacts.firstContactDetails.name, missingErrorMessage("First contact name")),
@@ -46,7 +46,7 @@ class RegistrationValidationService @Inject() () {
       validateOptExists(registration.contactAddress, missingErrorMessage("Contact address")),
       validateOptExists(registration.amlSupervisor, missingErrorMessage("AML supervisor")),
       validateSecondContactDetails(registration)
-    ).mapN((_, _, _, _, _, _, _, _, _) => registration)
+    ).mapN((businessPartnerId, _, _, _, _, _, _, _, _) => businessPartnerId)
 
   private def validateSecondContactDetails(registration: Registration): ValidationResult[Registration] =
     registration.contacts.secondContact match {
@@ -73,7 +73,7 @@ class RegistrationValidationService @Inject() () {
       case _           => DataValidationError(missingErrorMessage("Second contact choice")).invalidNec
     }
 
-  private def validateGrsJourneyData(registration: Registration): ValidationResult[Registration] = {
+  private def validateGrsJourneyData(registration: Registration): ValidationResult[String] = {
     val grsJourneyData: (
       Option[IncorporatedEntityJourneyData],
       Option[PartnershipEntityJourneyData],
@@ -84,8 +84,8 @@ class RegistrationValidationService @Inject() () {
       registration.soleTraderEntityJourneyData
     )
 
-    val validateBusinessPartnerId: Option[String] => ValidationResult[Registration] = {
-      case Some(_) => registration.validNec
+    val validateBusinessPartnerId: Option[String] => ValidationResult[String] = {
+      case Some(s) => s.validNec
       case _       => DataValidationError(missingErrorMessage("Business partner ID")).invalidNec
     }
 

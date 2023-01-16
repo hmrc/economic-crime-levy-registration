@@ -19,12 +19,13 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 import play.api.http.HeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.SubscriptionStatusResponse
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, SubscriptionStatusResponse}
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdGenerator
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
 import javax.inject.{Inject, Singleton}
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -47,5 +48,10 @@ class IntegrationFrameworkConnector @Inject() (
       s"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status",
       headers = integrationFrameworkHeaders
     )
+
+  def subscribeToEcl(businessPartnerId: String)(implicit
+    hc: HeaderCarrier
+  ): Future[CreateEclSubscriptionResponse] =
+    Future.successful(CreateEclSubscriptionResponse(Instant.now(), "XMECL0000000001"))
 
 }

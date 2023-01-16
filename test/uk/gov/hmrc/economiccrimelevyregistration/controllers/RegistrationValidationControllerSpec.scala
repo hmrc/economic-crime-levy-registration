@@ -41,15 +41,16 @@ class RegistrationValidationControllerSpec extends SpecBase {
   )
 
   "getValidationErrors" should {
-    "return 204 NO_CONTENT when the registration data is valid" in forAll { registration: Registration =>
-      when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
+    "return 204 NO_CONTENT when the registration data is valid" in forAll {
+      (registration: Registration, businessPartnerId: String) =>
+        when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
-      when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(registration.validNec)
+        when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(businessPartnerId.validNec)
 
-      val result: Future[Result] =
-        controller.getValidationErrors(registration.internalId)(fakeRequest)
+        val result: Future[Result] =
+          controller.getValidationErrors(registration.internalId)(fakeRequest)
 
-      status(result) shouldBe NO_CONTENT
+        status(result) shouldBe NO_CONTENT
     }
 
     "return 200 OK with validation errors in the JSON response body when the registration data is invalid" in forAll {
