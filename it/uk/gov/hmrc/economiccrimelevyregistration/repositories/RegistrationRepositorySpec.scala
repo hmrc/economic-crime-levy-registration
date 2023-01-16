@@ -7,7 +7,7 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
-import uk.gov.hmrc.economiccrimelevyregistration.models.{ContactDetails, Contacts, Registration}
+import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import java.time.temporal.ChronoUnit
@@ -26,21 +26,11 @@ class RegistrationRepositorySpec
   private val now              = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
 
-  private val registration = Registration(
-    internalId = "test-id",
-    carriedOutAmlRegulatedActivityInCurrentFy = None,
-    entityType = None,
-    amlSupervisor = None,
-    incorporatedEntityJourneyData = None,
-    soleTraderEntityJourneyData = None,
-    partnershipEntityJourneyData = None,
-    businessSector = None,
-    contacts = Contacts(ContactDetails(None, None, None, None), None, ContactDetails(None, None, None, None)),
-    useRegisteredOfficeAddressAsContactAddress = None,
-    contactAddressIsUk = None,
-    contactAddress = None,
-    lastUpdated = Some(Instant.ofEpochSecond(1))
-  )
+  private val registration = Registration
+    .empty(
+      internalId = "test-id"
+    )
+    .copy(lastUpdated = Some(Instant.ofEpochSecond(1)))
 
   private val mockAppConfig = mock[AppConfig]
 

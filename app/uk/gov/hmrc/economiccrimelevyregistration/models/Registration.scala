@@ -25,6 +25,7 @@ final case class Registration(
   internalId: String,
   carriedOutAmlRegulatedActivityInCurrentFy: Option[Boolean],
   amlSupervisor: Option[AmlSupervisor],
+  relevantAp12Months: Option[Boolean],
   entityType: Option[EntityType],
   incorporatedEntityJourneyData: Option[IncorporatedEntityJourneyData],
   soleTraderEntityJourneyData: Option[SoleTraderEntityJourneyData],
@@ -43,8 +44,9 @@ object Registration {
   def empty(internalId: String): Registration = Registration(
     internalId = internalId,
     carriedOutAmlRegulatedActivityInCurrentFy = None,
-    entityType = None,
     amlSupervisor = None,
+    relevantAp12Months = None,
+    entityType = None,
     incorporatedEntityJourneyData = None,
     soleTraderEntityJourneyData = None,
     partnershipEntityJourneyData = None,
