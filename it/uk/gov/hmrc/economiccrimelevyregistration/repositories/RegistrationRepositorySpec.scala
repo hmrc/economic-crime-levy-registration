@@ -28,14 +28,12 @@ class RegistrationRepositorySpec
 
   private val registration = Registration(
     internalId = "test-id",
+    carriedOutAmlRegulatedActivityInCurrentFy = None,
     entityType = None,
-    meetsRevenueThreshold = None,
     amlSupervisor = None,
     incorporatedEntityJourneyData = None,
     soleTraderEntityJourneyData = None,
     partnershipEntityJourneyData = None,
-    startedAmlRegulatedActivityInCurrentFy = None,
-    amlRegulatedActivityStartDate = None,
     businessSector = None,
     contacts = Contacts(ContactDetails(None, None, None, None), None, ContactDetails(None, None, None, None)),
     useRegisteredOfficeAddressAsContactAddress = None,
