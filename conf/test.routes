@@ -1,1 +1,2 @@
-GET        /clear-all        uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers.TestOnlyController.clearAllData
+GET        /clear-all            uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers.TestOnlyController.clearAllData
+GET        /clear-current        uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers.TestOnlyController.clearCurrentData
