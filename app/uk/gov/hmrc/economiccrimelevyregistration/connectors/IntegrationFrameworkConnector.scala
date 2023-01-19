@@ -52,6 +52,9 @@ class IntegrationFrameworkConnector @Inject() (
   def subscribeToEcl(businessPartnerId: String)(implicit
     hc: HeaderCarrier
   ): Future[CreateEclSubscriptionResponse] =
-    Future.successful(CreateEclSubscriptionResponse(Instant.now(), "XMECL0000000001"))
+    httpClient.POSTEmpty[CreateEclSubscriptionResponse](
+      s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscriptions/ECL/create?idType=SAFE&idValue=$businessPartnerId",
+      headers = integrationFrameworkHeaders
+    )
 
 }
