@@ -57,8 +57,7 @@ class RegistrationValidationService @Inject() () {
       validateOptExists(registration.contactAddress, missingErrorMessage("Contact address")),
       validateOptExists(registration.amlSupervisor, missingErrorMessage("AML supervisor")),
       validateSecondContactDetails(registration)
-    ).mapN((_, _, _, _, _, _, _, _, _, _, _, _, _) => registration)
-    ).mapN((businessPartnerId, _, _, _, _, _, _, _, _) => businessPartnerId)
+    ).mapN((businessPartnerId, _, _, _, _, _, _, _, _, _, _, _, _) => businessPartnerId)
 
   private def validateSecondContactDetails(registration: Registration): ValidationResult[Registration] =
     registration.contacts.secondContact match {
