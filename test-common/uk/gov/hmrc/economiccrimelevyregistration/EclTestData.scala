@@ -77,10 +77,17 @@ trait EclTestData {
       firstContactEmail             <- Arbitrary.arbitrary[String]
       firstContactNumber            <- Arbitrary.arbitrary[String]
       eclAddress                    <- Arbitrary.arbitrary[EclAddress]
+      relevantAp12Months            <- Arbitrary.arbitrary[Boolean]
+      relevantApLength              <- Arbitrary.arbitrary[Int]
+      relevantApRevenue             <- Arbitrary.arbitrary[Long]
     } yield ValidRegistration(
       registration.copy(
         internalId = internalId,
         entityType = Some(UkLimitedCompany),
+        carriedOutAmlRegulatedActivityInCurrentFy = Some(true),
+        relevantAp12Months = Some(relevantAp12Months),
+        relevantApLength = if (relevantAp12Months) None else Some(relevantApLength),
+        relevantApRevenue = Some(relevantApRevenue),
         incorporatedEntityJourneyData = Some(
           incorporatedEntityJourneyData.copy(registration =
             incorporatedEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))

@@ -32,6 +32,17 @@ class RegistrationValidationService @Inject() () {
   def validateRegistration(registration: Registration): ValidationResult[String] =
     (
       validateGrsJourneyData(registration),
+      validateOptExists(
+        registration.carriedOutAmlRegulatedActivityInCurrentFy,
+        missingErrorMessage("Carried out AML regulated activity choice")
+      ),
+      validateOptExists(registration.relevantAp12Months, missingErrorMessage("Relevant AP 12 months choice")),
+      validateOptExists(registration.relevantApRevenue, missingErrorMessage("Relevant AP revenue")),
+      validateConditionalOptExists(
+        registration.relevantApLength,
+        registration.relevantAp12Months.contains(false),
+        missingErrorMessage("Relevant AP length")
+      ),
       validateOptExists(registration.contacts.firstContactDetails.name, missingErrorMessage("First contact name")),
       validateOptExists(registration.contacts.firstContactDetails.role, missingErrorMessage("First contact role")),
       validateOptExists(
@@ -46,6 +57,7 @@ class RegistrationValidationService @Inject() () {
       validateOptExists(registration.contactAddress, missingErrorMessage("Contact address")),
       validateOptExists(registration.amlSupervisor, missingErrorMessage("AML supervisor")),
       validateSecondContactDetails(registration)
+    ).mapN((_, _, _, _, _, _, _, _, _, _, _, _, _) => registration)
     ).mapN((businessPartnerId, _, _, _, _, _, _, _, _) => businessPartnerId)
 
   private def validateSecondContactDetails(registration: Registration): ValidationResult[Registration] =
@@ -118,6 +130,20 @@ class RegistrationValidationService @Inject() () {
     optData match {
       case Some(value) => value.validNec
       case _           => DataValidationError(description).invalidNec
+    }
+
+  private def validateConditionalOptExists[T](
+    optData: Option[T],
+    condition: Boolean,
+    description: String
+  ): ValidationResult[Option[T]] =
+    if (condition) {
+      optData match {
+        case Some(value) => Some(value).validNec
+        case _           => DataValidationError(description).invalidNec
+      }
+    } else {
+      None.validNec
     }
 
 }

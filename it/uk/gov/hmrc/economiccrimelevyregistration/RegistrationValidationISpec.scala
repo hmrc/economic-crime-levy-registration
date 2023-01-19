@@ -63,6 +63,9 @@ class RegistrationValidationISpec extends ISpecBase {
         callRoute(FakeRequest(routes.RegistrationValidationController.getValidationErrors(internalId)))
 
       val expectedErrors = Seq(
+        DataValidationError("Carried out AML regulated activity choice is missing"),
+        DataValidationError("Relevant AP 12 months choice is missing"),
+        DataValidationError("Relevant AP revenue is missing"),
         DataValidationError("AML supervisor is missing"),
         DataValidationError("Business sector is missing"),
         DataValidationError("First contact name is missing"),

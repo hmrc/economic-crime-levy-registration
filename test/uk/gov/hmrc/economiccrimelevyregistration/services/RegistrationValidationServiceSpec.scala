@@ -20,9 +20,9 @@ import cats.data.Validated.Valid
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.SoleTrader
-import uk.gov.hmrc.economiccrimelevyregistration.models.{ContactDetails, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
+import uk.gov.hmrc.economiccrimelevyregistration.models.{ContactDetails, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.{PartnershipType, ValidRegistration}
 
 class RegistrationValidationServiceSpec extends SpecBase {
@@ -39,6 +39,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
       val registration = Registration.empty("internalId")
 
       val expectedErrors = Seq(
+        DataValidationError("Carried out AML regulated activity choice is missing"),
+        DataValidationError("Relevant AP 12 months choice is missing"),
+        DataValidationError("Relevant AP revenue is missing"),
         DataValidationError("AML supervisor is missing"),
         DataValidationError("Business sector is missing"),
         DataValidationError("First contact name is missing"),
@@ -53,7 +56,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
       val result = service.validateRegistration(registration)
 
       result.isValid shouldBe false
-      result.leftMap(nec => nec.toNonEmptyList.toList should contain allElementsOf expectedErrors)
+      result.leftMap(nec => nec.toNonEmptyList.toList should contain theSameElementsAs expectedErrors)
     }
 
     "return an error if the entity type is uk limited company but there is no incorporated entity data in the registration" in forAll {
@@ -64,7 +67,20 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain(DataValidationError("Incorporated entity data is missing"))
+          nec.toNonEmptyList.toList should contain only DataValidationError("Incorporated entity data is missing")
+        )
+    }
+
+    "return an error if the relevant AP is not 12 months and the relevant AP length is missing" in forAll {
+      validRegistration: ValidRegistration =>
+        val invalidRegistration =
+          validRegistration.registration.copy(relevantAp12Months = Some(false), relevantApLength = None)
+
+        val result = service.validateRegistration(invalidRegistration)
+
+        result.isValid shouldBe false
+        result.leftMap(nec =>
+          nec.toNonEmptyList.toList should contain only DataValidationError("Relevant AP length is missing")
         )
     }
 
@@ -77,7 +93,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain(DataValidationError("Partnership data is missing"))
+          nec.toNonEmptyList.toList should contain only DataValidationError("Partnership data is missing")
         )
     }
 
@@ -90,7 +106,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain(DataValidationError("Sole trader data is missing"))
+          nec.toNonEmptyList.toList should contain only DataValidationError("Sole trader data is missing")
         )
     }
 
@@ -109,7 +125,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain(DataValidationError("Business partner ID is missing"))
+          nec.toNonEmptyList.toList should contain only DataValidationError("Business partner ID is missing")
         )
     }
 
@@ -130,7 +146,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val result = service.validateRegistration(invalidRegistration)
 
         result.isValid shouldBe false
-        result.leftMap(nec => nec.toNonEmptyList.toList should contain allElementsOf expectedErrors)
+        result.leftMap(nec => nec.toNonEmptyList.toList should contain theSameElementsAs expectedErrors)
     }
 
   }

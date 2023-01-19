@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers
 
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -26,12 +27,17 @@ import scala.concurrent.ExecutionContext
 @Singleton()
 class TestOnlyController @Inject() (
   cc: ControllerComponents,
-  registrationRepository: RegistrationRepository
+  registrationRepository: RegistrationRepository,
+  authorise: AuthorisedAction
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   def clearAllData: Action[AnyContent] = Action.async { _ =>
     registrationRepository.collection.drop().toFuture().map(_ => Ok("All data cleared"))
+  }
+
+  def clearCurrentData: Action[AnyContent] = authorise.async { implicit request =>
+    registrationRepository.clear(request.internalId).map(_ => Ok("Current user data cleared"))
   }
 
 }
