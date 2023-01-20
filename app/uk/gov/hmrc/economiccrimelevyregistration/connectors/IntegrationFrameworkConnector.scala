@@ -25,7 +25,6 @@ import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
 import javax.inject.{Inject, Singleton}
-import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton

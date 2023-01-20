@@ -19,11 +19,10 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 import cats.data.Validated.{Invalid, Valid}
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.economiccrimelevyregistration.connectors.IntegrationFrameworkConnector
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.RegistrationValidationService
+import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationValidationService, SubscriptionService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
@@ -33,9 +32,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class RegistrationSubmissionController @Inject() (
   cc: ControllerComponents,
   registrationRepository: RegistrationRepository,
-  integrationFrameworkConnector: IntegrationFrameworkConnector,
   authorise: AuthorisedAction,
-  registrationValidationService: RegistrationValidationService
+  registrationValidationService: RegistrationValidationService,
+  subscriptionService: SubscriptionService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -44,7 +43,7 @@ class RegistrationSubmissionController @Inject() (
       case Some(registration) =>
         registrationValidationService.validateRegistration(registration) match {
           case Valid(id)  =>
-            integrationFrameworkConnector.subscribeToEcl(id).map { response =>
+            subscriptionService.subscribeToEcl(id).map { response =>
               Ok(Json.toJson(response))
             }
           case Invalid(e) =>

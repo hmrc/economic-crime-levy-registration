@@ -16,14 +16,8 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.eacd
 
-import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.economiccrimelevyregistration.models.KeyValue
-
-final case class CreateEnrolmentRequest(
-  identifiers: Seq[KeyValue],
-  verifiers: Seq[KeyValue]
-)
-
-object CreateEnrolmentRequest {
-  implicit val format: OFormat[CreateEnrolmentRequest] = Json.format[CreateEnrolmentRequest]
+object EclEnrolment {
+  val ServiceName: String   = "HMRC-ECL-ORG"
+  val IdentifierKey: String = "EclRegistrationReference"
+  val VerifierKey: String   = "EclRegistrationDate"
 }
