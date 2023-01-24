@@ -67,7 +67,7 @@ class TaxEnrolmentsConnectorSpec extends SpecBase {
         reset(mockHttpClient)
     }
 
-    "throw an UpstreamResponseError exception when the http client fails to return a success response" in forAll {
+    "throw an UpstreamErrorResponse exception when the http client fails to return a success response" in forAll {
       createEnrolmentRequest: CreateEnrolmentRequest =>
         val expectedUrl = s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$ServiceName/enrolment"
 
