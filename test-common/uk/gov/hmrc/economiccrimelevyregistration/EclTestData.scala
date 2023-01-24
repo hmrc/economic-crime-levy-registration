@@ -68,9 +68,9 @@ trait EclTestData {
   implicit val arbValidRegistration: Arbitrary[ValidRegistration] = Arbitrary {
     for {
       registration                  <- MkArbitrary[Registration].arbitrary.arbitrary
-      internalId                    <- Arbitrary.arbitrary[String]
+      internalId                     = alphaNumericString
       incorporatedEntityJourneyData <- Arbitrary.arbitrary[IncorporatedEntityJourneyData]
-      businessPartnerId             <- Arbitrary.arbitrary[String]
+      businessPartnerId              = alphaNumericString
       businessSector                <- Arbitrary.arbitrary[BusinessSector]
       firstContactName              <- Arbitrary.arbitrary[String]
       firstContactRole              <- Arbitrary.arbitrary[String]

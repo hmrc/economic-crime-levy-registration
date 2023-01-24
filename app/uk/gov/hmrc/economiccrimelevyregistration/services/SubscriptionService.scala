@@ -23,6 +23,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponse
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +38,7 @@ class SubscriptionService @Inject() (
     }
 
   private def createEnrolmentRequest(subscriptionResponse: CreateEclSubscriptionResponse): CreateEnrolmentRequest = {
-    val formatter = DateTimeFormatter.ofPattern("YYYYMMDD")
+    val formatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneId.systemDefault())
 
     CreateEnrolmentRequest(
       identifiers = Seq(KeyValue(IdentifierKey, subscriptionResponse.eclReference)),
