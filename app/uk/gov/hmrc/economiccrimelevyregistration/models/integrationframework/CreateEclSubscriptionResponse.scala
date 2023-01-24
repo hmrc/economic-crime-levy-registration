@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
-import play.api.libs.json.{Format, Json, OFormat}
+import play.api.libs.json.{Json, OFormat}
 
 import java.time.Instant
 
@@ -27,6 +27,4 @@ final case class CreateEclSubscriptionResponse(
 
 object CreateEclSubscriptionResponse {
   implicit val format: OFormat[CreateEclSubscriptionResponse] = Json.format[CreateEclSubscriptionResponse]
-
-  implicitly[Format[Instant]]
 }
