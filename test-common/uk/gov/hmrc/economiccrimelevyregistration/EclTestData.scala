@@ -29,7 +29,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Ch
 
 import java.time.{Instant, LocalDate}
 
-final case class ValidRegistration(registration: Registration)
+final case class ValidRegistration(registration: Registration, expectedBusinessPartnerId: String)
 
 final case class PartnershipType(entityType: EntityType)
 
@@ -68,9 +68,9 @@ trait EclTestData {
   implicit val arbValidRegistration: Arbitrary[ValidRegistration] = Arbitrary {
     for {
       registration                  <- MkArbitrary[Registration].arbitrary.arbitrary
-      internalId                    <- Arbitrary.arbitrary[String]
+      internalId                     = alphaNumericString
       incorporatedEntityJourneyData <- Arbitrary.arbitrary[IncorporatedEntityJourneyData]
-      businessPartnerId             <- Arbitrary.arbitrary[String]
+      businessPartnerId              = alphaNumericString
       businessSector                <- Arbitrary.arbitrary[BusinessSector]
       firstContactName              <- Arbitrary.arbitrary[String]
       firstContactRole              <- Arbitrary.arbitrary[String]
@@ -107,7 +107,8 @@ trait EclTestData {
           secondContact = Some(false)
         ),
         contactAddress = Some(eclAddress)
-      )
+      ),
+      businessPartnerId
     )
   }
 

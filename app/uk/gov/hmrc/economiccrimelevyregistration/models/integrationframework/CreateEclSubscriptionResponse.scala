@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.models.eacd
+package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.economiccrimelevyregistration.models.KeyValue
 
-final case class CreateEnrolmentRequest(
-  identifiers: Seq[KeyValue],
-  verifiers: Seq[KeyValue]
+import java.time.Instant
+
+final case class CreateEclSubscriptionResponse(
+  processingDate: Instant,
+  eclReference: String
 )
 
-object CreateEnrolmentRequest {
-  implicit val format: OFormat[CreateEnrolmentRequest] = Json.format[CreateEnrolmentRequest]
+object CreateEclSubscriptionResponse {
+  implicit val format: OFormat[CreateEclSubscriptionResponse] = Json.format[CreateEclSubscriptionResponse]
 }

@@ -20,8 +20,9 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import play.api.http.HeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.SubscriptionStatusResponse
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, SubscriptionStatusResponse}
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdGenerator
 import uk.gov.hmrc.http.HttpClient
 
@@ -67,6 +68,46 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
           .GET[SubscriptionStatusResponse](
             ArgumentMatchers.eq(expectedUrl),
             any(),
+            ArgumentMatchers.eq(expectedHeaders)
+          )(any(), any(), any())
+
+        reset(mockHttpClient)
+    }
+  }
+
+  "subscribeToEcl" should {
+    "return a subscription reference when the http client returns a subscription reference" in forAll {
+      (
+        businessPartnerId: String,
+        createEclSubscriptionResponse: CreateEclSubscriptionResponse,
+        correlationId: String
+      ) =>
+        val expectedUrl =
+          s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscriptions/ECL/create?idType=SAFE&idValue=$businessPartnerId"
+
+        val expectedHeaders: Seq[(String, String)] = Seq(
+          (HeaderNames.AUTHORIZATION, appConfig.integrationFrameworkBearerToken),
+          (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
+          (CustomHeaderNames.CorrelationId, correlationId)
+        )
+
+        when(mockCorrelationIdGenerator.generateCorrelationId).thenReturn(correlationId)
+
+        when(
+          mockHttpClient.POSTEmpty[CreateEclSubscriptionResponse](
+            ArgumentMatchers.eq(expectedUrl),
+            ArgumentMatchers.eq(expectedHeaders)
+          )(any(), any(), any())
+        )
+          .thenReturn(Future.successful(createEclSubscriptionResponse))
+
+        val result = await(connector.subscribeToEcl(businessPartnerId))
+
+        result shouldBe createEclSubscriptionResponse
+
+        verify(mockHttpClient, times(1))
+          .POSTEmpty[CreateEclSubscriptionResponse](
+            ArgumentMatchers.eq(expectedUrl),
             ArgumentMatchers.eq(expectedHeaders)
           )(any(), any(), any())
 

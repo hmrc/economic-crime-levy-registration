@@ -23,7 +23,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisorType, BusinessSector, EclAddress, EntityType, SubscriptionStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, RegistrationStatus, VerificationStatus}
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, EtmpSubscriptionStatus}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, CreateEclSubscriptionResponse, EtmpSubscriptionStatus}
 
 object CachedArbitraries extends EclTestData {
 
@@ -40,5 +40,6 @@ object CachedArbitraries extends EclTestData {
   implicit lazy val arbEtmpSubscriptionStatus: Arbitrary[EtmpSubscriptionStatus]               = mkArb
   implicit lazy val arbIncorporatedEntityJourneyData: Arbitrary[IncorporatedEntityJourneyData] = mkArb
   implicit lazy val arbEclAddress: Arbitrary[EclAddress]                                       = mkArb
+  implicit lazy val arbCreateEclSubscriptionResponse: Arbitrary[CreateEclSubscriptionResponse] = mkArb
 
 }

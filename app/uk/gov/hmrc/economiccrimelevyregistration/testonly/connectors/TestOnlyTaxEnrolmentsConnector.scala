@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.connectors
+package uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors
 
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
-import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
-import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
+import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorResponse}
 
@@ -26,16 +25,17 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TaxEnrolmentsConnector @Inject() (appConfig: AppConfig, httpClient: HttpClient)(implicit ec: ExecutionContext) {
+class TestOnlyTaxEnrolmentsConnector @Inject() (appConfig: AppConfig, httpClient: HttpClient)(implicit
+  ec: ExecutionContext
+) {
 
   private val taxEnrolmentsUrl: String =
-    s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$ServiceName/enrolment"
+    s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments"
 
-  def enrol(createEnrolmentRequest: CreateEnrolmentRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+  def deEnrol(groupId: String, eclReference: String)(implicit hc: HeaderCarrier): Future[Unit] =
     httpClient
-      .PUT[CreateEnrolmentRequest, Either[UpstreamErrorResponse, HttpResponse]](
-        taxEnrolmentsUrl,
-        createEnrolmentRequest
+      .DELETE[Either[UpstreamErrorResponse, HttpResponse]](
+        s"$taxEnrolmentsUrl/groups/$groupId/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}"
       )
       .map {
         case Left(e)  => throw e

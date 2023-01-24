@@ -20,7 +20,7 @@ import play.api.mvc.Call
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 
-class HealthEndpointIntegrationSpec extends ISpecBase {
+class HealthEndpointIntegrationISpec extends ISpecBase {
 
   "GET /ping/ping" should {
     "respond with 200 status" in {

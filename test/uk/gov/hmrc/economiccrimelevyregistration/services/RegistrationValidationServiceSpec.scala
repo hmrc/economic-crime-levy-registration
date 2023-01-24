@@ -29,10 +29,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
   val service = new RegistrationValidationService()
 
   "validateRegistration" should {
-    "return the registration if it is valid" in forAll { validRegistration: ValidRegistration =>
+    "return the business partner ID if the registration is valid" in forAll { validRegistration: ValidRegistration =>
       val result = service.validateRegistration(validRegistration.registration)
 
-      result shouldBe Valid(validRegistration.registration)
+      result shouldBe Valid(validRegistration.expectedBusinessPartnerId)
     }
 
     "return a non-empty chain of errors when unconditional mandatory registration data items are missing" in {

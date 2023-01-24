@@ -18,7 +18,9 @@ package uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers
 
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
+import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
+import uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors.TestOnlyTaxEnrolmentsConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
@@ -28,6 +30,7 @@ import scala.concurrent.ExecutionContext
 class TestOnlyController @Inject() (
   cc: ControllerComponents,
   registrationRepository: RegistrationRepository,
+  testOnlyTaxEnrolmentsConnector: TestOnlyTaxEnrolmentsConnector,
   authorise: AuthorisedAction
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
@@ -38,6 +41,16 @@ class TestOnlyController @Inject() (
 
   def clearCurrentData: Action[AnyContent] = authorise.async { implicit request =>
     registrationRepository.clear(request.internalId).map(_ => Ok("Current user data cleared"))
+  }
+
+  def deEnrol(groupId: String, eclReference: String): Action[AnyContent] = authorise.async { implicit request =>
+    testOnlyTaxEnrolmentsConnector
+      .deEnrol(groupId, eclReference)
+      .map(_ =>
+        Ok(
+          s"Enrolment ${EclEnrolment.ServiceName} successfully de-allocated from group ID $groupId with ECL reference $eclReference. The enrolment has also been de-assigned from all users within the group."
+        )
+      )
   }
 
 }
