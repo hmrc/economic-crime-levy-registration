@@ -19,8 +19,8 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorResponse}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,9 +33,12 @@ class TaxEnrolmentsConnector @Inject() (appConfig: AppConfig, httpClient: HttpCl
 
   def enrol(createEnrolmentRequest: CreateEnrolmentRequest)(implicit hc: HeaderCarrier): Future[Unit] =
     httpClient
-      .PUT[CreateEnrolmentRequest, HttpResponse](
+      .PUT[CreateEnrolmentRequest, Either[UpstreamErrorResponse, HttpResponse]](
         taxEnrolmentsUrl,
         createEnrolmentRequest
       )
-      .map(_ => ())
+      .map {
+        case Left(e)  => throw e
+        case Right(_) => ()
+      }
 }
