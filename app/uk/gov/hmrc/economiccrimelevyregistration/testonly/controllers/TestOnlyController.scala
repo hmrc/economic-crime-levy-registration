@@ -48,7 +48,8 @@ class TestOnlyController @Inject() (
       .deEnrol(groupId, eclReference)
       .map(_ =>
         Ok(
-          s"Enrolment ${EclEnrolment.ServiceName} successfully de-allocated from group ID $groupId with ECL reference $eclReference. The enrolment has also been de-assigned from all users within the group."
+          s"Enrolment ${EclEnrolment.ServiceName} successfully de-allocated from group ID $groupId with ECL reference $eclReference. " +
+            s"The enrolment has also been de-assigned from all users within the group."
         )
       )
   }

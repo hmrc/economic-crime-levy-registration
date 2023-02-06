@@ -18,10 +18,11 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import cats.data.ValidatedNec
 import cats.implicits._
+import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, Registration}
 
 import javax.inject.Inject
 
@@ -32,10 +33,8 @@ class RegistrationValidationService @Inject() () {
   def validateRegistration(registration: Registration): ValidationResult[String] =
     (
       validateGrsJourneyData(registration),
-      validateOptExists(
-        registration.carriedOutAmlRegulatedActivityInCurrentFy,
-        missingErrorMessage("Carried out AML regulated activity choice")
-      ),
+      validateAmlRegulatedActivity(registration),
+      validateAmlSupervisor(registration),
       validateOptExists(registration.relevantAp12Months, missingErrorMessage("Relevant AP 12 months choice")),
       validateOptExists(registration.relevantApRevenue, missingErrorMessage("Relevant AP revenue")),
       validateConditionalOptExists(
@@ -43,6 +42,7 @@ class RegistrationValidationService @Inject() () {
         registration.relevantAp12Months.contains(false),
         missingErrorMessage("Relevant AP length")
       ),
+      validateRevenueMeetsThreshold(registration),
       validateOptExists(registration.contacts.firstContactDetails.name, missingErrorMessage("First contact name")),
       validateOptExists(registration.contacts.firstContactDetails.role, missingErrorMessage("First contact role")),
       validateOptExists(
@@ -55,9 +55,8 @@ class RegistrationValidationService @Inject() () {
       ),
       validateOptExists(registration.businessSector, missingErrorMessage("Business sector")),
       validateOptExists(registration.contactAddress, missingErrorMessage("Contact address")),
-      validateOptExists(registration.amlSupervisor, missingErrorMessage("AML supervisor")),
       validateSecondContactDetails(registration)
-    ).mapN((businessPartnerId, _, _, _, _, _, _, _, _, _, _, _, _) => businessPartnerId)
+    ).mapN((businessPartnerId, _, _, _, _, _, _, _, _, _, _, _, _, _) => businessPartnerId)
 
   private def validateSecondContactDetails(registration: Registration): ValidationResult[Registration] =
     registration.contacts.secondContact match {
@@ -122,6 +121,28 @@ class RegistrationValidationService @Inject() () {
       case _                      => DataValidationError(missingErrorMessage("Entity type")).invalidNec
     }
   }
+
+  private def validateAmlRegulatedActivity(registration: Registration): ValidationResult[Registration] =
+    registration.carriedOutAmlRegulatedActivityInCurrentFy match {
+      case Some(true)  => registration.validNec
+      case Some(false) => DataValidationError("Carried out AML regulated activity cannot be false").invalidNec
+      case _           => DataValidationError(missingErrorMessage("Carried out AML regulated activity choice")).invalidNec
+    }
+
+  private def validateAmlSupervisor(registration: Registration): ValidationResult[Registration] =
+    registration.amlSupervisor match {
+      case Some(AmlSupervisor(GamblingCommission | FinancialConductAuthority, _)) =>
+        DataValidationError("AML supervisor cannot be GC or FCA").invalidNec
+      case Some(_)                                                                => registration.validNec
+      case _                                                                      => DataValidationError(missingErrorMessage("AML supervisor")).invalidNec
+    }
+
+  private def validateRevenueMeetsThreshold(registration: Registration): ValidationResult[Registration] =
+    registration.revenueMeetsThreshold match {
+      case Some(true)  => registration.validNec
+      case Some(false) => DataValidationError("Revenue does not meet the liability threshold").invalidNec
+      case _           => DataValidationError(missingErrorMessage("Revenue meets threshold flag")).invalidNec
+    }
 
   private def missingErrorMessage(missingDataDescription: String): String = s"$missingDataDescription is missing"
 
