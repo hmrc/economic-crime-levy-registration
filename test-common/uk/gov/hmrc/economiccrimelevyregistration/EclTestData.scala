@@ -88,6 +88,7 @@ trait EclTestData {
         relevantAp12Months = Some(relevantAp12Months),
         relevantApLength = if (relevantAp12Months) None else Some(relevantApLength),
         relevantApRevenue = Some(relevantApRevenue),
+        revenueMeetsThreshold = Some(true),
         incorporatedEntityJourneyData = Some(
           incorporatedEntityJourneyData.copy(registration =
             incorporatedEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))

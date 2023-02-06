@@ -17,12 +17,14 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import cats.data.Validated.Valid
+import org.scalacheck.{Arbitrary, Gen}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.SoleTrader
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
-import uk.gov.hmrc.economiccrimelevyregistration.models.{ContactDetails, Registration}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, AmlSupervisorType, ContactDetails, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.{PartnershipType, ValidRegistration}
 
 class RegistrationValidationServiceSpec extends SpecBase {
@@ -42,6 +44,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         DataValidationError("Carried out AML regulated activity choice is missing"),
         DataValidationError("Relevant AP 12 months choice is missing"),
         DataValidationError("Relevant AP revenue is missing"),
+        DataValidationError("Revenue meets threshold flag is missing"),
         DataValidationError("AML supervisor is missing"),
         DataValidationError("Business sector is missing"),
         DataValidationError("First contact name is missing"),
@@ -149,5 +152,51 @@ class RegistrationValidationServiceSpec extends SpecBase {
         result.leftMap(nec => nec.toNonEmptyList.toList should contain theSameElementsAs expectedErrors)
     }
 
+    "return an error if the registration data contains the AML regulated activity choice as false" in forAll {
+      validRegistration: ValidRegistration =>
+        val invalidRegistration = validRegistration.registration
+          .copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(false))
+
+        val result = service.validateRegistration(invalidRegistration)
+
+        result.isValid shouldBe false
+        result.leftMap(nec =>
+          nec.toNonEmptyList.toList should contain only DataValidationError(
+            "Carried out AML regulated activity cannot be false"
+          )
+        )
+    }
+
+    "return an error if the registration data contains GC or FCA as the AML supervisor" in forAll(
+      Arbitrary.arbitrary[ValidRegistration],
+      Gen.oneOf(GamblingCommission, FinancialConductAuthority)
+    ) { (validRegistration: ValidRegistration, gcOrFca: AmlSupervisorType) =>
+      val invalidRegistration = validRegistration.registration
+        .copy(amlSupervisor = Some(AmlSupervisor(gcOrFca, None)))
+
+      val result = service.validateRegistration(invalidRegistration)
+
+      result.isValid shouldBe false
+      result.leftMap(nec =>
+        nec.toNonEmptyList.toList should contain only DataValidationError(
+          "AML supervisor cannot be GC or FCA"
+        )
+      )
+    }
+
+    "return an error if the registration data contains the revenue meets threshold flag as false" in forAll {
+      validRegistration: ValidRegistration =>
+        val invalidRegistration = validRegistration.registration
+          .copy(revenueMeetsThreshold = Some(false))
+
+        val result = service.validateRegistration(invalidRegistration)
+
+        result.isValid shouldBe false
+        result.leftMap(nec =>
+          nec.toNonEmptyList.toList should contain only DataValidationError(
+            "Revenue does not meet the liability threshold"
+          )
+        )
+    }
   }
 }
