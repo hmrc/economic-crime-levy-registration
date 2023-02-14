@@ -23,9 +23,9 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.SoleTrader
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
-import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
+import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, AmlSupervisorType, ContactDetails, Registration}
-import uk.gov.hmrc.economiccrimelevyregistration.{PartnershipType, ValidRegistration}
+import uk.gov.hmrc.economiccrimelevyregistration.{PartnershipType, ScottishOrGeneralPartnershipType, ValidRegistration}
 
 class RegistrationValidationServiceSpec extends SpecBase {
   val service = new RegistrationValidationService()
@@ -88,9 +88,13 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return an error if the entity type is partnership but there is no partnership data in the registration" in forAll {
-      (validRegistration: ValidRegistration, partnershipType: PartnershipType) =>
+      (validRegistration: ValidRegistration, partnershipType: PartnershipType, partnershipName: String) =>
         val invalidRegistration = validRegistration.registration
-          .copy(entityType = Some(partnershipType.entityType), partnershipEntityJourneyData = None)
+          .copy(
+            entityType = Some(partnershipType.entityType),
+            partnershipEntityJourneyData = None,
+            partnershipName = Some(partnershipName)
+          )
 
         val result = service.validateRegistration(invalidRegistration)
 
@@ -195,6 +199,36 @@ class RegistrationValidationServiceSpec extends SpecBase {
         result.leftMap(nec =>
           nec.toNonEmptyList.toList should contain only DataValidationError(
             "Revenue does not meet the liability threshold"
+          )
+        )
+    }
+
+    "return an error if the registration data contains no partnership name and the entity type is general or scottish partnership" in forAll {
+      (
+        validRegistration: ValidRegistration,
+        scottishOrGeneralPartnershipType: ScottishOrGeneralPartnershipType,
+        partnershipEntityJourneyData: PartnershipEntityJourneyData,
+        businessPartnerId: String
+      ) =>
+        val validPartnershipData = partnershipEntityJourneyData.copy(registration =
+          partnershipEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
+        )
+
+        val invalidRegistration = validRegistration.registration
+          .copy(
+            entityType = Some(scottishOrGeneralPartnershipType.entityType),
+            incorporatedEntityJourneyData = None,
+            soleTraderEntityJourneyData = None,
+            partnershipEntityJourneyData = Some(validPartnershipData),
+            partnershipName = None
+          )
+
+        val result = service.validateRegistration(invalidRegistration)
+
+        result.isValid shouldBe false
+        result.leftMap(nec =>
+          nec.toNonEmptyList.toList should contain only DataValidationError(
+            "Partnership name is missing"
           )
         )
     }

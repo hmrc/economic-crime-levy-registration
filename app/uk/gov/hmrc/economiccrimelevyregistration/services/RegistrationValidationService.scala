@@ -55,8 +55,13 @@ class RegistrationValidationService @Inject() () {
       ),
       validateOptExists(registration.businessSector, missingErrorMessage("Business sector")),
       validateOptExists(registration.contactAddress, missingErrorMessage("Contact address")),
-      validateSecondContactDetails(registration)
-    ).mapN((businessPartnerId, _, _, _, _, _, _, _, _, _, _, _, _, _) => businessPartnerId)
+      validateSecondContactDetails(registration),
+      validateConditionalOptExists(
+        registration.partnershipName,
+        registration.entityType.contains(GeneralPartnership) || registration.entityType.contains(ScottishPartnership),
+        missingErrorMessage("Partnership name")
+      )
+    ).mapN((businessPartnerId, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => businessPartnerId)
 
   private def validateSecondContactDetails(registration: Registration): ValidationResult[Registration] =
     registration.contacts.secondContact match {

@@ -33,6 +33,8 @@ final case class ValidRegistration(registration: Registration, expectedBusinessP
 
 final case class PartnershipType(entityType: EntityType)
 
+final case class ScottishOrGeneralPartnershipType(entityType: EntityType)
+
 trait EclTestData {
 
   implicit val arbInstant: Arbitrary[Instant] = Arbitrary {
@@ -125,6 +127,17 @@ trait EclTestData {
                            )
                          )
     } yield PartnershipType(partnershipType)
+  }
+
+  implicit val arbScottishOrGeneralPartnershipType: Arbitrary[ScottishOrGeneralPartnershipType] = Arbitrary {
+    for {
+      scottishOrGeneralPartnershipType <- Gen.oneOf(
+                                            Seq(
+                                              GeneralPartnership,
+                                              ScottishPartnership
+                                            )
+                                          )
+    } yield ScottishOrGeneralPartnershipType(scottishOrGeneralPartnershipType)
   }
 
   def alphaNumericString: String = Gen.alphaNumStr.retryUntil(_.nonEmpty).sample.get
