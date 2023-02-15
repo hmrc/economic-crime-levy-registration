@@ -21,6 +21,7 @@ import cats.implicits.catsSyntaxValidatedId
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.scalacheck.{Arbitrary, Gen}
+import uk.gov.hmrc.economiccrimelevyregistration._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
@@ -30,7 +31,6 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErr
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, AmlSupervisorType, ContactDetails, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.utils.SchemaValidator
-import uk.gov.hmrc.economiccrimelevyregistration.{LimitedPartnershipType, PartnershipType, ScottishOrGeneralPartnershipType, ValidUkCompanyRegistration}
 
 import java.time.{Clock, Instant, ZoneId}
 
@@ -44,18 +44,60 @@ class RegistrationValidationServiceSpec extends SpecBase {
   val service = new RegistrationValidationService(stubClock, mockSchemaValidator)
 
   "validateRegistration" should {
-    "return the ECL subscription if the registration is valid" in forAll {
-      validRegistration: ValidUkCompanyRegistration =>
+    "return the ECL subscription if the registration for a UK company is valid" in forAll {
+      validUkCompanyRegistration: ValidUkCompanyRegistration =>
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(validRegistration.expectedEclSubscription),
+            ArgumentMatchers.eq(validUkCompanyRegistration.expectedEclSubscription),
             any()
           )(any())
-        ).thenReturn(validRegistration.expectedEclSubscription.validNel)
+        ).thenReturn(validUkCompanyRegistration.expectedEclSubscription.validNel)
 
-        val result = service.validateRegistration(validRegistration.registration)
+        val result = service.validateRegistration(validUkCompanyRegistration.registration)
 
-        result shouldBe Valid(validRegistration.expectedEclSubscription)
+        result shouldBe Valid(validUkCompanyRegistration.expectedEclSubscription)
+    }
+
+    "return the ECL subscription if the registration for a sole trader is valid" in forAll {
+      validSoleTraderRegistration: ValidSoleTraderRegistration =>
+        when(
+          mockSchemaValidator.validateAgainstJsonSchema(
+            ArgumentMatchers.eq(validSoleTraderRegistration.expectedEclSubscription),
+            any()
+          )(any())
+        ).thenReturn(validSoleTraderRegistration.expectedEclSubscription.validNel)
+
+        val result = service.validateRegistration(validSoleTraderRegistration.registration)
+
+        result shouldBe Valid(validSoleTraderRegistration.expectedEclSubscription)
+    }
+
+    "return the ECL subscription if the registration for a limited partnership is valid" in forAll {
+      validLimitedPartnershipRegistration: ValidLimitedPartnershipRegistration =>
+        when(
+          mockSchemaValidator.validateAgainstJsonSchema(
+            ArgumentMatchers.eq(validLimitedPartnershipRegistration.expectedEclSubscription),
+            any()
+          )(any())
+        ).thenReturn(validLimitedPartnershipRegistration.expectedEclSubscription.validNel)
+
+        val result = service.validateRegistration(validLimitedPartnershipRegistration.registration)
+
+        result shouldBe Valid(validLimitedPartnershipRegistration.expectedEclSubscription)
+    }
+
+    "return the ECL subscription if the registration for a scottish or general partnership is valid" in forAll {
+      validScottishOrGeneralPartnershipRegistration: ValidScottishOrGeneralPartnershipRegistration =>
+        when(
+          mockSchemaValidator.validateAgainstJsonSchema(
+            ArgumentMatchers.eq(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription),
+            any()
+          )(any())
+        ).thenReturn(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription.validNel)
+
+        val result = service.validateRegistration(validScottishOrGeneralPartnershipRegistration.registration)
+
+        result shouldBe Valid(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription)
     }
 
     "return a non-empty chain of errors when unconditional mandatory registration data items are missing" in {

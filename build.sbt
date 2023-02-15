@@ -6,7 +6,6 @@ val appName = "economic-crime-levy-registration"
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
-  .settings(SbtDistributablesPlugin.publishingSettings: _*)
   .settings(inConfig(Test)(testSettings): _*)
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(itSettings): _*)
@@ -57,7 +56,7 @@ val excludedScoveragePackages: Seq[String] = Seq(
   "app.*",
   "prod.*",
   ".*Routes.*",
-  "testOnly.*",
+  ".*testonly.*",
   "testOnlyDoNotUseInAppConf.*"
 )
 

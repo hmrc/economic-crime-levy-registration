@@ -42,7 +42,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       case Valid(eclSubscription) =>
         schemaValidator.validateAgainstJsonSchema(
           eclSubscription,
-          SchemaLoader.loadRequestSchema("create-ecl-subscription-request.json")
+          SchemaLoader.loadSchema("create-ecl-subscription-request.json")
         )
       case invalid                => invalid
     }

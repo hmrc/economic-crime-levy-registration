@@ -22,7 +22,7 @@ import scala.io.Source
 
 object SchemaLoader {
 
-  def loadRequestSchema(schemaFileName: String): Schema = {
+  def loadSchema(schemaFileName: String): Schema = {
     val schemaFilePath = s"/schemas/$schemaFileName"
     val resource       = getClass.getResourceAsStream(schemaFilePath)
     val source         = Source.fromInputStream(resource)

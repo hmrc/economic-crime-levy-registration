@@ -24,7 +24,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models._
-import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
+import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{CompanyProfile, IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import wolfendale.scalacheck.regexp.RegexpGen
@@ -33,11 +33,25 @@ import java.time.{Instant, LocalDate}
 
 final case class ValidUkCompanyRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
 
+final case class ValidSoleTraderRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
+
+final case class ValidLimitedPartnershipRegistration(
+  registration: Registration,
+  expectedEclSubscription: EclSubscription
+)
+
+final case class ValidScottishOrGeneralPartnershipRegistration(
+  registration: Registration,
+  expectedEclSubscription: EclSubscription
+)
+
 final case class PartnershipType(entityType: EntityType)
 
 final case class ScottishOrGeneralPartnershipType(entityType: EntityType)
 
 final case class LimitedPartnershipType(entityType: EntityType)
+
+final case class CommonRegistrationData(registration: Registration)
 
 trait EclTestData {
 
@@ -93,45 +107,76 @@ trait EclTestData {
     } yield s"$firstPart@$secondPart.$thirdPart".toLowerCase
   }
 
+  implicit def arbCommonRegistrationData: Arbitrary[CommonRegistrationData] = Arbitrary {
+    for {
+      businessSector     <- Arbitrary.arbitrary[BusinessSector]
+      eclAddress          = EclAddress(
+                              organisation = Some("Test Org Name"),
+                              addressLine1 = Some("Test Address Line 1"),
+                              addressLine2 = Some("Test Address Line 2"),
+                              addressLine3 = None,
+                              addressLine4 = None,
+                              region = Some("Test Region"),
+                              postCode = Some("AB12 3DE"),
+                              poBox = None,
+                              countryCode = "GB"
+                            )
+      relevantAp12Months <- Arbitrary.arbitrary[Boolean]
+      relevantApLength   <- Arbitrary.arbitrary[Int]
+      relevantApRevenue  <- Arbitrary.arbitrary[Long]
+      firstContactName   <- stringsWithMaxLength(160)
+      firstContactRole   <- stringsWithMaxLength(160)
+      firstContactEmail  <- emailAddress(160)
+      firstContactNumber <- telephoneNumber(24)
+      internalId          = alphaNumericString
+    } yield CommonRegistrationData(
+      Registration
+        .empty(internalId = internalId)
+        .copy(
+          carriedOutAmlRegulatedActivityInCurrentFy = Some(true),
+          businessSector = Some(businessSector),
+          relevantAp12Months = Some(relevantAp12Months),
+          relevantApLength = if (relevantAp12Months) None else Some(relevantApLength),
+          relevantApRevenue = Some(relevantApRevenue),
+          revenueMeetsThreshold = Some(true),
+          contacts = Contacts.empty.copy(
+            firstContactDetails = ContactDetails(
+              name = Some(firstContactName),
+              role = Some(firstContactRole),
+              emailAddress = Some(firstContactEmail),
+              telephoneNumber = Some(firstContactNumber)
+            ),
+            secondContact = Some(false)
+          ),
+          contactAddress = Some(eclAddress),
+          amlSupervisor = Some(AmlSupervisor(Hmrc, None))
+        )
+    )
+  }
+
   def telephoneNumber(maxLength: Int): Gen[String] =
     RegexpGen.from(s"${Regex.telephoneNumber}").retryUntil(s => s.length <= maxLength && s.trim.nonEmpty)
 
+  private def commonCorrespondenceAddressDetails: CorrespondenceAddressDetails =
+    CorrespondenceAddressDetails(
+      addressLine1 = "Test Org Name, Test Address Line 1",
+      addressLine2 = Some("Test Address Line 2, Test Region"),
+      addressLine3 = None,
+      addressLine4 = None,
+      postCode = Some("AB12 3DE"),
+      country = Some("GB")
+    )
+
   implicit val arbValidUkCompanyRegistration: Arbitrary[ValidUkCompanyRegistration] = Arbitrary {
     for {
-      registration                  <- MkArbitrary[Registration].arbitrary.arbitrary
-      internalId                     = alphaNumericString
+      businessPartnerId             <- RegexpGen.from(Regex.businessPartnerId)
       incorporatedEntityJourneyData <- Arbitrary.arbitrary[IncorporatedEntityJourneyData]
       ctutr                         <- RegexpGen.from(Regex.customerIdentificationNumber)
       companyNumber                 <- RegexpGen.from(Regex.customerIdentificationNumber)
-      businessPartnerId             <- RegexpGen.from(Regex.businessPartnerId)
-      businessSector                <- Arbitrary.arbitrary[BusinessSector]
-      firstContactName              <- stringsWithMaxLength(160)
-      firstContactRole              <- stringsWithMaxLength(160)
-      firstContactEmail             <- emailAddress(160)
-      firstContactNumber            <- telephoneNumber(24)
-      eclAddress                     = EclAddress(
-                                         organisation = Some("Test Org Name"),
-                                         addressLine1 = Some("Test Address Line 1"),
-                                         addressLine2 = Some("Test Address Line 2"),
-                                         addressLine3 = None,
-                                         addressLine4 = None,
-                                         region = Some("Test Region"),
-                                         postCode = Some("AB12 3DE"),
-                                         poBox = None,
-                                         countryCode = "GB"
-                                       )
-      relevantAp12Months            <- Arbitrary.arbitrary[Boolean]
-      relevantApLength              <- Arbitrary.arbitrary[Int]
-      relevantApRevenue             <- Arbitrary.arbitrary[Long]
+      commonRegistrationData        <- Arbitrary.arbitrary[CommonRegistrationData]
     } yield ValidUkCompanyRegistration(
-      registration.copy(
-        internalId = internalId,
+      commonRegistrationData.registration.copy(
         entityType = Some(UkLimitedCompany),
-        carriedOutAmlRegulatedActivityInCurrentFy = Some(true),
-        relevantAp12Months = Some(relevantAp12Months),
-        relevantApLength = if (relevantAp12Months) None else Some(relevantApLength),
-        relevantApRevenue = Some(relevantApRevenue),
-        revenueMeetsThreshold = Some(true),
         incorporatedEntityJourneyData = Some(
           incorporatedEntityJourneyData.copy(
             ctutr = ctutr,
@@ -141,19 +186,7 @@ trait EclTestData {
           )
         ),
         partnershipEntityJourneyData = None,
-        soleTraderEntityJourneyData = None,
-        amlSupervisor = Some(AmlSupervisor(Hmrc, None)),
-        businessSector = Some(businessSector),
-        contacts = Contacts.empty.copy(
-          firstContactDetails = ContactDetails(
-            name = Some(firstContactName),
-            role = Some(firstContactRole),
-            emailAddress = Some(firstContactEmail),
-            telephoneNumber = Some(firstContactNumber)
-          ),
-          secondContact = Some(false)
-        ),
-        contactAddress = Some(eclAddress)
+        soleTraderEntityJourneyData = None
       ),
       EclSubscription(
         LegalEntityDetails(
@@ -166,26 +199,164 @@ trait EclTestData {
           customerType = "01",
           registrationDate = "2007-12-25",
           amlSupervisor = "Hmrc",
-          businessSector = businessSector.toString
+          businessSector = commonRegistrationData.registration.businessSector.get.toString
         ),
-        correspondenceAddressDetails = CorrespondenceAddressDetails(
-          addressLine1 = "Test Org Name, Test Address Line 1",
-          addressLine2 = Some("Test Address Line 2, Test Region"),
-          addressLine3 = None,
-          addressLine4 = None,
-          postCode = eclAddress.postCode,
-          country = Some(eclAddress.countryCode)
-        ),
+        correspondenceAddressDetails = commonCorrespondenceAddressDetails,
         primaryContactDetails = SubscriptionContactDetails(
-          name = firstContactName,
-          positionInCompany = firstContactRole,
-          telephone = firstContactNumber,
-          emailAddress = firstContactEmail
+          name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
+          positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
+          telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+          emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
         ),
         secondaryContactDetails = None
       )
     )
   }
+
+  implicit val arbValidSoleTraderRegistration: Arbitrary[ValidSoleTraderRegistration] = Arbitrary {
+    for {
+      businessPartnerId           <- RegexpGen.from(Regex.businessPartnerId)
+      soleTraderEntityJourneyData <- Arbitrary.arbitrary[SoleTraderEntityJourneyData]
+      sautr                       <- RegexpGen.from(Regex.customerIdentificationNumber)
+      nino                        <- RegexpGen.from(Regex.customerIdentificationNumber)
+      commonRegistrationData      <- Arbitrary.arbitrary[CommonRegistrationData]
+    } yield ValidSoleTraderRegistration(
+      commonRegistrationData.registration.copy(
+        entityType = Some(SoleTrader),
+        incorporatedEntityJourneyData = None,
+        partnershipEntityJourneyData = None,
+        soleTraderEntityJourneyData = Some(
+          soleTraderEntityJourneyData.copy(
+            sautr = Some(sautr),
+            nino = Some(nino),
+            registration =
+              soleTraderEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
+          )
+        )
+      ),
+      EclSubscription(
+        LegalEntityDetails(
+          safeId = businessPartnerId,
+          customerIdentification1 = sautr,
+          customerIdentification2 = Some(nino),
+          organisationName = None,
+          firstName = Some(soleTraderEntityJourneyData.fullName.firstName),
+          lastName = Some(soleTraderEntityJourneyData.fullName.lastName),
+          customerType = "02",
+          registrationDate = "2007-12-25",
+          amlSupervisor = "Hmrc",
+          businessSector = commonRegistrationData.registration.businessSector.get.toString
+        ),
+        correspondenceAddressDetails = commonCorrespondenceAddressDetails,
+        primaryContactDetails = SubscriptionContactDetails(
+          name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
+          positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
+          telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+          emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
+        ),
+        secondaryContactDetails = None
+      )
+    )
+  }
+
+  implicit val arbValidLimitedPartnershipRegistration: Arbitrary[ValidLimitedPartnershipRegistration] = Arbitrary {
+    for {
+      businessPartnerId            <- RegexpGen.from(Regex.businessPartnerId)
+      partnershipEntityJourneyData <- Arbitrary.arbitrary[PartnershipEntityJourneyData]
+      companyProfile               <- Arbitrary.arbitrary[CompanyProfile]
+      sautr                        <- RegexpGen.from(Regex.customerIdentificationNumber)
+      companyNumber                <- RegexpGen.from(Regex.customerIdentificationNumber)
+      commonRegistrationData       <- Arbitrary.arbitrary[CommonRegistrationData]
+      partnershipType              <- Arbitrary.arbitrary[LimitedPartnershipType]
+    } yield ValidLimitedPartnershipRegistration(
+      commonRegistrationData.registration.copy(
+        entityType = Some(partnershipType.entityType),
+        incorporatedEntityJourneyData = None,
+        partnershipEntityJourneyData = Some(
+          partnershipEntityJourneyData.copy(
+            sautr = Some(sautr),
+            companyProfile = Some(companyProfile.copy(companyNumber = companyNumber)),
+            registration =
+              partnershipEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
+          )
+        ),
+        soleTraderEntityJourneyData = None
+      ),
+      EclSubscription(
+        LegalEntityDetails(
+          safeId = businessPartnerId,
+          customerIdentification1 = sautr,
+          customerIdentification2 = Some(companyNumber),
+          organisationName = Some(companyProfile.companyName),
+          firstName = None,
+          lastName = None,
+          customerType = "01",
+          registrationDate = "2007-12-25",
+          amlSupervisor = "Hmrc",
+          businessSector = commonRegistrationData.registration.businessSector.get.toString
+        ),
+        correspondenceAddressDetails = commonCorrespondenceAddressDetails,
+        primaryContactDetails = SubscriptionContactDetails(
+          name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
+          positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
+          telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+          emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
+        ),
+        secondaryContactDetails = None
+      )
+    )
+  }
+
+  implicit val arbValidScottishOrGeneralPartnershipRegistration
+    : Arbitrary[ValidScottishOrGeneralPartnershipRegistration] =
+    Arbitrary {
+      for {
+        businessPartnerId            <- RegexpGen.from(Regex.businessPartnerId)
+        partnershipEntityJourneyData <- Arbitrary.arbitrary[PartnershipEntityJourneyData]
+        sautr                        <- RegexpGen.from(Regex.customerIdentificationNumber)
+        postcode                     <- RegexpGen.from(Regex.customerIdentificationNumber)
+        commonRegistrationData       <- Arbitrary.arbitrary[CommonRegistrationData]
+        partnershipType              <- Arbitrary.arbitrary[ScottishOrGeneralPartnershipType]
+        partnershipName               = "Test Partnership Name"
+      } yield ValidScottishOrGeneralPartnershipRegistration(
+        commonRegistrationData.registration.copy(
+          entityType = Some(partnershipType.entityType),
+          incorporatedEntityJourneyData = None,
+          partnershipEntityJourneyData = Some(
+            partnershipEntityJourneyData.copy(
+              sautr = Some(sautr),
+              postcode = Some(postcode),
+              registration =
+                partnershipEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
+            )
+          ),
+          soleTraderEntityJourneyData = None,
+          partnershipName = Some(partnershipName)
+        ),
+        EclSubscription(
+          LegalEntityDetails(
+            safeId = businessPartnerId,
+            customerIdentification1 = sautr,
+            customerIdentification2 = Some(postcode),
+            organisationName = Some(partnershipName),
+            firstName = None,
+            lastName = None,
+            customerType = "01",
+            registrationDate = "2007-12-25",
+            amlSupervisor = "Hmrc",
+            businessSector = commonRegistrationData.registration.businessSector.get.toString
+          ),
+          correspondenceAddressDetails = commonCorrespondenceAddressDetails,
+          primaryContactDetails = SubscriptionContactDetails(
+            name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
+            positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
+            telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+            emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
+          ),
+          secondaryContactDetails = None
+        )
+      )
+    }
 
   implicit val arbPartnershipType: Arbitrary[PartnershipType] = Arbitrary {
     for {
