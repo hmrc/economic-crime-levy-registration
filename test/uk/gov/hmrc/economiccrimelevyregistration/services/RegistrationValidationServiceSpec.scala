@@ -17,6 +17,9 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import cats.data.Validated.Valid
+import cats.implicits.catsSyntaxValidatedId
+import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
 import org.scalacheck.{Arbitrary, Gen}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
@@ -26,6 +29,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErr
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, AmlSupervisorType, ContactDetails, Registration}
+import uk.gov.hmrc.economiccrimelevyregistration.utils.SchemaValidator
 import uk.gov.hmrc.economiccrimelevyregistration.{LimitedPartnershipType, PartnershipType, ScottishOrGeneralPartnershipType, ValidRegistration}
 
 import java.time.{Clock, Instant, ZoneId}
@@ -35,10 +39,19 @@ class RegistrationValidationServiceSpec extends SpecBase {
   private val fixedPointInTime = Instant.parse("2007-12-25T10:15:30.00Z")
   private val stubClock: Clock = Clock.fixed(fixedPointInTime, ZoneId.systemDefault)
 
-  val service = new RegistrationValidationService(stubClock)
+  val mockSchemaValidator: SchemaValidator = mock[SchemaValidator]
+
+  val service = new RegistrationValidationService(stubClock, mockSchemaValidator)
 
   "validateRegistration" should {
     "return the ECL subscription if the registration is valid" in forAll { validRegistration: ValidRegistration =>
+      when(
+        mockSchemaValidator.validateAgainstJsonSchema(
+          ArgumentMatchers.eq(validRegistration.expectedEclSubscription),
+          ArgumentMatchers.eq("create-ecl-subscription-request.json")
+        )(any())
+      ).thenReturn(validRegistration.expectedEclSubscription.validNel)
+
       val result = service.validateRegistration(validRegistration.registration)
 
       result shouldBe Valid(validRegistration.expectedEclSubscription)
@@ -66,7 +79,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
       val result = service.validateRegistration(registration)
 
       result.isValid shouldBe false
-      result.leftMap(nec => nec.toNonEmptyList.toList should contain theSameElementsAs expectedErrors)
+      result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
 
     "return an error if the entity type is uk limited company but there is no incorporated entity data in the registration" in forAll {
@@ -77,7 +90,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain only DataValidationError(
+          nec.toList should contain only DataValidationError(
             DataMissing,
             "Incorporated entity data is missing"
           )
@@ -93,7 +106,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain only DataValidationError(
+          nec.toList should contain only DataValidationError(
             DataMissing,
             "Relevant AP length is missing"
           )
@@ -113,7 +126,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain only DataValidationError(DataMissing, "Partnership data is missing")
+          nec.toList should contain only DataValidationError(DataMissing, "Partnership data is missing")
         )
     }
 
@@ -126,7 +139,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain only DataValidationError(DataMissing, "Sole trader data is missing")
+          nec.toList should contain only DataValidationError(DataMissing, "Sole trader data is missing")
         )
     }
 
@@ -145,7 +158,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain only DataValidationError(
+          nec.toList should contain only DataValidationError(
             DataMissing,
             "Business partner ID is missing"
           )
@@ -169,7 +182,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val result = service.validateRegistration(invalidRegistration)
 
         result.isValid shouldBe false
-        result.leftMap(nec => nec.toNonEmptyList.toList should contain theSameElementsAs expectedErrors)
+        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
 
     "return an error if the registration data contains the AML regulated activity choice as false" in forAll {
@@ -181,7 +194,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain only DataValidationError(
+          nec.toList should contain only DataValidationError(
             DataInvalid,
             "Carried out AML regulated activity cannot be false"
           )
@@ -199,7 +212,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
       result.isValid shouldBe false
       result.leftMap(nec =>
-        nec.toNonEmptyList.toList should contain only DataValidationError(
+        nec.toList should contain only DataValidationError(
           DataInvalid,
           "AML supervisor cannot be GC or FCA"
         )
@@ -215,7 +228,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain only DataValidationError(
+          nec.toList should contain only DataValidationError(
             DataInvalid,
             "Revenue does not meet the liability threshold"
           )
@@ -233,7 +246,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain only DataValidationError(
+          nec.toList should contain only DataValidationError(
             DataInvalid,
             "Contact address has no address lines"
           )
@@ -273,7 +286,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
           )
 
           result.isValid shouldBe false
-          result.leftMap(nec => nec.toNonEmptyList.toList should contain theSameElementsAs expectedErrors)
+          result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
       }
 
     "return errors if the registration data contains no partnership SA UTR and " +
@@ -308,7 +321,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
           )
 
           result.isValid shouldBe false
-          result.leftMap(nec => nec.toNonEmptyList.toList should contain theSameElementsAs expectedErrors)
+          result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
       }
 
     "return errors if the registration data contains no sole trader SA UTR or NINO and the entity type is sole trader" in forAll {
@@ -337,7 +350,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toNonEmptyList.toList should contain only DataValidationError(
+          nec.toList should contain only DataValidationError(
             DataMissing,
             "Sole trader SA UTR or NINO is missing"
           )

@@ -48,7 +48,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
       (registration: Registration, eclSubscription: EclSubscription) =>
         when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
-        when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(eclSubscription.validNec)
+        when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(eclSubscription.validNel)
 
         val result: Future[Result] =
           controller.getValidationErrors(registration.internalId)(fakeRequest)
@@ -61,7 +61,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
         when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
         when(mockRegistrationValidationService.validateRegistration(any()))
-          .thenReturn(DataValidationError(DataInvalid, "Invalid data").invalidNec)
+          .thenReturn(DataValidationError(DataInvalid, "Invalid data").invalidNel)
 
         val result: Future[Result] =
           controller.getValidationErrors(registration.internalId)(fakeRequest)

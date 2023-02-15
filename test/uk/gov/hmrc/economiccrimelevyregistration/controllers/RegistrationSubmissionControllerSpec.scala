@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
-import cats.implicits.catsSyntaxValidatedIdBinCompat0
+import cats.implicits.catsSyntaxValidatedId
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
@@ -55,7 +55,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
       ) =>
         when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
-        when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(eclSubscription.validNec)
+        when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(eclSubscription.validNel)
 
         when(mockSubscriptionServiceService.subscribeToEcl(ArgumentMatchers.eq(eclSubscription))(any()))
           .thenReturn(Future.successful(subscriptionResponse))
@@ -72,7 +72,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
         when(mockRegistrationValidationService.validateRegistration(any()))
-          .thenReturn(DataValidationError(DataInvalid, "Invalid data").invalidNec)
+          .thenReturn(DataValidationError(DataInvalid, "Invalid data").invalidNel)
 
         val result: Future[Result] =
           controller.submitRegistration(registration.internalId)(fakeRequest)

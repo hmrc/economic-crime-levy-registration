@@ -47,7 +47,7 @@ class RegistrationSubmissionController @Inject() (
               Ok(Json.toJson(response))
             }
           case Invalid(e)             =>
-            Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toNonEmptyList.toList))))
+            Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
         }
       case None               => Future.successful(NotFound)
     }

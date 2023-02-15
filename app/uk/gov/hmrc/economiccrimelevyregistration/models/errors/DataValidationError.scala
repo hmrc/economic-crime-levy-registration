@@ -21,8 +21,9 @@ import play.api.libs.json.{Json, OFormat}
 final case class DataValidationError(code: String, message: String, path: Option[String] = None)
 
 object DataValidationError {
-  val DataInvalid = "DATA_INVALID"
-  val DataMissing = "DATA_MISSING"
+  val SchemaValidationError = "SCHEMA_VALIDATION_ERROR"
+  val DataInvalid           = "DATA_INVALID"
+  val DataMissing           = "DATA_MISSING"
 
   implicit val format: OFormat[DataValidationError] = Json.format[DataValidationError]
 }
