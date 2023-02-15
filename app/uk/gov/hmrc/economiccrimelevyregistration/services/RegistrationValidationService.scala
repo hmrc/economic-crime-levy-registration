@@ -27,7 +27,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJ
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, ContactDetails, EclAddress, Registration}
-import uk.gov.hmrc.economiccrimelevyregistration.utils.SchemaValidator
+import uk.gov.hmrc.economiccrimelevyregistration.utils.{SchemaLoader, SchemaValidator}
 
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant, LocalDate, ZoneId}
@@ -40,7 +40,10 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
   def validateRegistration(registration: Registration): ValidationResult[EclSubscription] =
     transformToEclSubscription(registration) match {
       case Valid(eclSubscription) =>
-        schemaValidator.validateAgainstJsonSchema(eclSubscription, "create-ecl-subscription-request.json")
+        schemaValidator.validateAgainstJsonSchema(
+          eclSubscription,
+          SchemaLoader.loadRequestSchema("create-ecl-subscription-request.json")
+        )
       case invalid                => invalid
     }
 

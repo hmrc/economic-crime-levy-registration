@@ -48,7 +48,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
       when(
         mockSchemaValidator.validateAgainstJsonSchema(
           ArgumentMatchers.eq(validRegistration.expectedEclSubscription),
-          ArgumentMatchers.eq("create-ecl-subscription-request.json")
+          any()
         )(any())
       ).thenReturn(validRegistration.expectedEclSubscription.validNel)
 

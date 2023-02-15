@@ -30,12 +30,11 @@ class SchemaValidator @Inject() () {
 
   type ValidationResult[A] = ValidatedNel[DataValidationError, A]
 
-  def validateAgainstJsonSchema[T](o: T, schemaName: String)(implicit
+  def validateAgainstJsonSchema[T](o: T, schema: Schema)(implicit
     format: OFormat[T]
   ): ValidationResult[T] = {
-    val schema: Schema = SchemaLoader.loadRequestSchema(schemaName)
-    val jsonString     = Json.toJson(o).toString()
-    val json           = circeParse(jsonString).getOrElse(
+    val jsonString = Json.toJson(o).toString()
+    val json       = circeParse(jsonString).getOrElse(
       throw new Exception("Could not transform play JSON into circe JSON for schema validation")
     )
 
