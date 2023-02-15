@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration
 
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
+import org.scalacheck.Gen.{choose, listOfN}
 import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
@@ -26,10 +27,11 @@ import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
+import wolfendale.scalacheck.regexp.RegexpGen
 
 import java.time.{Instant, LocalDate}
 
-final case class ValidRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
+final case class ValidUkCompanyRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
 
 final case class PartnershipType(entityType: EntityType)
 
@@ -69,17 +71,44 @@ trait EclTestData {
     )
   }
 
-  implicit val arbValidRegistration: Arbitrary[ValidRegistration] = Arbitrary {
+  def alphaNumStringsWithMaxLength(maxLength: Int): Gen[String] =
+    for {
+      length <- choose(1, maxLength)
+      chars  <- listOfN(length, Gen.alphaNumChar)
+    } yield chars.mkString
+
+  def stringsWithMaxLength(maxLength: Int): Gen[String] =
+    for {
+      length <- choose(1, maxLength)
+      chars  <- listOfN(length, Arbitrary.arbitrary[Char])
+    } yield chars.mkString
+
+  def emailAddress(maxLength: Int): Gen[String] = {
+    val emailPartsLength = maxLength / 5
+
+    for {
+      firstPart  <- alphaNumStringsWithMaxLength(emailPartsLength)
+      secondPart <- alphaNumStringsWithMaxLength(emailPartsLength)
+      thirdPart  <- alphaNumStringsWithMaxLength(emailPartsLength)
+    } yield s"$firstPart@$secondPart.$thirdPart".toLowerCase
+  }
+
+  def telephoneNumber(maxLength: Int): Gen[String] =
+    RegexpGen.from(s"${Regex.telephoneNumber}").retryUntil(s => s.length <= maxLength && s.trim.nonEmpty)
+
+  implicit val arbValidUkCompanyRegistration: Arbitrary[ValidUkCompanyRegistration] = Arbitrary {
     for {
       registration                  <- MkArbitrary[Registration].arbitrary.arbitrary
       internalId                     = alphaNumericString
       incorporatedEntityJourneyData <- Arbitrary.arbitrary[IncorporatedEntityJourneyData]
-      businessPartnerId              = alphaNumericString
+      ctutr                         <- RegexpGen.from(Regex.customerIdentificationNumber)
+      companyNumber                 <- RegexpGen.from(Regex.customerIdentificationNumber)
+      businessPartnerId             <- RegexpGen.from(Regex.businessPartnerId)
       businessSector                <- Arbitrary.arbitrary[BusinessSector]
-      firstContactName              <- Arbitrary.arbitrary[String]
-      firstContactRole              <- Arbitrary.arbitrary[String]
-      firstContactEmail             <- Arbitrary.arbitrary[String]
-      firstContactNumber            <- Arbitrary.arbitrary[String]
+      firstContactName              <- stringsWithMaxLength(160)
+      firstContactRole              <- stringsWithMaxLength(160)
+      firstContactEmail             <- emailAddress(160)
+      firstContactNumber            <- telephoneNumber(24)
       eclAddress                     = EclAddress(
                                          organisation = Some("Test Org Name"),
                                          addressLine1 = Some("Test Address Line 1"),
@@ -94,7 +123,7 @@ trait EclTestData {
       relevantAp12Months            <- Arbitrary.arbitrary[Boolean]
       relevantApLength              <- Arbitrary.arbitrary[Int]
       relevantApRevenue             <- Arbitrary.arbitrary[Long]
-    } yield ValidRegistration(
+    } yield ValidUkCompanyRegistration(
       registration.copy(
         internalId = internalId,
         entityType = Some(UkLimitedCompany),
@@ -104,8 +133,11 @@ trait EclTestData {
         relevantApRevenue = Some(relevantApRevenue),
         revenueMeetsThreshold = Some(true),
         incorporatedEntityJourneyData = Some(
-          incorporatedEntityJourneyData.copy(registration =
-            incorporatedEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
+          incorporatedEntityJourneyData.copy(
+            ctutr = ctutr,
+            companyProfile = incorporatedEntityJourneyData.companyProfile.copy(companyNumber = companyNumber),
+            registration =
+              incorporatedEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
           )
         ),
         partnershipEntityJourneyData = None,
@@ -126,8 +158,8 @@ trait EclTestData {
       EclSubscription(
         LegalEntityDetails(
           safeId = businessPartnerId,
-          customerIdentification1 = incorporatedEntityJourneyData.ctutr,
-          customerIdentification2 = Some(incorporatedEntityJourneyData.companyProfile.companyNumber),
+          customerIdentification1 = ctutr,
+          customerIdentification2 = Some(companyNumber),
           organisationName = Some(incorporatedEntityJourneyData.companyProfile.companyName),
           firstName = None,
           lastName = None,

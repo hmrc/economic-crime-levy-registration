@@ -368,12 +368,12 @@
         "customerIdentification1": {
           "type": "string",
           "description": "Customer Identification1",
-          "pattern": "^[0-9]{15}$"
+          "pattern": "^[a-zA-Z0-9]{1,15}$"
         },
         "customerIdentification2": {
           "type": "string",
           "description": "Customer Identification2",
-          "pattern": "^[0-9]{15}$"
+          "pattern": "^[a-zA-Z0-9]{1,15}$"
         },
         "customerType": {
           "type": "string",

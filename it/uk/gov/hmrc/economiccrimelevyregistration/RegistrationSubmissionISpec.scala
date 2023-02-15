@@ -18,7 +18,7 @@ class RegistrationSubmissionISpec extends ISpecBase {
     "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid" in {
       stubAuthorised()
 
-      val validRegistration    = random[ValidRegistration]
+      val validRegistration    = random[ValidUkCompanyRegistration]
       val subscriptionResponse =
         random[CreateEclSubscriptionResponse].copy(processingDate = Instant.parse("2007-12-25T10:15:30.00Z"))
 
