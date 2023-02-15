@@ -67,13 +67,14 @@ object CorrespondenceAddressDetails {
     postCode: Option[String],
     countryCode: String
   ): CorrespondenceAddressDetails = {
-    val groupedLines = (line1 +: otherLines).grouped(2).toSeq
+    def seqOptStringToString(seq: Seq[Option[String]]): Option[String] =
+      Option(seq.flatten.mkString(", ")).filter(_.nonEmpty)
 
     CorrespondenceAddressDetails(
-      addressLine1 = groupedLines.headOption.map(_.mkString(", ")).getOrElse(line1),
-      addressLine2 = groupedLines.lift(1).map(_.mkString(", ")),
-      addressLine3 = groupedLines.lift(2).map(_.mkString(", ")),
-      addressLine4 = groupedLines.lift(3).map(_.mkString(", ")),
+      addressLine1 = line1,
+      addressLine2 = seqOptStringToString(Seq(otherLines.headOption, otherLines.lift(3))),
+      addressLine3 = seqOptStringToString(Seq(otherLines.lift(1), otherLines.lift(4))),
+      addressLine4 = seqOptStringToString(Seq(otherLines.lift(2), otherLines.lift(5))),
       postCode = postCode,
       country = Some(countryCode)
     )

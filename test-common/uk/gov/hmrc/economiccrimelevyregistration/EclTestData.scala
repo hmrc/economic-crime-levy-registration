@@ -159,10 +159,10 @@ trait EclTestData {
 
   private def commonCorrespondenceAddressDetails: CorrespondenceAddressDetails =
     CorrespondenceAddressDetails(
-      addressLine1 = "Test Org Name, Test Address Line 1",
-      addressLine2 = Some("Test Address Line 2, Test Region"),
-      addressLine3 = None,
-      addressLine4 = None,
+      addressLine1 = "Test Org Name",
+      addressLine2 = Some("Test Address Line 1"),
+      addressLine3 = Some("Test Address Line 2"),
+      addressLine4 = Some("Test Region"),
       postCode = Some("AB12 3DE"),
       country = Some("GB")
     )
