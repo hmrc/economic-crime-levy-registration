@@ -25,10 +25,9 @@ import uk.gov.hmrc.economiccrimelevyregistration._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
-import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.SoleTrader
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
-import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
+import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
 import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, AmlSupervisorType, ContactDetails, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.utils.SchemaValidator
 
@@ -157,13 +156,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return an error if the entity type is partnership but there is no partnership data in the registration" in forAll {
-      (validRegistration: ValidUkCompanyRegistration, partnershipType: PartnershipType, partnershipName: String) =>
-        val invalidRegistration = validRegistration.registration
-          .copy(
-            entityType = Some(partnershipType.entityType),
-            partnershipEntityJourneyData = None,
-            partnershipName = Some(partnershipName)
-          )
+      (validLimitedPartnershipRegistration: ValidLimitedPartnershipRegistration) =>
+        val invalidRegistration = validLimitedPartnershipRegistration.registration
+          .copy(partnershipEntityJourneyData = None)
 
         val result = service.validateRegistration(invalidRegistration)
 
@@ -174,9 +169,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return an error if the entity type is sole trader but there is no sole trader data in the registration" in forAll {
-      (validRegistration: ValidUkCompanyRegistration) =>
-        val invalidRegistration = validRegistration.registration
-          .copy(entityType = Some(SoleTrader), soleTraderEntityJourneyData = None)
+      (validSoleTraderRegistration: ValidSoleTraderRegistration) =>
+        val invalidRegistration = validSoleTraderRegistration.registration
+          .copy(soleTraderEntityJourneyData = None)
 
         val result = service.validateRegistration(invalidRegistration)
 
@@ -298,27 +293,17 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
     "return errors if the registration data contains no partnership name, SA UTR and " +
       "postcode when the entity type is general or scottish partnership" in forAll {
-        (
-          validRegistration: ValidUkCompanyRegistration,
-          scottishOrGeneralPartnershipType: ScottishOrGeneralPartnershipType,
-          partnershipEntityJourneyData: PartnershipEntityJourneyData,
-          businessPartnerId: String
-        ) =>
-          val invalidPartnershipData = partnershipEntityJourneyData.copy(
-            sautr = None,
-            postcode = None,
-            registration =
-              partnershipEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
-          )
-
-          val invalidRegistration = validRegistration.registration
-            .copy(
-              entityType = Some(scottishOrGeneralPartnershipType.entityType),
-              incorporatedEntityJourneyData = None,
-              soleTraderEntityJourneyData = None,
-              partnershipEntityJourneyData = Some(invalidPartnershipData),
-              partnershipName = None
+        (validScottishOrGeneralPartnershipRegistration: ValidScottishOrGeneralPartnershipRegistration) =>
+          val invalidPartnershipData =
+            validScottishOrGeneralPartnershipRegistration.registration.partnershipEntityJourneyData.map(
+              _.copy(
+                sautr = None,
+                postcode = None
+              )
             )
+
+          val invalidRegistration = validScottishOrGeneralPartnershipRegistration.registration
+            .copy(partnershipEntityJourneyData = invalidPartnershipData, partnershipName = None)
 
           val result = service.validateRegistration(invalidRegistration)
 
@@ -334,27 +319,17 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
     "return errors if the registration data contains no partnership SA UTR and " +
       "company profile when the entity type is limited, limited liability or scottish limited partnership" in forAll {
-        (
-          validRegistration: ValidUkCompanyRegistration,
-          limitedPartnershipType: LimitedPartnershipType,
-          partnershipEntityJourneyData: PartnershipEntityJourneyData,
-          businessPartnerId: String
-        ) =>
-          val invalidPartnershipData = partnershipEntityJourneyData.copy(
-            sautr = None,
-            companyProfile = None,
-            registration =
-              partnershipEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
-          )
-
-          val invalidRegistration = validRegistration.registration
-            .copy(
-              entityType = Some(limitedPartnershipType.entityType),
-              incorporatedEntityJourneyData = None,
-              soleTraderEntityJourneyData = None,
-              partnershipEntityJourneyData = Some(invalidPartnershipData),
-              partnershipName = None
+        (validLimitedPartnershipRegistration: ValidLimitedPartnershipRegistration) =>
+          val invalidPartnershipData =
+            validLimitedPartnershipRegistration.registration.partnershipEntityJourneyData.map(
+              _.copy(
+                sautr = None,
+                companyProfile = None
+              )
             )
+
+          val invalidRegistration = validLimitedPartnershipRegistration.registration
+            .copy(partnershipEntityJourneyData = invalidPartnershipData)
 
           val result = service.validateRegistration(invalidRegistration)
 
@@ -368,26 +343,16 @@ class RegistrationValidationServiceSpec extends SpecBase {
       }
 
     "return errors if the registration data contains no sole trader SA UTR or NINO and the entity type is sole trader" in forAll {
-      (
-        validRegistration: ValidUkCompanyRegistration,
-        soleTraderEntityJourneyData: SoleTraderEntityJourneyData,
-        businessPartnerId: String
-      ) =>
-        val invalidSoleTraderData = soleTraderEntityJourneyData.copy(
-          sautr = None,
-          nino = None,
-          registration =
-            soleTraderEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
+      (validSoleTraderRegistration: ValidSoleTraderRegistration) =>
+        val invalidSoleTraderData = validSoleTraderRegistration.registration.soleTraderEntityJourneyData.map(
+          _.copy(
+            sautr = None,
+            nino = None
+          )
         )
 
-        val invalidRegistration = validRegistration.registration
-          .copy(
-            entityType = Some(SoleTrader),
-            incorporatedEntityJourneyData = None,
-            soleTraderEntityJourneyData = Some(invalidSoleTraderData),
-            partnershipEntityJourneyData = None,
-            partnershipName = None
-          )
+        val invalidRegistration =
+          validSoleTraderRegistration.registration.copy(soleTraderEntityJourneyData = invalidSoleTraderData)
 
         val result = service.validateRegistration(invalidRegistration)
 
