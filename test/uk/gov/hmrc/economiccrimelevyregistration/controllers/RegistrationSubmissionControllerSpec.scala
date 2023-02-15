@@ -24,8 +24,9 @@ import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError.DataInvalid
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponse
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationValidationService, SubscriptionService}
 
@@ -47,12 +48,16 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
   "submitRegistration" should {
     "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid" in forAll {
-      (registration: Registration, businessPartnerId: String, subscriptionResponse: CreateEclSubscriptionResponse) =>
+      (
+        registration: Registration,
+        eclSubscription: EclSubscription,
+        subscriptionResponse: CreateEclSubscriptionResponse
+      ) =>
         when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
-        when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(businessPartnerId.validNec)
+        when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(eclSubscription.validNec)
 
-        when(mockSubscriptionServiceService.subscribeToEcl(ArgumentMatchers.eq(businessPartnerId))(any()))
+        when(mockSubscriptionServiceService.subscribeToEcl(ArgumentMatchers.eq(eclSubscription))(any()))
           .thenReturn(Future.successful(subscriptionResponse))
 
         val result: Future[Result] =
@@ -67,13 +72,15 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
         when(mockRegistrationValidationService.validateRegistration(any()))
-          .thenReturn(DataValidationError("Invalid data").invalidNec)
+          .thenReturn(DataValidationError(DataInvalid, "Invalid data").invalidNec)
 
         val result: Future[Result] =
           controller.submitRegistration(registration.internalId)(fakeRequest)
 
         status(result)        shouldBe INTERNAL_SERVER_ERROR
-        contentAsJson(result) shouldBe Json.toJson(DataValidationErrors(Seq(DataValidationError("Invalid data"))))
+        contentAsJson(result) shouldBe Json.toJson(
+          DataValidationErrors(Seq(DataValidationError(DataInvalid, "Invalid data")))
+        )
     }
 
     "return 404 NOT_FOUND when there is no registration data to submit" in forAll { registration: Registration =>

@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import play.api.libs.json._
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.SoleTrader
 
 sealed trait EntityType
 

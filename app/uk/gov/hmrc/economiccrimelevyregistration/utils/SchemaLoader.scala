@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.models.errors
+package uk.gov.hmrc.economiccrimelevyregistration.utils
 
-import play.api.libs.json.{Json, OFormat}
+import io.circe.schema.Schema
 
-final case class DataValidationError(code: String, message: String, path: Option[String] = None)
+import scala.io.Source
 
-object DataValidationError {
-  val DataInvalid = "DATA_INVALID"
-  val DataMissing = "DATA_MISSING"
+object SchemaLoader {
 
-  implicit val format: OFormat[DataValidationError] = Json.format[DataValidationError]
-}
+  def loadRequestSchema(schemaFileName: String): Schema = {
+    val schemaFilePath = s"/schemas/$schemaFileName"
+    val resource       = getClass.getResourceAsStream(schemaFilePath)
+    val source         = Source.fromInputStream(resource)
 
-final case class DataValidationErrors(errors: Seq[DataValidationError])
+    val jsonSchema =
+      try source.getLines().mkString
+      finally source.close()
 
-object DataValidationErrors {
-  implicit val format: OFormat[DataValidationErrors] = Json.format[DataValidationErrors]
+    Schema
+      .loadFromString(jsonSchema)
+      .get
+  }
+
 }

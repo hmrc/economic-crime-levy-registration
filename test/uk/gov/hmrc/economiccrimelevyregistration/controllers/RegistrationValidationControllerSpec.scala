@@ -21,8 +21,11 @@ import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError.DataInvalid
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EclSubscription
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.RegistrationValidationService
 
@@ -42,10 +45,10 @@ class RegistrationValidationControllerSpec extends SpecBase {
 
   "getValidationErrors" should {
     "return 204 NO_CONTENT when the registration data is valid" in forAll {
-      (registration: Registration, businessPartnerId: String) =>
+      (registration: Registration, eclSubscription: EclSubscription) =>
         when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
-        when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(businessPartnerId.validNec)
+        when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(eclSubscription.validNec)
 
         val result: Future[Result] =
           controller.getValidationErrors(registration.internalId)(fakeRequest)
@@ -58,13 +61,15 @@ class RegistrationValidationControllerSpec extends SpecBase {
         when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
         when(mockRegistrationValidationService.validateRegistration(any()))
-          .thenReturn(DataValidationError("Invalid data").invalidNec)
+          .thenReturn(DataValidationError(DataInvalid, "Invalid data").invalidNec)
 
         val result: Future[Result] =
           controller.getValidationErrors(registration.internalId)(fakeRequest)
 
         status(result)        shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(DataValidationErrors(Seq(DataValidationError("Invalid data"))))
+        contentAsJson(result) shouldBe Json.toJson(
+          DataValidationErrors(Seq(DataValidationError(DataInvalid, "Invalid data")))
+        )
     }
 
     "return 404 NOT_FOUND when there is no registration data to validate" in forAll { registration: Registration =>

@@ -21,29 +21,29 @@ import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.{IntegrationFrameworkConnector, TaxEnrolmentsConnector}
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponse
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
 
 import scala.concurrent.Future
 
 class SubscriptionServiceSpec extends SpecBase {
-  val mockIntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
-  val mockTaxEnrolmentsConnector        = mock[TaxEnrolmentsConnector]
+  val mockIntegrationFrameworkConnector: IntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
+  val mockTaxEnrolmentsConnector: TaxEnrolmentsConnector               = mock[TaxEnrolmentsConnector]
 
   val service = new SubscriptionService(mockIntegrationFrameworkConnector, mockTaxEnrolmentsConnector)
 
   "subscribeToEcl" should {
     "return the ECL reference number" in forAll {
       (
-        businessPartnerId: String,
+        eclSubscription: EclSubscription,
         subscriptionResponse: CreateEclSubscriptionResponse
       ) =>
-        when(mockIntegrationFrameworkConnector.subscribeToEcl(ArgumentMatchers.eq(businessPartnerId))(any()))
+        when(mockIntegrationFrameworkConnector.subscribeToEcl(ArgumentMatchers.eq(eclSubscription))(any()))
           .thenReturn(Future.successful(subscriptionResponse))
 
         when(mockTaxEnrolmentsConnector.enrol(any())(any()))
           .thenReturn(Future.successful(()))
 
-        val result = await(service.subscribeToEcl(businessPartnerId))
+        val result = await(service.subscribeToEcl(eclSubscription))
 
         result shouldBe subscriptionResponse
     }

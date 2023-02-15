@@ -25,15 +25,17 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, EtmpSubscriptionStatus, SubscriptionStatusResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 
 import java.time.{Instant, LocalDate}
 
-final case class ValidRegistration(registration: Registration, expectedBusinessPartnerId: String)
+final case class ValidRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
 
 final case class PartnershipType(entityType: EntityType)
 
 final case class ScottishOrGeneralPartnershipType(entityType: EntityType)
+
+final case class LimitedPartnershipType(entityType: EntityType)
 
 trait EclTestData {
 
@@ -78,7 +80,17 @@ trait EclTestData {
       firstContactRole              <- Arbitrary.arbitrary[String]
       firstContactEmail             <- Arbitrary.arbitrary[String]
       firstContactNumber            <- Arbitrary.arbitrary[String]
-      eclAddress                    <- Arbitrary.arbitrary[EclAddress]
+      eclAddress                     = EclAddress(
+                                         organisation = Some("Test Org Name"),
+                                         addressLine1 = Some("Test Address Line 1"),
+                                         addressLine2 = Some("Test Address Line 2"),
+                                         addressLine3 = None,
+                                         addressLine4 = None,
+                                         region = Some("Test Region"),
+                                         postCode = Some("AB12 3DE"),
+                                         poBox = None,
+                                         countryCode = "GB"
+                                       )
       relevantAp12Months            <- Arbitrary.arbitrary[Boolean]
       relevantApLength              <- Arbitrary.arbitrary[Int]
       relevantApRevenue             <- Arbitrary.arbitrary[Long]
@@ -111,7 +123,35 @@ trait EclTestData {
         ),
         contactAddress = Some(eclAddress)
       ),
-      businessPartnerId
+      EclSubscription(
+        LegalEntityDetails(
+          safeId = businessPartnerId,
+          customerIdentification1 = incorporatedEntityJourneyData.ctutr,
+          customerIdentification2 = Some(incorporatedEntityJourneyData.companyProfile.companyNumber),
+          organisationName = Some(incorporatedEntityJourneyData.companyProfile.companyName),
+          firstName = None,
+          lastName = None,
+          customerType = "01",
+          registrationDate = "2007-12-25",
+          amlSupervisor = "Hmrc",
+          businessSector = businessSector.toString
+        ),
+        correspondenceAddressDetails = CorrespondenceAddressDetails(
+          addressLine1 = "Test Org Name, Test Address Line 1",
+          addressLine2 = Some("Test Address Line 2, Test Region"),
+          addressLine3 = None,
+          addressLine4 = None,
+          postCode = eclAddress.postCode,
+          country = Some(eclAddress.countryCode)
+        ),
+        primaryContactDetails = SubscriptionContactDetails(
+          name = firstContactName,
+          positionInCompany = firstContactRole,
+          telephone = firstContactNumber,
+          emailAddress = firstContactEmail
+        ),
+        secondaryContactDetails = None
+      )
     )
   }
 
@@ -138,6 +178,18 @@ trait EclTestData {
                                             )
                                           )
     } yield ScottishOrGeneralPartnershipType(scottishOrGeneralPartnershipType)
+  }
+
+  implicit val arbLimitedPartnershipType: Arbitrary[LimitedPartnershipType] = Arbitrary {
+    for {
+      limitedPartnershipType <- Gen.oneOf(
+                                  Seq(
+                                    LimitedPartnership,
+                                    LimitedLiabilityPartnership,
+                                    ScottishLimitedPartnership
+                                  )
+                                )
+    } yield LimitedPartnershipType(limitedPartnershipType)
   }
 
   def alphaNumericString: String = Gen.alphaNumStr.retryUntil(_.nonEmpty).sample.get
