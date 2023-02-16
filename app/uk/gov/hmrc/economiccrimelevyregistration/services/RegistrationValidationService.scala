@@ -21,12 +21,12 @@ import cats.data.ValidatedNel
 import cats.implicits._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
+import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
-import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, ContactDetails, EclAddress, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.utils.{SchemaLoader, SchemaValidator}
 
 import java.time.format.DateTimeFormatter
@@ -52,8 +52,8 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       validateLegalEntityDetails(registration),
       validateAmlSupervisor(registration),
       validateOptExists(registration.businessSector, "Business sector"),
-      validateFirstContactDetails(registration.contacts.firstContactDetails),
-      validateSecondContactDetails(registration),
+      validateContactDetails("First", registration.contacts.firstContactDetails),
+      validateSecondContactDetails(registration.contacts),
       validateEclAddress(registration.contactAddress),
       validateAmlRegulatedActivity(registration),
       validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
@@ -86,54 +86,30 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         )
     }
 
-  private def validateFirstContactDetails(details: ContactDetails): ValidationResult[SubscriptionContactDetails] =
+  private def validateContactDetails(
+    firstOrSecond: String,
+    details: ContactDetails
+  ): ValidationResult[SubscriptionContactDetails] =
     (
-      validateOptExists(details.name, "First contact name"),
-      validateOptExists(details.role, "First contact role"),
+      validateOptExists(details.name, s"$firstOrSecond contact name"),
+      validateOptExists(details.role, s"$firstOrSecond contact role"),
       validateOptExists(
         details.emailAddress,
-        "First contact email"
+        s"$firstOrSecond contact email"
       ),
       validateOptExists(
         details.telephoneNumber,
-        "First contact number"
+        s"$firstOrSecond contact number"
       )
     ).mapN { (name, role, email, number) =>
       SubscriptionContactDetails(name = name, positionInCompany = role, telephone = number, emailAddress = email)
     }
 
   private def validateSecondContactDetails(
-    registration: Registration
+    contacts: Contacts
   ): ValidationResult[Option[SubscriptionContactDetails]] =
-    registration.contacts.secondContact match {
-      case Some(true)  =>
-        (
-          validateOptExists(
-            registration.contacts.secondContactDetails.name,
-            "Second contact name"
-          ),
-          validateOptExists(
-            registration.contacts.secondContactDetails.role,
-            "Second contact role"
-          ),
-          validateOptExists(
-            registration.contacts.secondContactDetails.emailAddress,
-            "Second contact email"
-          ),
-          validateOptExists(
-            registration.contacts.secondContactDetails.telephoneNumber,
-            "Second contact number"
-          )
-        ).mapN((name, role, email, number) =>
-          Some(
-            SubscriptionContactDetails(
-              name = name,
-              positionInCompany = role,
-              telephone = number,
-              emailAddress = email
-            )
-          )
-        )
+    contacts.secondContact match {
+      case Some(true)  => validateContactDetails("Second", contacts.secondContactDetails).map(Some(_))
       case Some(false) => None.validNel
       case _           => DataValidationError(DataMissing, missingErrorMessage("Second contact choice")).invalidNel
     }
