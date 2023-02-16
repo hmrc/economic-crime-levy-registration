@@ -167,12 +167,19 @@ trait EclTestData {
       country = Some("GB")
     )
 
+  implicit val arbCompanyProfile: Arbitrary[CompanyProfile] = Arbitrary {
+    for {
+      companyProfile <- MkArbitrary[CompanyProfile].arbitrary.arbitrary
+      companyName    <- stringsWithMaxLength(160)
+      companyNumber  <- RegexpGen.from(Regex.customerIdentificationNumber)
+    } yield companyProfile.copy(companyName = companyName, companyNumber = companyNumber)
+  }
+
   implicit val arbValidUkCompanyRegistration: Arbitrary[ValidUkCompanyRegistration] = Arbitrary {
     for {
       businessPartnerId             <- RegexpGen.from(Regex.businessPartnerId)
       incorporatedEntityJourneyData <- Arbitrary.arbitrary[IncorporatedEntityJourneyData]
       ctutr                         <- RegexpGen.from(Regex.customerIdentificationNumber)
-      companyNumber                 <- RegexpGen.from(Regex.customerIdentificationNumber)
       commonRegistrationData        <- Arbitrary.arbitrary[CommonRegistrationData]
     } yield ValidUkCompanyRegistration(
       commonRegistrationData.registration.copy(
@@ -180,7 +187,6 @@ trait EclTestData {
         incorporatedEntityJourneyData = Some(
           incorporatedEntityJourneyData.copy(
             ctutr = ctutr,
-            companyProfile = incorporatedEntityJourneyData.companyProfile.copy(companyNumber = companyNumber),
             registration =
               incorporatedEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
           )
@@ -192,7 +198,7 @@ trait EclTestData {
         LegalEntityDetails(
           safeId = businessPartnerId,
           customerIdentification1 = ctutr,
-          customerIdentification2 = Some(companyNumber),
+          customerIdentification2 = Some(incorporatedEntityJourneyData.companyProfile.companyNumber),
           organisationName = Some(incorporatedEntityJourneyData.companyProfile.companyName),
           firstName = None,
           lastName = None,
@@ -265,7 +271,6 @@ trait EclTestData {
       partnershipEntityJourneyData <- Arbitrary.arbitrary[PartnershipEntityJourneyData]
       companyProfile               <- Arbitrary.arbitrary[CompanyProfile]
       sautr                        <- RegexpGen.from(Regex.customerIdentificationNumber)
-      companyNumber                <- RegexpGen.from(Regex.customerIdentificationNumber)
       commonRegistrationData       <- Arbitrary.arbitrary[CommonRegistrationData]
       partnershipType              <- Arbitrary.arbitrary[LimitedPartnershipType]
     } yield ValidLimitedPartnershipRegistration(
@@ -275,7 +280,7 @@ trait EclTestData {
         partnershipEntityJourneyData = Some(
           partnershipEntityJourneyData.copy(
             sautr = Some(sautr),
-            companyProfile = Some(companyProfile.copy(companyNumber = companyNumber)),
+            companyProfile = Some(companyProfile),
             registration =
               partnershipEntityJourneyData.registration.copy(registeredBusinessPartnerId = Some(businessPartnerId))
           )
@@ -286,7 +291,7 @@ trait EclTestData {
         LegalEntityDetails(
           safeId = businessPartnerId,
           customerIdentification1 = sautr,
-          customerIdentification2 = Some(companyNumber),
+          customerIdentification2 = Some(companyProfile.companyName),
           organisationName = Some(companyProfile.companyName),
           firstName = None,
           lastName = None,
