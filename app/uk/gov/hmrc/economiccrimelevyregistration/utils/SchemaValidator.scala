@@ -45,9 +45,8 @@ class SchemaValidator @Inject() () {
         Invalid(
           e.map(e =>
             DataValidationError(
-              code = Option(e.keyword).getOrElse(SchemaValidationError),
-              message = e.getMessage,
-              path = Some(e.location)
+              code = SchemaValidationError,
+              message = s"Schema validation error for field: ${e.location} (${Option(e.keyword).getOrElse("unknown")})"
             )
           )
         )

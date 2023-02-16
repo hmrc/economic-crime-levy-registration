@@ -67,14 +67,24 @@ object CorrespondenceAddressDetails {
     postCode: Option[String],
     countryCode: String
   ): CorrespondenceAddressDetails = {
-    def seqOptStringToString(seq: Seq[Option[String]]): Option[String] =
+    val AddressLineMaxLength = 35
+
+    def seqOptLinesToString(seq: Seq[Option[String]]): Option[String] =
       Option(seq.flatten.mkString(", ")).filter(_.nonEmpty)
 
+    def overflow(optS: Option[String]): Option[String] =
+      optS.map(s => s.takeRight(Math.max(0, s.length - AddressLineMaxLength))).filter(_.nonEmpty)
+
+    val addressLine1 = line1
+    val addressLine2 = seqOptLinesToString(Seq(overflow(Some(line1)), otherLines.headOption, otherLines.lift(3)))
+    val addressLine3 = seqOptLinesToString(Seq(overflow(addressLine2), otherLines.lift(1), otherLines.lift(4)))
+    val addressLine4 = seqOptLinesToString(Seq(overflow(addressLine3), otherLines.lift(2), otherLines.lift(5)))
+
     CorrespondenceAddressDetails(
-      addressLine1 = line1,
-      addressLine2 = seqOptStringToString(Seq(otherLines.headOption, otherLines.lift(3))),
-      addressLine3 = seqOptStringToString(Seq(otherLines.lift(1), otherLines.lift(4))),
-      addressLine4 = seqOptStringToString(Seq(otherLines.lift(2), otherLines.lift(5))),
+      addressLine1 = addressLine1.take(AddressLineMaxLength),
+      addressLine2 = addressLine2.map(_.take(AddressLineMaxLength)),
+      addressLine3 = addressLine3.map(_.take(AddressLineMaxLength)),
+      addressLine4 = addressLine4.map(_.take(AddressLineMaxLength)),
       postCode = postCode,
       country = Some(countryCode)
     )

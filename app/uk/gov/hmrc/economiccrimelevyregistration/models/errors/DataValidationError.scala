@@ -18,7 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 
 import play.api.libs.json.{Json, OFormat}
 
-final case class DataValidationError(code: String, message: String, path: Option[String] = None)
+final case class DataValidationError(code: String, message: String)
 
 object DataValidationError {
   val SchemaValidationError = "SCHEMA_VALIDATION_ERROR"
