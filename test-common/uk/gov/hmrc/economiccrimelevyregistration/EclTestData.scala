@@ -291,7 +291,7 @@ trait EclTestData {
         LegalEntityDetails(
           safeId = businessPartnerId,
           customerIdentification1 = sautr,
-          customerIdentification2 = Some(companyProfile.companyName),
+          customerIdentification2 = Some(companyProfile.companyNumber),
           organisationName = Some(companyProfile.companyName),
           firstName = None,
           lastName = None,
