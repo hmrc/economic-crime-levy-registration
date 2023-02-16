@@ -10,18 +10,27 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.KeyValue
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{CreateEnrolmentRequest, EclEnrolment}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponse
 
-import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, LocalDate}
 
 class RegistrationSubmissionISpec extends ISpecBase {
   s"POST ${routes.RegistrationSubmissionController.submitRegistration(":id").url}" should {
     "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid" in {
       stubAuthorised()
 
-      val validRegistration    = random[ValidRegistration]
+      val validRegistration    = random[ValidUkCompanyRegistration]
       val subscriptionResponse =
         random[CreateEclSubscriptionResponse].copy(processingDate = Instant.parse("2007-12-25T10:15:30.00Z"))
 
-      stubSubscribeToEcl(validRegistration.expectedBusinessPartnerId, subscriptionResponse)
+      val registrationDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+
+      stubSubscribeToEcl(
+        validRegistration.expectedEclSubscription.copy(legalEntityDetails =
+          validRegistration.expectedEclSubscription.legalEntityDetails.copy(registrationDate = registrationDate)
+        ),
+        subscriptionResponse
+      )
+
       stubEnrol(
         CreateEnrolmentRequest(
           identifiers = Seq(KeyValue(key = EclEnrolment.IdentifierKey, value = subscriptionResponse.eclReference)),
@@ -43,7 +52,7 @@ class RegistrationSubmissionISpec extends ISpecBase {
         )
       )
 
-      status(result) shouldBe OK
+      status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(subscriptionResponse)
     }
   }

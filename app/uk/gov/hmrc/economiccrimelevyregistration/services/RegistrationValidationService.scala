@@ -16,79 +16,107 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
-import cats.data.ValidatedNec
+import cats.data.Validated.Valid
+import cats.data.ValidatedNel
 import cats.implicits._
-import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
+import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
+import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
-import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, Registration}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
+import uk.gov.hmrc.economiccrimelevyregistration.utils.{SchemaLoader, SchemaValidator}
 
+import java.time.format.DateTimeFormatter
+import java.time.{Clock, Instant, LocalDate, ZoneId}
 import javax.inject.Inject
 
-class RegistrationValidationService @Inject() () {
+class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: SchemaValidator) {
 
-  type ValidationResult[A] = ValidatedNec[DataValidationError, A]
+  type ValidationResult[A] = ValidatedNel[DataValidationError, A]
 
-  def validateRegistration(registration: Registration): ValidationResult[String] =
+  def validateRegistration(registration: Registration): ValidationResult[EclSubscription] =
+    transformToEclSubscription(registration) match {
+      case Valid(eclSubscription) =>
+        schemaValidator.validateAgainstJsonSchema(
+          eclSubscription,
+          SchemaLoader.loadSchema("create-ecl-subscription-request.json")
+        )
+      case invalid                => invalid
+    }
+
+  private def transformToEclSubscription(registration: Registration): ValidationResult[EclSubscription] =
     (
-      validateGrsJourneyData(registration),
-      validateAmlRegulatedActivity(registration),
+      validateLegalEntityDetails(registration),
       validateAmlSupervisor(registration),
-      validateOptExists(registration.relevantAp12Months, missingErrorMessage("Relevant AP 12 months choice")),
-      validateOptExists(registration.relevantApRevenue, missingErrorMessage("Relevant AP revenue")),
+      validateOptExists(registration.businessSector, "Business sector"),
+      validateContactDetails("First", registration.contacts.firstContactDetails),
+      validateSecondContactDetails(registration.contacts),
+      validateEclAddress(registration.contactAddress),
+      validateAmlRegulatedActivity(registration),
+      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
+      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
       validateConditionalOptExists(
         registration.relevantApLength,
         registration.relevantAp12Months.contains(false),
-        missingErrorMessage("Relevant AP length")
+        "Relevant AP length"
       ),
-      validateRevenueMeetsThreshold(registration),
-      validateOptExists(registration.contacts.firstContactDetails.name, missingErrorMessage("First contact name")),
-      validateOptExists(registration.contacts.firstContactDetails.role, missingErrorMessage("First contact role")),
-      validateOptExists(
-        registration.contacts.firstContactDetails.emailAddress,
-        missingErrorMessage("First contact email")
-      ),
-      validateOptExists(
-        registration.contacts.firstContactDetails.telephoneNumber,
-        missingErrorMessage("First contact number")
-      ),
-      validateOptExists(registration.businessSector, missingErrorMessage("Business sector")),
-      validateOptExists(registration.contactAddress, missingErrorMessage("Contact address")),
-      validateSecondContactDetails(registration),
-      validateConditionalOptExists(
-        registration.partnershipName,
-        registration.entityType.contains(GeneralPartnership) || registration.entityType.contains(ScottishPartnership),
-        missingErrorMessage("Partnership name")
-      )
-    ).mapN((businessPartnerId, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => businessPartnerId)
-
-  private def validateSecondContactDetails(registration: Registration): ValidationResult[Registration] =
-    registration.contacts.secondContact match {
-      case Some(true)  =>
-        (
-          validateOptExists(
-            registration.contacts.secondContactDetails.name,
-            missingErrorMessage("Second contact name")
-          ),
-          validateOptExists(
-            registration.contacts.secondContactDetails.role,
-            missingErrorMessage("Second contact role")
-          ),
-          validateOptExists(
-            registration.contacts.secondContactDetails.emailAddress,
-            missingErrorMessage("Second contact email")
-          ),
-          validateOptExists(
-            registration.contacts.secondContactDetails.telephoneNumber,
-            missingErrorMessage("Second contact number")
-          )
-        ).mapN((_, _, _, _) => registration)
-      case Some(false) => registration.validNec
-      case _           => DataValidationError(missingErrorMessage("Second contact choice")).invalidNec
+      validateRevenueMeetsThreshold(registration)
+    ).mapN {
+      (
+        legalEntityDetails,
+        amlSupervisor,
+        businessSector,
+        firstContactDetails,
+        secondContactDetails,
+        contactAddress,
+        _,
+        _,
+        _,
+        _,
+        _
+      ) =>
+        EclSubscription(
+          legalEntityDetails = legalEntityDetails(amlSupervisor, businessSector.toString),
+          correspondenceAddressDetails = contactAddress,
+          primaryContactDetails = firstContactDetails,
+          secondaryContactDetails = secondContactDetails
+        )
     }
 
-  private def validateGrsJourneyData(registration: Registration): ValidationResult[String] = {
+  private def validateContactDetails(
+    firstOrSecond: String,
+    details: ContactDetails
+  ): ValidationResult[SubscriptionContactDetails] =
+    (
+      validateOptExists(details.name, s"$firstOrSecond contact name"),
+      validateOptExists(details.role, s"$firstOrSecond contact role"),
+      validateOptExists(
+        details.emailAddress,
+        s"$firstOrSecond contact email"
+      ),
+      validateOptExists(
+        details.telephoneNumber,
+        s"$firstOrSecond contact number"
+      )
+    ).mapN { (name, role, email, number) =>
+      SubscriptionContactDetails(name = name, positionInCompany = role, telephone = number, emailAddress = email)
+    }
+
+  private def validateSecondContactDetails(
+    contacts: Contacts
+  ): ValidationResult[Option[SubscriptionContactDetails]] =
+    contacts.secondContact match {
+      case Some(true)  => validateContactDetails("Second", contacts.secondContactDetails).map(Some(_))
+      case Some(false) => None.validNel
+      case _           => DataValidationError(DataMissing, missingErrorMessage("Second contact choice")).invalidNel
+    }
+
+  private def validateLegalEntityDetails(
+    registration: Registration
+  ): ValidationResult[(String, String) => LegalEntityDetails] = {
     val grsJourneyData: (
       Option[IncorporatedEntityJourneyData],
       Option[PartnershipEntityJourneyData],
@@ -99,62 +127,171 @@ class RegistrationValidationService @Inject() () {
       registration.soleTraderEntityJourneyData
     )
 
-    val validateBusinessPartnerId: Option[String] => ValidationResult[String] = {
-      case Some(s) => s.validNec
-      case _       => DataValidationError(missingErrorMessage("Business partner ID")).invalidNec
-    }
+    def registrationDate: String =
+      LocalDate.ofInstant(Instant.now(clock), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE)
 
     registration.entityType match {
-      case Some(UkLimitedCompany) =>
+      case Some(UkLimitedCompany)                                                              =>
         grsJourneyData match {
-          case (Some(i), None, None) => validateBusinessPartnerId(i.registration.registeredBusinessPartnerId)
-          case _                     => DataValidationError(missingErrorMessage("Incorporated entity data")).invalidNec
+          case (Some(i), None, None) =>
+            validateOptExists(i.registration.registeredBusinessPartnerId, "Business partner ID").map {
+              businessPartnerId =>
+                LegalEntityDetails(
+                  safeId = businessPartnerId,
+                  customerIdentification1 = i.ctutr,
+                  customerIdentification2 = Some(i.companyProfile.companyNumber),
+                  organisationName = Some(i.companyProfile.companyName),
+                  firstName = None,
+                  lastName = None,
+                  customerType = CustomerType.Organisation,
+                  registrationDate = registrationDate,
+                  _,
+                  _
+                )
+            }
+          case _                     => DataValidationError(DataMissing, missingErrorMessage("Incorporated entity data")).invalidNel
         }
-      case Some(
-            LimitedLiabilityPartnership | GeneralPartnership | ScottishPartnership | LimitedPartnership |
-            ScottishLimitedPartnership
-          ) =>
+      case Some(LimitedLiabilityPartnership | LimitedPartnership | ScottishLimitedPartnership) =>
         grsJourneyData match {
-          case (None, Some(p), None) => validateBusinessPartnerId(p.registration.registeredBusinessPartnerId)
-          case _                     => DataValidationError(missingErrorMessage("Partnership data")).invalidNec
+          case (None, Some(lp), None) =>
+            (
+              validateOptExists(lp.registration.registeredBusinessPartnerId, "Business partner ID"),
+              validateOptExists(lp.sautr, "Partnership SA UTR"),
+              validateOptExists(lp.companyProfile, "Partnership company profile")
+            ).mapN { (businessPartnerId, sautr, companyProfile) =>
+              LegalEntityDetails(
+                safeId = businessPartnerId,
+                customerIdentification1 = sautr,
+                customerIdentification2 = Some(companyProfile.companyNumber),
+                organisationName = Some(companyProfile.companyName),
+                firstName = None,
+                lastName = None,
+                customerType = CustomerType.Organisation,
+                registrationDate = registrationDate,
+                _,
+                _
+              )
+            }
+          case _                      => DataValidationError(DataMissing, missingErrorMessage("Partnership data")).invalidNel
         }
-      case Some(SoleTrader)       =>
+      case Some(GeneralPartnership | ScottishPartnership)                                      =>
         grsJourneyData match {
-          case (None, None, Some(s)) => validateBusinessPartnerId(s.registration.registeredBusinessPartnerId)
-          case _                     => DataValidationError(missingErrorMessage("Sole trader data")).invalidNec
+          case (None, Some(p), None) =>
+            (
+              validateOptExists(p.registration.registeredBusinessPartnerId, "Business partner ID"),
+              validateOptExists(p.sautr, "Partnership SA UTR"),
+              validateOptExists(p.postcode, "Partnership postcode"),
+              validateOptExists(registration.partnershipName, "Partnership name")
+            ).mapN { (businessPartnerId, sautr, postcode, partnershipName) =>
+              LegalEntityDetails(
+                safeId = businessPartnerId,
+                customerIdentification1 = sautr,
+                customerIdentification2 = Some(postcode),
+                organisationName = Some(partnershipName),
+                firstName = None,
+                lastName = None,
+                customerType = CustomerType.Organisation,
+                registrationDate = registrationDate,
+                _,
+                _
+              )
+            }
+          case _                     => DataValidationError(DataMissing, missingErrorMessage("Partnership data")).invalidNel
         }
-      case _                      => DataValidationError(missingErrorMessage("Entity type")).invalidNec
+      case Some(SoleTrader)                                                                    =>
+        grsJourneyData match {
+          case (None, None, Some(s)) =>
+            (
+              validateOptExists(s.registration.registeredBusinessPartnerId, "Business partner ID"),
+              validateSoleTraderIdentifiers(s)
+            ).mapN { (businessPartnerId, soleTraderIdentifiers) =>
+              LegalEntityDetails(
+                safeId = businessPartnerId,
+                customerIdentification1 = soleTraderIdentifiers._1,
+                customerIdentification2 = soleTraderIdentifiers._2,
+                organisationName = None,
+                firstName = Some(s.fullName.firstName),
+                lastName = Some(s.fullName.lastName),
+                customerType = CustomerType.Individual,
+                registrationDate = registrationDate,
+                _,
+                _
+              )
+            }
+          case _                     => DataValidationError(DataMissing, missingErrorMessage("Sole trader data")).invalidNel
+        }
+      case _                                                                                   =>
+        DataValidationError(DataMissing, missingErrorMessage("Entity type")).invalidNel
     }
+
   }
+
+  private def validateSoleTraderIdentifiers(
+    s: SoleTraderEntityJourneyData
+  ): ValidationResult[(String, Option[String])] =
+    (s.sautr, s.nino) match {
+      case (Some(sautr), Some(nino)) => (sautr, Some(nino)).validNel
+      case (Some(sautr), _)          => (sautr, None).validNel
+      case (_, Some(nino))           => (nino, None).validNel
+      case _                         => DataValidationError(DataMissing, missingErrorMessage("Sole trader SA UTR or NINO")).invalidNel
+    }
 
   private def validateAmlRegulatedActivity(registration: Registration): ValidationResult[Registration] =
     registration.carriedOutAmlRegulatedActivityInCurrentFy match {
-      case Some(true)  => registration.validNec
-      case Some(false) => DataValidationError("Carried out AML regulated activity cannot be false").invalidNec
-      case _           => DataValidationError(missingErrorMessage("Carried out AML regulated activity choice")).invalidNec
+      case Some(true)  => registration.validNel
+      case Some(false) =>
+        DataValidationError(DataInvalid, "Carried out AML regulated activity cannot be false").invalidNel
+      case _           =>
+        DataValidationError(DataMissing, missingErrorMessage("Carried out AML regulated activity choice")).invalidNel
     }
 
-  private def validateAmlSupervisor(registration: Registration): ValidationResult[Registration] =
+  private def validateAmlSupervisor(registration: Registration): ValidationResult[String] =
     registration.amlSupervisor match {
       case Some(AmlSupervisor(GamblingCommission | FinancialConductAuthority, _)) =>
-        DataValidationError("AML supervisor cannot be GC or FCA").invalidNec
-      case Some(_)                                                                => registration.validNec
-      case _                                                                      => DataValidationError(missingErrorMessage("AML supervisor")).invalidNec
+        DataValidationError(DataInvalid, "AML supervisor cannot be GC or FCA").invalidNel
+      case Some(AmlSupervisor(Hmrc, _))                                           => Hmrc.toString.validNel
+      case Some(AmlSupervisor(_, Some(otherProfessionalBody)))                    => otherProfessionalBody.validNel
+      case _                                                                      =>
+        DataValidationError(DataMissing, missingErrorMessage("AML supervisor")).invalidNel
     }
 
   private def validateRevenueMeetsThreshold(registration: Registration): ValidationResult[Registration] =
     registration.revenueMeetsThreshold match {
-      case Some(true)  => registration.validNec
-      case Some(false) => DataValidationError("Revenue does not meet the liability threshold").invalidNec
-      case _           => DataValidationError(missingErrorMessage("Revenue meets threshold flag")).invalidNec
+      case Some(true)  => registration.validNel
+      case Some(false) => DataValidationError(DataInvalid, "Revenue does not meet the liability threshold").invalidNel
+      case _           => DataValidationError(DataMissing, missingErrorMessage("Revenue meets threshold flag")).invalidNel
     }
 
-  private def missingErrorMessage(missingDataDescription: String): String = s"$missingDataDescription is missing"
+  private def validateEclAddress(eclAddress: Option[EclAddress]): ValidationResult[CorrespondenceAddressDetails] =
+    eclAddress match {
+      case Some(address) =>
+        val addressLines: Seq[String] = Seq(
+          address.organisation,
+          address.addressLine1,
+          address.addressLine2,
+          address.addressLine3,
+          address.addressLine4,
+          address.region,
+          address.poBox
+        ).flatMap(_.toSeq)
+
+        addressLines match {
+          case line1 :: otherLines =>
+            CorrespondenceAddressDetails(
+              line1,
+              otherLines,
+              address.postCode,
+              address.countryCode
+            ).validNel
+          case _                   => DataValidationError(DataInvalid, "Contact address has no address lines").invalidNel
+        }
+      case _             => DataValidationError(DataMissing, missingErrorMessage("Contact address")).invalidNel
+    }
 
   private def validateOptExists[T](optData: Option[T], description: String): ValidationResult[T] =
     optData match {
-      case Some(value) => value.validNec
-      case _           => DataValidationError(description).invalidNec
+      case Some(value) => value.validNel
+      case _           => DataValidationError(DataMissing, missingErrorMessage(description)).invalidNel
     }
 
   private def validateConditionalOptExists[T](
@@ -164,11 +301,13 @@ class RegistrationValidationService @Inject() () {
   ): ValidationResult[Option[T]] =
     if (condition) {
       optData match {
-        case Some(value) => Some(value).validNec
-        case _           => DataValidationError(description).invalidNec
+        case Some(value) => Some(value).validNel
+        case _           => DataValidationError(DataMissing, missingErrorMessage(description)).invalidNel
       }
     } else {
-      None.validNec
+      None.validNel
     }
+
+  private def missingErrorMessage(missingDataDescription: String): String = s"$missingDataDescription is missing"
 
 }

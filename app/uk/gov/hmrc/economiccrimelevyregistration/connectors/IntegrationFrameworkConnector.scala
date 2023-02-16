@@ -19,7 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 import play.api.http.HeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, SubscriptionStatusResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, SubscriptionStatusResponse}
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdGenerator
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
@@ -48,11 +48,12 @@ class IntegrationFrameworkConnector @Inject() (
       headers = integrationFrameworkHeaders
     )
 
-  def subscribeToEcl(businessPartnerId: String)(implicit
+  def subscribeToEcl(eclSubscription: EclSubscription)(implicit
     hc: HeaderCarrier
   ): Future[CreateEclSubscriptionResponse] =
-    httpClient.POSTEmpty[CreateEclSubscriptionResponse](
-      s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscriptions/ECL/create?idType=SAFE&idValue=$businessPartnerId",
+    httpClient.POST[EclSubscription, CreateEclSubscriptionResponse](
+      s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscriptions/ECL/create?idType=SAFE&idValue=${eclSubscription.legalEntityDetails.safeId}",
+      eclSubscription,
       headers = integrationFrameworkHeaders
     )
 

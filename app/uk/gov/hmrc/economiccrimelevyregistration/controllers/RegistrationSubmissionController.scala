@@ -42,12 +42,12 @@ class RegistrationSubmissionController @Inject() (
     registrationRepository.get(id).flatMap {
       case Some(registration) =>
         registrationValidationService.validateRegistration(registration) match {
-          case Valid(id)  =>
-            subscriptionService.subscribeToEcl(id).map { response =>
+          case Valid(eclSubscription) =>
+            subscriptionService.subscribeToEcl(eclSubscription).map { response =>
               Ok(Json.toJson(response))
             }
-          case Invalid(e) =>
-            Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toNonEmptyList.toList))))
+          case Invalid(e)             =>
+            Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
         }
       case None               => Future.successful(NotFound)
     }

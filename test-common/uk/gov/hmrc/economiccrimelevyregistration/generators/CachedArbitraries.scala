@@ -22,8 +22,8 @@ import org.scalacheck.derive.MkArbitrary
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisorType, BusinessSector, EclAddress, EntityType, SubscriptionStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
-import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, RegistrationStatus, VerificationStatus}
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, CreateEclSubscriptionResponse, EtmpSubscriptionStatus}
+import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, RegistrationStatus, SoleTraderEntityJourneyData, VerificationStatus}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, CreateEclSubscriptionResponse, EclSubscription, EtmpSubscriptionStatus}
 
 object CachedArbitraries extends EclTestData {
 
@@ -40,7 +40,9 @@ object CachedArbitraries extends EclTestData {
   implicit lazy val arbEtmpSubscriptionStatus: Arbitrary[EtmpSubscriptionStatus]               = mkArb
   implicit lazy val arbIncorporatedEntityJourneyData: Arbitrary[IncorporatedEntityJourneyData] = mkArb
   implicit lazy val arbPartnershipEntityJourneyData: Arbitrary[PartnershipEntityJourneyData]   = mkArb
+  implicit lazy val arbSoleTraderEntityJourneyData: Arbitrary[SoleTraderEntityJourneyData]     = mkArb
   implicit lazy val arbEclAddress: Arbitrary[EclAddress]                                       = mkArb
   implicit lazy val arbCreateEclSubscriptionResponse: Arbitrary[CreateEclSubscriptionResponse] = mkArb
+  implicit lazy val arbEclSubscription: Arbitrary[EclSubscription]                             = mkArb
 
 }

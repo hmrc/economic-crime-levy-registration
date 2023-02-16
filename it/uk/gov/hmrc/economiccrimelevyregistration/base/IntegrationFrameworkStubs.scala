@@ -4,7 +4,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponse
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
 
 trait IntegrationFrameworkStubs { self: WireMockStubs =>
 
@@ -13,8 +13,7 @@ trait IntegrationFrameworkStubs { self: WireMockStubs =>
       get(urlEqualTo(s"/cross-regime/subscription/ECL/SAFE/$testBusinessPartnerId/status")),
       aResponse()
         .withStatus(200)
-        .withBody(
-          s"""
+        .withBody(s"""
              |{
              |  "subscriptionStatus": "SUCCESSFUL",
              |  "idType": "ZECL",
@@ -29,17 +28,20 @@ trait IntegrationFrameworkStubs { self: WireMockStubs =>
       get(urlEqualTo(s"/cross-regime/subscription/ECL/SAFE/$testBusinessPartnerId/status")),
       aResponse()
         .withStatus(200)
-        .withBody(
-          s"""
+        .withBody(s"""
              |{
              |  "subscriptionStatus": "NO_FORM_BUNDLE_FOUND"
              |}
      """.stripMargin)
     )
 
-  def stubSubscribeToEcl(businessPartnerId: String, subscriptionResponse: CreateEclSubscriptionResponse): StubMapping =
+  def stubSubscribeToEcl(
+    eclSubscription: EclSubscription,
+    subscriptionResponse: CreateEclSubscriptionResponse
+  ): StubMapping =
     stub(
-      post(urlEqualTo(s"/economic-crime-levy/subscriptions/ECL/create?idType=SAFE&idValue=$businessPartnerId")),
+      post(urlEqualTo(s"/economic-crime-levy/subscriptions/ECL/create?idType=SAFE&idValue=${eclSubscription.legalEntityDetails.safeId}"))
+        .withRequestBody(equalToJson(Json.toJson(eclSubscription).toString())),
       aResponse()
         .withStatus(200)
         .withBody(Json.toJson(subscriptionResponse).toString())

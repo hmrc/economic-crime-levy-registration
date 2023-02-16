@@ -20,7 +20,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.connectors.{IntegrationFramewor
 import uk.gov.hmrc.economiccrimelevyregistration.models.KeyValue
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponse
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.ZoneId
@@ -32,8 +32,10 @@ class SubscriptionService @Inject() (
   integrationFrameworkConnector: IntegrationFrameworkConnector,
   taxEnrolmentsConnector: TaxEnrolmentsConnector
 )(implicit ec: ExecutionContext) {
-  def subscribeToEcl(id: String)(implicit hc: HeaderCarrier): Future[CreateEclSubscriptionResponse] =
-    integrationFrameworkConnector.subscribeToEcl(id).flatMap { response =>
+  def subscribeToEcl(
+    eclSubscription: EclSubscription
+  )(implicit hc: HeaderCarrier): Future[CreateEclSubscriptionResponse] =
+    integrationFrameworkConnector.subscribeToEcl(eclSubscription).flatMap { response =>
       taxEnrolmentsConnector.enrol(createEnrolmentRequest(response)).map(_ => response)
     }
 

@@ -22,6 +22,7 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
 
 class RegistrationValidationISpec extends ISpecBase {
@@ -30,7 +31,7 @@ class RegistrationValidationISpec extends ISpecBase {
     "return 204 NO_CONTENT when the registration data is valid" in {
       stubAuthorised()
 
-      val validRegistration = random[ValidRegistration]
+      val validRegistration = random[ValidUkCompanyRegistration]
 
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(
@@ -63,19 +64,19 @@ class RegistrationValidationISpec extends ISpecBase {
         callRoute(FakeRequest(routes.RegistrationValidationController.getValidationErrors(internalId)))
 
       val expectedErrors = Seq(
-        DataValidationError("Carried out AML regulated activity choice is missing"),
-        DataValidationError("Relevant AP 12 months choice is missing"),
-        DataValidationError("Relevant AP revenue is missing"),
-        DataValidationError("Revenue meets threshold flag is missing"),
-        DataValidationError("AML supervisor is missing"),
-        DataValidationError("Business sector is missing"),
-        DataValidationError("First contact name is missing"),
-        DataValidationError("First contact role is missing"),
-        DataValidationError("First contact email is missing"),
-        DataValidationError("First contact number is missing"),
-        DataValidationError("Contact address is missing"),
-        DataValidationError("Entity type is missing"),
-        DataValidationError("Second contact choice is missing")
+        DataValidationError(DataMissing, "Carried out AML regulated activity choice is missing"),
+        DataValidationError(DataMissing, "Relevant AP 12 months choice is missing"),
+        DataValidationError(DataMissing, "Relevant AP revenue is missing"),
+        DataValidationError(DataMissing, "Revenue meets threshold flag is missing"),
+        DataValidationError(DataMissing, "AML supervisor is missing"),
+        DataValidationError(DataMissing, "Business sector is missing"),
+        DataValidationError(DataMissing, "First contact name is missing"),
+        DataValidationError(DataMissing, "First contact role is missing"),
+        DataValidationError(DataMissing, "First contact email is missing"),
+        DataValidationError(DataMissing, "First contact number is missing"),
+        DataValidationError(DataMissing, "Contact address is missing"),
+        DataValidationError(DataMissing, "Entity type is missing"),
+        DataValidationError(DataMissing, "Second contact choice is missing")
       )
 
       status(validationResult)                                      shouldBe OK
