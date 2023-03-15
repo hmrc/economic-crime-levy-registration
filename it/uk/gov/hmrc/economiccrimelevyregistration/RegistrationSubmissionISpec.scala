@@ -25,8 +25,11 @@ class RegistrationSubmissionISpec extends ISpecBase {
       val registrationDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
 
       stubSubscribeToEcl(
-        validRegistration.expectedEclSubscription.copy(legalEntityDetails =
-          validRegistration.expectedEclSubscription.legalEntityDetails.copy(registrationDate = registrationDate)
+        validRegistration.expectedEclSubscription.copy(subscription =
+          validRegistration.expectedEclSubscription.subscription.copy(
+            legalEntityDetails = validRegistration.expectedEclSubscription.subscription.legalEntityDetails
+              .copy(registrationDate = registrationDate)
+          )
         ),
         subscriptionResponse
       )

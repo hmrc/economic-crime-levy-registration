@@ -47,10 +47,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
       validUkCompanyRegistration: ValidUkCompanyRegistration =>
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(validUkCompanyRegistration.expectedEclSubscription),
+            ArgumentMatchers.eq(validUkCompanyRegistration.expectedEclSubscription.subscription),
             any()
           )(any())
-        ).thenReturn(validUkCompanyRegistration.expectedEclSubscription.validNel)
+        ).thenReturn(validUkCompanyRegistration.expectedEclSubscription.subscription.validNel)
 
         val result = service.validateRegistration(validUkCompanyRegistration.registration)
 
@@ -61,10 +61,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
       validSoleTraderRegistration: ValidSoleTraderRegistration =>
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(validSoleTraderRegistration.expectedEclSubscription),
+            ArgumentMatchers.eq(validSoleTraderRegistration.expectedEclSubscription.subscription),
             any()
           )(any())
-        ).thenReturn(validSoleTraderRegistration.expectedEclSubscription.validNel)
+        ).thenReturn(validSoleTraderRegistration.expectedEclSubscription.subscription.validNel)
 
         val result = service.validateRegistration(validSoleTraderRegistration.registration)
 
@@ -75,10 +75,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
       validLimitedPartnershipRegistration: ValidLimitedPartnershipRegistration =>
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(validLimitedPartnershipRegistration.expectedEclSubscription),
+            ArgumentMatchers.eq(validLimitedPartnershipRegistration.expectedEclSubscription.subscription),
             any()
           )(any())
-        ).thenReturn(validLimitedPartnershipRegistration.expectedEclSubscription.validNel)
+        ).thenReturn(validLimitedPartnershipRegistration.expectedEclSubscription.subscription.validNel)
 
         val result = service.validateRegistration(validLimitedPartnershipRegistration.registration)
 
@@ -89,21 +89,22 @@ class RegistrationValidationServiceSpec extends SpecBase {
       validScottishOrGeneralPartnershipRegistration: ValidScottishOrGeneralPartnershipRegistration =>
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription),
+            ArgumentMatchers.eq(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription.subscription),
             any()
           )(any())
-        ).thenReturn(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription.validNel)
+        ).thenReturn(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription.subscription.validNel)
 
         val result = service.validateRegistration(validScottishOrGeneralPartnershipRegistration.registration)
 
         result shouldBe Valid(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription)
     }
 
-    "return a non-empty chain of errors when unconditional mandatory registration data items are missing" in {
+    "return a non-empty list of errors when unconditional mandatory registration data items are missing" in {
       val registration = Registration.empty("internalId")
 
       val expectedErrors = Seq(
         DataValidationError(DataMissing, "Carried out AML regulated activity choice is missing"),
+        DataValidationError(DataMissing, "Business partner ID is missing"),
         DataValidationError(DataMissing, "Relevant AP 12 months choice is missing"),
         DataValidationError(DataMissing, "Relevant AP revenue is missing"),
         DataValidationError(DataMissing, "Revenue meets threshold flag is missing"),
@@ -124,7 +125,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
       result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
 
-    "return an error if the entity type is uk limited company but there is no incorporated entity data in the registration" in forAll {
+    "return errors if the entity type is uk limited company but there is no incorporated entity data in the registration" in forAll {
       validRegistration: ValidUkCompanyRegistration =>
         val invalidRegistration = validRegistration.registration.copy(incorporatedEntityJourneyData = None)
 
@@ -132,9 +133,12 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toList should contain only DataValidationError(
-            DataMissing,
-            "Incorporated entity data is missing"
+          nec.toList should contain theSameElementsAs Seq(
+            DataValidationError(
+              DataMissing,
+              "Incorporated entity data is missing"
+            ),
+            DataValidationError(DataMissing, "Business partner ID is missing")
           )
         )
     }
@@ -155,7 +159,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         )
     }
 
-    "return an error if the entity type is partnership but there is no partnership data in the registration" in forAll {
+    "return errors if the entity type is partnership but there is no partnership data in the registration" in forAll {
       (validLimitedPartnershipRegistration: ValidLimitedPartnershipRegistration) =>
         val invalidRegistration = validLimitedPartnershipRegistration.registration
           .copy(partnershipEntityJourneyData = None)
@@ -164,11 +168,15 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toList should contain only DataValidationError(DataMissing, "Partnership data is missing")
+          nec.toList should contain theSameElementsAs
+            Seq(
+              DataValidationError(DataMissing, "Partnership data is missing"),
+              DataValidationError(DataMissing, "Business partner ID is missing")
+            )
         )
     }
 
-    "return an error if the entity type is sole trader but there is no sole trader data in the registration" in forAll {
+    "return errors if the entity type is sole trader but there is no sole trader data in the registration" in forAll {
       (validSoleTraderRegistration: ValidSoleTraderRegistration) =>
         val invalidRegistration = validSoleTraderRegistration.registration
           .copy(soleTraderEntityJourneyData = None)
@@ -177,7 +185,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         result.isValid shouldBe false
         result.leftMap(nec =>
-          nec.toList should contain only DataValidationError(DataMissing, "Sole trader data is missing")
+          nec.toList should contain theSameElementsAs Seq(
+            DataValidationError(DataMissing, "Sole trader data is missing"),
+            DataValidationError(DataMissing, "Business partner ID is missing")
+          )
         )
     }
 

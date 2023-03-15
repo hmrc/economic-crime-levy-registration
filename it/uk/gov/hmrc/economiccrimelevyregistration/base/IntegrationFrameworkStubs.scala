@@ -40,7 +40,7 @@ trait IntegrationFrameworkStubs { self: WireMockStubs =>
     subscriptionResponse: CreateEclSubscriptionResponse
   ): StubMapping =
     stub(
-      post(urlEqualTo(s"/economic-crime-levy/subscriptions/ECL/create?idType=SAFE&idValue=${eclSubscription.legalEntityDetails.safeId}"))
+      post(urlEqualTo(s"/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"))
         .withRequestBody(equalToJson(Json.toJson(eclSubscription).toString())),
       aResponse()
         .withStatus(200)

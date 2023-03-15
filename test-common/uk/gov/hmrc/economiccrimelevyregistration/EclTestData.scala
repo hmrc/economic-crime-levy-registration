@@ -164,7 +164,7 @@ trait EclTestData {
       addressLine3 = Some("Test Address Line 2"),
       addressLine4 = Some("Test Region"),
       postCode = Some("AB12 3DE"),
-      country = Some("GB")
+      countryCode = Some("GB")
     )
 
   implicit val arbCompanyProfile: Arbitrary[CompanyProfile] = Arbitrary {
@@ -195,26 +195,28 @@ trait EclTestData {
         soleTraderEntityJourneyData = None
       ),
       EclSubscription(
-        LegalEntityDetails(
-          safeId = businessPartnerId,
-          customerIdentification1 = ctutr,
-          customerIdentification2 = Some(incorporatedEntityJourneyData.companyProfile.companyNumber),
-          organisationName = Some(incorporatedEntityJourneyData.companyProfile.companyName),
-          firstName = None,
-          lastName = None,
-          customerType = "01",
-          registrationDate = "2007-12-25",
-          amlSupervisor = "Hmrc",
-          businessSector = commonRegistrationData.registration.businessSector.get.toString
-        ),
-        correspondenceAddressDetails = commonCorrespondenceAddressDetails,
-        primaryContactDetails = SubscriptionContactDetails(
-          name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
-          positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
-          telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
-          emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
-        ),
-        secondaryContactDetails = None
+        businessPartnerId = businessPartnerId,
+        subscription = Subscription(
+          LegalEntityDetails(
+            customerIdentification1 = ctutr,
+            customerIdentification2 = Some(incorporatedEntityJourneyData.companyProfile.companyNumber),
+            organisationName = Some(incorporatedEntityJourneyData.companyProfile.companyName),
+            firstName = None,
+            lastName = None,
+            customerType = "01",
+            registrationDate = "2007-12-25",
+            amlSupervisor = "Hmrc",
+            businessSector = commonRegistrationData.registration.businessSector.get.toString
+          ),
+          correspondenceAddressDetails = commonCorrespondenceAddressDetails,
+          primaryContactDetails = SubscriptionContactDetails(
+            name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
+            positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
+            telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+            emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
+          ),
+          secondaryContactDetails = None
+        )
       )
     )
   }
@@ -241,26 +243,28 @@ trait EclTestData {
         )
       ),
       EclSubscription(
-        LegalEntityDetails(
-          safeId = businessPartnerId,
-          customerIdentification1 = sautr,
-          customerIdentification2 = Some(nino),
-          organisationName = None,
-          firstName = Some(soleTraderEntityJourneyData.fullName.firstName),
-          lastName = Some(soleTraderEntityJourneyData.fullName.lastName),
-          customerType = "02",
-          registrationDate = "2007-12-25",
-          amlSupervisor = "Hmrc",
-          businessSector = commonRegistrationData.registration.businessSector.get.toString
-        ),
-        correspondenceAddressDetails = commonCorrespondenceAddressDetails,
-        primaryContactDetails = SubscriptionContactDetails(
-          name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
-          positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
-          telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
-          emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
-        ),
-        secondaryContactDetails = None
+        businessPartnerId = businessPartnerId,
+        subscription = Subscription(
+          LegalEntityDetails(
+            customerIdentification1 = sautr,
+            customerIdentification2 = Some(nino),
+            organisationName = None,
+            firstName = Some(soleTraderEntityJourneyData.fullName.firstName),
+            lastName = Some(soleTraderEntityJourneyData.fullName.lastName),
+            customerType = "02",
+            registrationDate = "2007-12-25",
+            amlSupervisor = "Hmrc",
+            businessSector = commonRegistrationData.registration.businessSector.get.toString
+          ),
+          correspondenceAddressDetails = commonCorrespondenceAddressDetails,
+          primaryContactDetails = SubscriptionContactDetails(
+            name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
+            positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
+            telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+            emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
+          ),
+          secondaryContactDetails = None
+        )
       )
     )
   }
@@ -288,26 +292,28 @@ trait EclTestData {
         soleTraderEntityJourneyData = None
       ),
       EclSubscription(
-        LegalEntityDetails(
-          safeId = businessPartnerId,
-          customerIdentification1 = sautr,
-          customerIdentification2 = Some(companyProfile.companyNumber),
-          organisationName = Some(companyProfile.companyName),
-          firstName = None,
-          lastName = None,
-          customerType = "01",
-          registrationDate = "2007-12-25",
-          amlSupervisor = "Hmrc",
-          businessSector = commonRegistrationData.registration.businessSector.get.toString
-        ),
-        correspondenceAddressDetails = commonCorrespondenceAddressDetails,
-        primaryContactDetails = SubscriptionContactDetails(
-          name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
-          positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
-          telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
-          emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
-        ),
-        secondaryContactDetails = None
+        businessPartnerId = businessPartnerId,
+        subscription = Subscription(
+          LegalEntityDetails(
+            customerIdentification1 = sautr,
+            customerIdentification2 = Some(companyProfile.companyNumber),
+            organisationName = Some(companyProfile.companyName),
+            firstName = None,
+            lastName = None,
+            customerType = "01",
+            registrationDate = "2007-12-25",
+            amlSupervisor = "Hmrc",
+            businessSector = commonRegistrationData.registration.businessSector.get.toString
+          ),
+          correspondenceAddressDetails = commonCorrespondenceAddressDetails,
+          primaryContactDetails = SubscriptionContactDetails(
+            name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
+            positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
+            telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+            emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
+          ),
+          secondaryContactDetails = None
+        )
       )
     )
   }
@@ -339,26 +345,28 @@ trait EclTestData {
           partnershipName = Some(partnershipName)
         ),
         EclSubscription(
-          LegalEntityDetails(
-            safeId = businessPartnerId,
-            customerIdentification1 = sautr,
-            customerIdentification2 = Some(postcode),
-            organisationName = Some(partnershipName),
-            firstName = None,
-            lastName = None,
-            customerType = "01",
-            registrationDate = "2007-12-25",
-            amlSupervisor = "Hmrc",
-            businessSector = commonRegistrationData.registration.businessSector.get.toString
-          ),
-          correspondenceAddressDetails = commonCorrespondenceAddressDetails,
-          primaryContactDetails = SubscriptionContactDetails(
-            name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
-            positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
-            telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
-            emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
-          ),
-          secondaryContactDetails = None
+          businessPartnerId = businessPartnerId,
+          subscription = Subscription(
+            LegalEntityDetails(
+              customerIdentification1 = sautr,
+              customerIdentification2 = Some(postcode),
+              organisationName = Some(partnershipName),
+              firstName = None,
+              lastName = None,
+              customerType = "01",
+              registrationDate = "2007-12-25",
+              amlSupervisor = "Hmrc",
+              businessSector = commonRegistrationData.registration.businessSector.get.toString
+            ),
+            correspondenceAddressDetails = commonCorrespondenceAddressDetails,
+            primaryContactDetails = SubscriptionContactDetails(
+              name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
+              positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
+              telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+              emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
+            ),
+            secondaryContactDetails = None
+          )
         )
       )
     }

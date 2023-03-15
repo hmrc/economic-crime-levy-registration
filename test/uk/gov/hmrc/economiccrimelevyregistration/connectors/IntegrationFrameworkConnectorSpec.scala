@@ -22,7 +22,7 @@ import play.api.http.HeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, SubscriptionStatusResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, Subscription, SubscriptionStatusResponse}
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdGenerator
 import uk.gov.hmrc.http.HttpClient
 
@@ -83,7 +83,7 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
         correlationId: String
       ) =>
         val expectedUrl =
-          s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscriptions/ECL/create?idType=SAFE&idValue=${eclSubscription.legalEntityDetails.safeId}"
+          s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"
 
         val expectedHeaders: Seq[(String, String)] = Seq(
           (HeaderNames.AUTHORIZATION, appConfig.integrationFrameworkBearerToken),
@@ -94,9 +94,9 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
         when(mockCorrelationIdGenerator.generateCorrelationId).thenReturn(correlationId)
 
         when(
-          mockHttpClient.POST[EclSubscription, CreateEclSubscriptionResponse](
+          mockHttpClient.POST[Subscription, CreateEclSubscriptionResponse](
             ArgumentMatchers.eq(expectedUrl),
-            ArgumentMatchers.eq(eclSubscription),
+            ArgumentMatchers.eq(eclSubscription.subscription),
             ArgumentMatchers.eq(expectedHeaders)
           )(any(), any(), any(), any())
         )
@@ -107,9 +107,9 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
         result shouldBe createEclSubscriptionResponse
 
         verify(mockHttpClient, times(1))
-          .POST[EclSubscription, CreateEclSubscriptionResponse](
+          .POST[Subscription, CreateEclSubscriptionResponse](
             ArgumentMatchers.eq(expectedUrl),
-            ArgumentMatchers.eq(eclSubscription),
+            ArgumentMatchers.eq(eclSubscription.subscription),
             ArgumentMatchers.eq(expectedHeaders)
           )(any(), any(), any(), any())
 
