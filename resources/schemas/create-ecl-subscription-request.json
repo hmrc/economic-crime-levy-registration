@@ -1,11 +1,13 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Add ECL Subscription Request Schema",
   "type": "object",
   "required": [
     "legalEntityDetails",
     "correspondenceAddressDetails",
     "primaryContactDetails"
   ],
+  "additionalProperties": false,
   "properties": {
     "legalEntityDetails": {
       "$ref": "#/definitions/legalEntityDetails_type"
@@ -32,49 +34,6 @@
       "description": "Business Sector",
       "minLength": 1,
       "maxLength": 100
-    },
-    "correspondenceAddressDetails_type": {
-      "type": "object",
-      "description": "Address details.",
-      "additionalProperties": false,
-      "required": [
-        "addressLine1"
-      ],
-      "properties": {
-        "addressLine1": {
-          "type": "string",
-          "description": "Address line 1",
-          "minLength": 1,
-          "maxLength": 35
-        },
-        "addressLine2": {
-          "type": "string",
-          "description": "Address line 2",
-          "minLength": 1,
-          "maxLength": 35
-        },
-        "addressLine3": {
-          "type": "string",
-          "description": "Address line 3",
-          "minLength": 1,
-          "maxLength": 35
-        },
-        "addressLine4": {
-          "type": "string",
-          "description": "Address line 4",
-          "minLength": 1,
-          "maxLength": 35
-        },
-        "postCode": {
-          "type": "string",
-          "description": "Postal code",
-          "minLength": 1,
-          "maxLength": 10
-        },
-        "country": {
-          "$ref": "#/definitions/country_code_type"
-        }
-      }
     },
     "country_code_type": {
       "description": "Country Code.",
@@ -340,6 +299,49 @@
         "ZZ"
       ]
     },
+    "correspondenceAddressDetails_type": {
+      "type": "object",
+      "description": "Address details.",
+      "additionalProperties": false,
+      "required": [
+        "addressLine1"
+      ],
+      "properties": {
+        "addressLine1": {
+          "type": "string",
+          "description": "Address line 1",
+          "minLength": 1,
+          "maxLength": 35
+        },
+        "addressLine2": {
+          "type": "string",
+          "description": "Address line 2",
+          "minLength": 1,
+          "maxLength": 35
+        },
+        "addressLine3": {
+          "type": "string",
+          "description": "Address line 3",
+          "minLength": 1,
+          "maxLength": 35
+        },
+        "addressLine4": {
+          "type": "string",
+          "description": "Address line 4",
+          "minLength": 1,
+          "maxLength": 35
+        },
+        "postCode": {
+          "type": "string",
+          "description": "Postal code",
+          "minLength": 1,
+          "maxLength": 10
+        },
+        "countryCode": {
+          "$ref": "#/definitions/country_code_type"
+        }
+      }
+    },
     "date_type": {
       "type": "string",
       "pattern": "^[0-9]{4}-([0][1-9]|[1][0-2])-([0][1-9]|[1-2][0-9]|[3][0-1])$"
@@ -352,7 +354,6 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "safeId",
         "customerIdentification1",
         "customerType",
         "registrationDate",
@@ -360,11 +361,6 @@
         "businessSector"
       ],
       "properties": {
-        "safeId": {
-          "type": "string",
-          "description": "Safe ID",
-          "pattern": "X[A-Z]{1}[0-9]{13}"
-        },
         "customerIdentification1": {
           "type": "string",
           "description": "Customer Identification1",

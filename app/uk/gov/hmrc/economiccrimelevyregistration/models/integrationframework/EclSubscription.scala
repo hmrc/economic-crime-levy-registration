@@ -19,18 +19,26 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 import play.api.libs.json.{Json, OFormat}
 
 final case class EclSubscription(
-  legalEntityDetails: LegalEntityDetails,
-  correspondenceAddressDetails: CorrespondenceAddressDetails,
-  primaryContactDetails: SubscriptionContactDetails,
-  secondaryContactDetails: Option[SubscriptionContactDetails]
+  businessPartnerId: String,
+  subscription: Subscription
 )
 
 object EclSubscription {
   implicit val format: OFormat[EclSubscription] = Json.format[EclSubscription]
 }
 
+final case class Subscription(
+  legalEntityDetails: LegalEntityDetails,
+  correspondenceAddressDetails: CorrespondenceAddressDetails,
+  primaryContactDetails: SubscriptionContactDetails,
+  secondaryContactDetails: Option[SubscriptionContactDetails]
+)
+
+object Subscription {
+  implicit val format: OFormat[Subscription] = Json.format[Subscription]
+}
+
 final case class LegalEntityDetails(
-  safeId: String,
   customerIdentification1: String,
   customerIdentification2: Option[String],
   organisationName: Option[String],
@@ -57,7 +65,7 @@ final case class CorrespondenceAddressDetails(
   addressLine3: Option[String],
   addressLine4: Option[String],
   postCode: Option[String],
-  country: Option[String]
+  countryCode: Option[String]
 )
 
 object CorrespondenceAddressDetails {
@@ -86,7 +94,7 @@ object CorrespondenceAddressDetails {
       addressLine3 = addressLine3.map(_.take(AddressLineMaxLength)),
       addressLine4 = addressLine4.map(_.take(AddressLineMaxLength)),
       postCode = postCode,
-      country = Some(countryCode)
+      countryCode = Some(countryCode)
     )
   }
 

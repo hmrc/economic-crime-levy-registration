@@ -40,16 +40,19 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
   def validateRegistration(registration: Registration): ValidationResult[EclSubscription] =
     transformToEclSubscription(registration) match {
       case Valid(eclSubscription) =>
-        schemaValidator.validateAgainstJsonSchema(
-          eclSubscription,
-          SchemaLoader.loadSchema("create-ecl-subscription-request.json")
-        )
+        schemaValidator
+          .validateAgainstJsonSchema(
+            eclSubscription.subscription,
+            SchemaLoader.loadSchema("create-ecl-subscription-request.json")
+          )
+          .map(_ => eclSubscription)
       case invalid                => invalid
     }
 
   private def transformToEclSubscription(registration: Registration): ValidationResult[EclSubscription] =
     (
       validateLegalEntityDetails(registration),
+      validateBusinessPartnerId(registration),
       validateAmlSupervisor(registration),
       validateOptExists(registration.businessSector, "Business sector"),
       validateContactDetails("First", registration.contacts.firstContactDetails),
@@ -67,6 +70,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     ).mapN {
       (
         legalEntityDetails,
+        businessPartnerId,
         amlSupervisor,
         businessSector,
         firstContactDetails,
@@ -79,10 +83,13 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         _
       ) =>
         EclSubscription(
-          legalEntityDetails = legalEntityDetails(amlSupervisor, businessSector.toString),
-          correspondenceAddressDetails = contactAddress,
-          primaryContactDetails = firstContactDetails,
-          secondaryContactDetails = secondContactDetails
+          businessPartnerId = businessPartnerId,
+          subscription = Subscription(
+            legalEntityDetails = legalEntityDetails(amlSupervisor, businessSector.toString),
+            correspondenceAddressDetails = contactAddress,
+            primaryContactDetails = firstContactDetails,
+            secondaryContactDetails = secondContactDetails
+          )
         )
     }
 
@@ -114,6 +121,15 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       case _           => DataValidationError(DataMissing, missingErrorMessage("Second contact choice")).invalidNel
     }
 
+  private def validateBusinessPartnerId(registration: Registration): ValidationResult[String] = {
+    val optBusinessPartnerId = registration.incorporatedEntityJourneyData
+      .flatMap(_.registration.registeredBusinessPartnerId)
+      .orElse(registration.partnershipEntityJourneyData.flatMap(_.registration.registeredBusinessPartnerId))
+      .orElse(registration.soleTraderEntityJourneyData.flatMap(_.registration.registeredBusinessPartnerId))
+
+    validateOptExists(optBusinessPartnerId, "Business partner ID")
+  }
+
   private def validateLegalEntityDetails(
     registration: Registration
   ): ValidationResult[(String, String) => LegalEntityDetails] = {
@@ -134,33 +150,29 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       case Some(UkLimitedCompany)                                                              =>
         grsJourneyData match {
           case (Some(i), None, None) =>
-            validateOptExists(i.registration.registeredBusinessPartnerId, "Business partner ID").map {
-              businessPartnerId =>
-                LegalEntityDetails(
-                  safeId = businessPartnerId,
-                  customerIdentification1 = i.ctutr,
-                  customerIdentification2 = Some(i.companyProfile.companyNumber),
-                  organisationName = Some(i.companyProfile.companyName),
-                  firstName = None,
-                  lastName = None,
-                  customerType = CustomerType.Organisation,
-                  registrationDate = registrationDate,
-                  _,
-                  _
-                )
-            }
+            (
+              LegalEntityDetails(
+                customerIdentification1 = i.ctutr,
+                customerIdentification2 = Some(i.companyProfile.companyNumber),
+                organisationName = Some(i.companyProfile.companyName),
+                firstName = None,
+                lastName = None,
+                customerType = CustomerType.Organisation,
+                registrationDate = registrationDate,
+                _,
+                _
+              )
+            ).validNel
           case _                     => DataValidationError(DataMissing, missingErrorMessage("Incorporated entity data")).invalidNel
         }
       case Some(LimitedLiabilityPartnership | LimitedPartnership | ScottishLimitedPartnership) =>
         grsJourneyData match {
           case (None, Some(lp), None) =>
             (
-              validateOptExists(lp.registration.registeredBusinessPartnerId, "Business partner ID"),
               validateOptExists(lp.sautr, "Partnership SA UTR"),
               validateOptExists(lp.companyProfile, "Partnership company profile")
-            ).mapN { (businessPartnerId, sautr, companyProfile) =>
+            ).mapN { (sautr, companyProfile) =>
               LegalEntityDetails(
-                safeId = businessPartnerId,
                 customerIdentification1 = sautr,
                 customerIdentification2 = Some(companyProfile.companyNumber),
                 organisationName = Some(companyProfile.companyName),
@@ -178,13 +190,11 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         grsJourneyData match {
           case (None, Some(p), None) =>
             (
-              validateOptExists(p.registration.registeredBusinessPartnerId, "Business partner ID"),
               validateOptExists(p.sautr, "Partnership SA UTR"),
               validateOptExists(p.postcode, "Partnership postcode"),
               validateOptExists(registration.partnershipName, "Partnership name")
-            ).mapN { (businessPartnerId, sautr, postcode, partnershipName) =>
+            ).mapN { (sautr, postcode, partnershipName) =>
               LegalEntityDetails(
-                safeId = businessPartnerId,
                 customerIdentification1 = sautr,
                 customerIdentification2 = Some(postcode),
                 organisationName = Some(partnershipName),
@@ -201,12 +211,8 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       case Some(SoleTrader)                                                                    =>
         grsJourneyData match {
           case (None, None, Some(s)) =>
-            (
-              validateOptExists(s.registration.registeredBusinessPartnerId, "Business partner ID"),
-              validateSoleTraderIdentifiers(s)
-            ).mapN { (businessPartnerId, soleTraderIdentifiers) =>
+            validateSoleTraderIdentifiers(s).map { soleTraderIdentifiers =>
               LegalEntityDetails(
-                safeId = businessPartnerId,
                 customerIdentification1 = soleTraderIdentifiers._1,
                 customerIdentification2 = soleTraderIdentifiers._2,
                 organisationName = None,

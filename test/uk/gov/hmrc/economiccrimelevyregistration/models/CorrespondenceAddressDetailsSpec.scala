@@ -50,7 +50,7 @@ class CorrespondenceAddressDetailsSpec extends SpecBase {
     addressLine3 = Some(addressLine2),
     addressLine4 = Some(region),
     postCode = postcode,
-    country = Some(countryCode)
+    countryCode = Some(countryCode)
   )
 
   val correspondenceAddressDetails2: CorrespondenceAddressDetails = CorrespondenceAddressDetails(
@@ -59,7 +59,7 @@ class CorrespondenceAddressDetailsSpec extends SpecBase {
     addressLine3 = Some(s"$addressLine2, $region"),
     addressLine4 = Some(s"$addressLine3, $poBox"),
     postCode = postcode,
-    country = Some(countryCode)
+    countryCode = Some(countryCode)
   )
 
   val correspondenceAddressDetails3: CorrespondenceAddressDetails = CorrespondenceAddressDetails(
@@ -68,7 +68,7 @@ class CorrespondenceAddressDetailsSpec extends SpecBase {
     addressLine3 = Some(addressLine3),
     addressLine4 = Some(addressLine4),
     postCode = postcode,
-    country = Some(countryCode)
+    countryCode = Some(countryCode)
   )
 
   val correspondenceAddressDetails4: CorrespondenceAddressDetails = CorrespondenceAddressDetails(
@@ -77,7 +77,7 @@ class CorrespondenceAddressDetailsSpec extends SpecBase {
     addressLine3 = Some(addressLine3),
     addressLine4 = Some(addressLine4),
     postCode = postcode,
-    country = Some(countryCode)
+    countryCode = Some(countryCode)
   )
 
   val correspondenceAddressDetails5: CorrespondenceAddressDetails = CorrespondenceAddressDetails(
@@ -86,7 +86,7 @@ class CorrespondenceAddressDetailsSpec extends SpecBase {
     addressLine3 = Some("ger than 35 characters, Test line 3"),
     addressLine4 = Some(" that is longer than 35 characters,"),
     postCode = postcode,
-    country = Some(countryCode)
+    countryCode = Some(countryCode)
   )
 
   "apply" should {
