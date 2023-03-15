@@ -126,7 +126,7 @@ trait EclTestData {
       relevantApRevenue  <- Arbitrary.arbitrary[Long]
       firstContactName   <- stringsWithMaxLength(160)
       firstContactRole   <- stringsWithMaxLength(160)
-      firstContactEmail  <- emailAddress(160)
+      firstContactEmail  <- emailAddress(132)
       firstContactNumber <- telephoneNumber(24)
       internalId          = alphaNumericString
     } yield CommonRegistrationData(
