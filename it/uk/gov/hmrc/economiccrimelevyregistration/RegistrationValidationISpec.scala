@@ -46,7 +46,6 @@ class RegistrationValidationISpec extends ISpecBase {
           )
         )
 
-      println(contentAsJson(validationResult))
       status(validationResult) shouldBe NO_CONTENT
     }
 

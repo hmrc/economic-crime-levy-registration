@@ -41,7 +41,7 @@ trait IntegrationFrameworkStubs { self: WireMockStubs =>
   ): StubMapping =
     stub(
       post(urlEqualTo(s"/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"))
-        .withRequestBody(equalToJson(Json.toJson(eclSubscription).toString())),
+        .withRequestBody(equalToJson(Json.toJson(eclSubscription.subscription).toString())),
       aResponse()
         .withStatus(200)
         .withBody(Json.toJson(subscriptionResponse).toString())
