@@ -44,7 +44,7 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
           s"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status"
 
         val expectedHeaders: Seq[(String, String)] = Seq(
-          (HeaderNames.AUTHORIZATION, appConfig.integrationFrameworkBearerToken),
+          (HeaderNames.AUTHORIZATION, s"Bearer ${appConfig.integrationFrameworkBearerToken}"),
           (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
           (CustomHeaderNames.CorrelationId, correlationId)
         )
@@ -86,7 +86,7 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
           s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"
 
         val expectedHeaders: Seq[(String, String)] = Seq(
-          (HeaderNames.AUTHORIZATION, appConfig.integrationFrameworkBearerToken),
+          (HeaderNames.AUTHORIZATION, s"Bearer ${appConfig.integrationFrameworkBearerToken}"),
           (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
           (CustomHeaderNames.CorrelationId, correlationId)
         )
