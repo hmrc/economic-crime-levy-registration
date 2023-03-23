@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
+import play.api.Logging
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.{IntegrationFrameworkConnector, TaxEnrolmentsConnector}
-import uk.gov.hmrc.economiccrimelevyregistration.models.KeyValue
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{KeyValue, KnownFactsWorkItem}
+import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.ZoneId
@@ -30,21 +32,32 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class SubscriptionService @Inject() (
   integrationFrameworkConnector: IntegrationFrameworkConnector,
-  taxEnrolmentsConnector: TaxEnrolmentsConnector
-)(implicit ec: ExecutionContext) {
+  taxEnrolmentsConnector: TaxEnrolmentsConnector,
+  knownFactsQueueRepository: KnownFactsQueueRepository
+)(implicit ec: ExecutionContext)
+    extends Logging {
+
+  private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneId.systemDefault())
+
   def subscribeToEcl(
     eclSubscription: EclSubscription
   )(implicit hc: HeaderCarrier): Future[CreateEclSubscriptionResponse] =
     integrationFrameworkConnector.subscribeToEcl(eclSubscription).flatMap { response =>
-      taxEnrolmentsConnector.enrol(createEnrolmentRequest(response)).map(_ => response)
+      taxEnrolmentsConnector.enrol(createEnrolmentRequest(response)).flatMap {
+        case Left(e)  =>
+          logger.error(s"Failed to enrol synchronously: ${e.message}")
+          knownFactsQueueRepository
+            .pushNew(KnownFactsWorkItem(response.eclReference, dateFormatter.format(response.processingDate)))
+            .map { _ =>
+              response
+            }
+        case Right(_) => Future.successful(response)
+      }
     }
 
-  private def createEnrolmentRequest(subscriptionResponse: CreateEclSubscriptionResponse): CreateEnrolmentRequest = {
-    val formatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneId.systemDefault())
-
+  private def createEnrolmentRequest(subscriptionResponse: CreateEclSubscriptionResponse): CreateEnrolmentRequest =
     CreateEnrolmentRequest(
       identifiers = Seq(KeyValue(IdentifierKey, subscriptionResponse.eclReference)),
-      verifiers = Seq(KeyValue(VerifierKey, formatter.format(subscriptionResponse.processingDate)))
+      verifiers = Seq(KeyValue(VerifierKey, dateFormatter.format(subscriptionResponse.processingDate)))
     )
-  }
 }

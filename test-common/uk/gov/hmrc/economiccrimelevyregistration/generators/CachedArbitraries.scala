@@ -20,29 +20,34 @@ import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitr
 import org.scalacheck.Arbitrary
 import org.scalacheck.derive.MkArbitrary
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
-import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisorType, BusinessSector, EclAddress, EntityType, SubscriptionStatus}
-import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
+import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisorType, BusinessSector, EclAddress, EntityType, KnownFactsWorkItem, SubscriptionStatus}
+import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{CreateEnrolmentRequest, UpsertKnownFactsRequest}
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, RegistrationStatus, SoleTraderEntityJourneyData, VerificationStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, CreateEclSubscriptionResponse, EclSubscription, EtmpSubscriptionStatus}
+import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.mongo.workitem.WorkItem
 
 object CachedArbitraries extends EclTestData {
 
   private def mkArb[T](implicit mkArb: MkArbitrary[T]): Arbitrary[T] = MkArbitrary[T].arbitrary
 
-  implicit lazy val arbChannel: Arbitrary[Channel]                                             = mkArb
-  implicit lazy val arbCreateEnrolmentRequest: Arbitrary[CreateEnrolmentRequest]               = mkArb
-  implicit lazy val arbAmlSupervisorType: Arbitrary[AmlSupervisorType]                         = mkArb
-  implicit lazy val arbBusinessSector: Arbitrary[BusinessSector]                               = mkArb
-  implicit lazy val arbEntityType: Arbitrary[EntityType]                                       = mkArb
-  implicit lazy val arbSubscriptionStatus: Arbitrary[SubscriptionStatus]                       = mkArb
-  implicit lazy val arbRegistrationStatus: Arbitrary[RegistrationStatus]                       = mkArb
-  implicit lazy val arbVerificationStatus: Arbitrary[VerificationStatus]                       = mkArb
-  implicit lazy val arbEtmpSubscriptionStatus: Arbitrary[EtmpSubscriptionStatus]               = mkArb
-  implicit lazy val arbIncorporatedEntityJourneyData: Arbitrary[IncorporatedEntityJourneyData] = mkArb
-  implicit lazy val arbPartnershipEntityJourneyData: Arbitrary[PartnershipEntityJourneyData]   = mkArb
-  implicit lazy val arbSoleTraderEntityJourneyData: Arbitrary[SoleTraderEntityJourneyData]     = mkArb
-  implicit lazy val arbEclAddress: Arbitrary[EclAddress]                                       = mkArb
-  implicit lazy val arbCreateEclSubscriptionResponse: Arbitrary[CreateEclSubscriptionResponse] = mkArb
-  implicit lazy val arbEclSubscription: Arbitrary[EclSubscription]                             = mkArb
+  implicit lazy val arbChannel: Arbitrary[Channel]                                                       = mkArb
+  implicit lazy val arbCreateEnrolmentRequest: Arbitrary[CreateEnrolmentRequest]                         = mkArb
+  implicit lazy val arbAmlSupervisorType: Arbitrary[AmlSupervisorType]                                   = mkArb
+  implicit lazy val arbBusinessSector: Arbitrary[BusinessSector]                                         = mkArb
+  implicit lazy val arbEntityType: Arbitrary[EntityType]                                                 = mkArb
+  implicit lazy val arbSubscriptionStatus: Arbitrary[SubscriptionStatus]                                 = mkArb
+  implicit lazy val arbRegistrationStatus: Arbitrary[RegistrationStatus]                                 = mkArb
+  implicit lazy val arbVerificationStatus: Arbitrary[VerificationStatus]                                 = mkArb
+  implicit lazy val arbEtmpSubscriptionStatus: Arbitrary[EtmpSubscriptionStatus]                         = mkArb
+  implicit lazy val arbIncorporatedEntityJourneyData: Arbitrary[IncorporatedEntityJourneyData]           = mkArb
+  implicit lazy val arbPartnershipEntityJourneyData: Arbitrary[PartnershipEntityJourneyData]             = mkArb
+  implicit lazy val arbSoleTraderEntityJourneyData: Arbitrary[SoleTraderEntityJourneyData]               = mkArb
+  implicit lazy val arbEclAddress: Arbitrary[EclAddress]                                                 = mkArb
+  implicit lazy val arbCreateEclSubscriptionResponse: Arbitrary[CreateEclSubscriptionResponse]           = mkArb
+  implicit lazy val arbEclSubscription: Arbitrary[EclSubscription]                                       = mkArb
+  implicit lazy val arbUpsertKnownFactsRequest: Arbitrary[UpsertKnownFactsRequest]                       = mkArb
+  implicit lazy val arbEitherErrorOrHttpResponse: Arbitrary[Either[UpstreamErrorResponse, HttpResponse]] = mkArb
+  implicit lazy val arbWorkItemKnownFactsWorkItem: Arbitrary[WorkItem[KnownFactsWorkItem]]               = mkArb
 
 }

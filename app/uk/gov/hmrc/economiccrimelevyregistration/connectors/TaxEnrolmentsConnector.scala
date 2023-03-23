@@ -31,14 +31,12 @@ class TaxEnrolmentsConnector @Inject() (appConfig: AppConfig, httpClient: HttpCl
   private val taxEnrolmentsUrl: String =
     s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$ServiceName/enrolment"
 
-  def enrol(createEnrolmentRequest: CreateEnrolmentRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+  def enrol(
+    createEnrolmentRequest: CreateEnrolmentRequest
+  )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, HttpResponse]] =
     httpClient
       .PUT[CreateEnrolmentRequest, Either[UpstreamErrorResponse, HttpResponse]](
         taxEnrolmentsUrl,
         createEnrolmentRequest
       )
-      .map {
-        case Left(e)  => throw e
-        case Right(_) => ()
-      }
 }

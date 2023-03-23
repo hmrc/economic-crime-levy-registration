@@ -19,27 +19,35 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
-import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
+import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{EclEnrolment, UpsertKnownFactsRequest}
 import uk.gov.hmrc.http.{HttpClient, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 
 import scala.concurrent.Future
 
-class TaxEnrolmentsConnectorSpec extends SpecBase {
-  val mockHttpClient: HttpClient = mock[HttpClient]
-  val connector                  = new TaxEnrolmentsConnector(appConfig, mockHttpClient)
+class EnrolmentStoreProxyConnectorSpec extends SpecBase {
 
-  "enrol" should {
+  val mockHttpClient: HttpClient = mock[HttpClient]
+  val connector                  = new EnrolmentStoreProxyConnectorImpl(appConfig, mockHttpClient)
+  val enrolmentStoreUrl: String  = s"${appConfig.enrolmentStoreProxyBaseUrl}/enrolment-store-proxy/enrolment-store"
+
+  "upsertKnownFacts" should {
+
     "return either an upstream error response or http response" in forAll {
-      (createEnrolmentRequest: CreateEnrolmentRequest, eitherResult: Either[UpstreamErrorResponse, HttpResponse]) =>
-        val expectedUrl = s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$ServiceName/enrolment"
+      (
+        eclReference: String,
+        upsertKnownFactsRequest: UpsertKnownFactsRequest,
+        eitherResult: Either[UpstreamErrorResponse, HttpResponse]
+      ) =>
+        val enrolmentKey = s"${EclEnrolment.ServiceName}~${EclEnrolment.IdentifierKey}~$eclReference"
+
+        val expectedUrl = s"$enrolmentStoreUrl/enrolments/$enrolmentKey"
 
         when(
           mockHttpClient
-            .PUT[CreateEnrolmentRequest, Either[UpstreamErrorResponse, HttpResponse]](
+            .PUT[UpsertKnownFactsRequest, Either[UpstreamErrorResponse, HttpResponse]](
               ArgumentMatchers.eq(expectedUrl),
-              any(),
+              ArgumentMatchers.eq(upsertKnownFactsRequest),
               any()
             )(
               any(),
@@ -50,12 +58,16 @@ class TaxEnrolmentsConnectorSpec extends SpecBase {
         )
           .thenReturn(Future.successful(eitherResult))
 
-        val result: Unit = await(connector.enrol(createEnrolmentRequest))
+        val result = await(connector.upsertKnownFacts(upsertKnownFactsRequest, eclReference))
 
-        result shouldBe ()
+        result shouldBe eitherResult
 
         verify(mockHttpClient, times(1))
-          .PUT[CreateEnrolmentRequest, HttpResponse](ArgumentMatchers.eq(expectedUrl), any(), any())(
+          .PUT[UpsertKnownFactsRequest, Either[UpstreamErrorResponse, HttpResponse]](
+            ArgumentMatchers.eq(expectedUrl),
+            ArgumentMatchers.eq(upsertKnownFactsRequest),
+            any()
+          )(
             any(),
             any(),
             any(),
@@ -65,4 +77,5 @@ class TaxEnrolmentsConnectorSpec extends SpecBase {
         reset(mockHttpClient)
     }
   }
+
 }

@@ -17,14 +17,31 @@
 package uk.gov.hmrc.economiccrimelevyregistration.config
 
 import com.google.inject.AbstractModule
+import play.api.{Configuration, Environment}
+import uk.gov.hmrc.economiccrimelevyregistration.connectors.{EnrolmentStoreProxyConnector, EnrolmentStoreProxyConnectorImpl}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.{AuthorisedAction, BaseAuthorisedAction}
+import uk.gov.hmrc.economiccrimelevyregistration.services.KnownFactsQueuePullScheduler
+import uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors.StubEnrolmentStoreProxyConnector
 
 import java.time.{Clock, ZoneOffset}
 
-class Module extends AbstractModule {
+class Module(environment: Environment, configuration: Configuration) extends AbstractModule {
 
   override def configure(): Unit = {
     bind(classOf[AuthorisedAction]).to(classOf[BaseAuthorisedAction]).asEagerSingleton()
     bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
+    bind(classOf[KnownFactsQueuePullScheduler]).asEagerSingleton()
+
+    val enrolmentStoreProxyStubEnabled = configuration.get[Boolean]("features.enrolmentStoreProxyStubEnabled")
+
+    if (enrolmentStoreProxyStubEnabled) {
+      bind(classOf[EnrolmentStoreProxyConnector])
+        .to(classOf[StubEnrolmentStoreProxyConnector])
+        .asEagerSingleton()
+    } else {
+      bind(classOf[EnrolmentStoreProxyConnector])
+        .to(classOf[EnrolmentStoreProxyConnectorImpl])
+        .asEagerSingleton()
+    }
   }
 }
