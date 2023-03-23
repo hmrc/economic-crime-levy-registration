@@ -4,7 +4,6 @@ object AppDependencies {
 
   val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28"         % "7.12.0",
-    "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"                % "0.74.0",
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-work-item-repo-play-28" % "0.74.0",
     "org.typelevel"     %% "cats-core"                         % "2.9.0",
     "io.circe"          %% "circe-json-schema"                 % "0.2.0",
