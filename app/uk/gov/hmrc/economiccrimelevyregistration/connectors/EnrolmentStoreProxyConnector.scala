@@ -40,12 +40,9 @@ class EnrolmentStoreProxyConnectorImpl @Inject() (appConfig: AppConfig, httpClie
 
   def upsertKnownFacts(upsertKnownFactsRequest: UpsertKnownFactsRequest, eclReference: String)(implicit
     hc: HeaderCarrier
-  ): Future[Either[UpstreamErrorResponse, HttpResponse]] = {
-    val enrolmentKey = s"${EclEnrolment.ServiceName}~${EclEnrolment.IdentifierKey}~$eclReference"
-
+  ): Future[Either[UpstreamErrorResponse, HttpResponse]] =
     httpClient.PUT[UpsertKnownFactsRequest, Either[UpstreamErrorResponse, HttpResponse]](
-      s"$enrolmentStoreUrl/enrolments/$enrolmentKey",
+      s"$enrolmentStoreUrl/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}",
       upsertKnownFactsRequest
     )
-  }
 }

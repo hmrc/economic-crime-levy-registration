@@ -39,9 +39,7 @@ class EnrolmentStoreProxyConnectorSpec extends SpecBase {
         upsertKnownFactsRequest: UpsertKnownFactsRequest,
         eitherResult: Either[UpstreamErrorResponse, HttpResponse]
       ) =>
-        val enrolmentKey = s"${EclEnrolment.ServiceName}~${EclEnrolment.IdentifierKey}~$eclReference"
-
-        val expectedUrl = s"$enrolmentStoreUrl/enrolments/$enrolmentKey"
+        val expectedUrl = s"$enrolmentStoreUrl/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}"
 
         when(
           mockHttpClient
