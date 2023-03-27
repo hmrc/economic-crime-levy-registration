@@ -39,6 +39,7 @@ final case class Registration(
   contactAddressIsUk: Option[Boolean],
   contactAddress: Option[EclAddress],
   partnershipName: Option[String],
+  privateBetaAccessCode: Option[String],
   lastUpdated: Option[Instant] = None
 )
 
@@ -62,6 +63,7 @@ object Registration {
     useRegisteredOfficeAddressAsContactAddress = None,
     contactAddress = None,
     partnershipName = None,
-    contactAddressIsUk = None
+    contactAddressIsUk = None,
+    privateBetaAccessCode = None
   )
 }
