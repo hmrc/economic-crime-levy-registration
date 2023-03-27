@@ -23,12 +23,13 @@ class RegistrationSubmissionISpec extends ISpecBase {
         random[CreateEclSubscriptionResponse].copy(processingDate = Instant.parse("2007-12-25T10:15:30.00Z"))
 
       val registrationDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+      val liabilityStartDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
 
       stubSubscribeToEcl(
         validRegistration.expectedEclSubscription.copy(subscription =
           validRegistration.expectedEclSubscription.subscription.copy(
             legalEntityDetails = validRegistration.expectedEclSubscription.subscription.legalEntityDetails
-              .copy(registrationDate = registrationDate)
+              .copy(registrationDate = registrationDate, liabilityStartDate = liabilityStartDate)
           )
         ),
         subscriptionResponse

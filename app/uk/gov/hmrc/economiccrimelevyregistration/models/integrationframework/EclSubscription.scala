@@ -46,6 +46,7 @@ final case class LegalEntityDetails(
   lastName: Option[String],
   customerType: String,
   registrationDate: String,
+  liabilityStartDate: String,
   amlSupervisor: String,
   businessSector: String
 )

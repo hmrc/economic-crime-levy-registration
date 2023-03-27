@@ -146,6 +146,9 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     def registrationDate: String =
       DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault()).format(Instant.now(clock))
 
+    def liabilityStartDate: String =
+      DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault()).format(Instant.now(clock))
+
     registration.entityType match {
       case Some(UkLimitedCompany)                                                              =>
         grsJourneyData match {
@@ -159,6 +162,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = None,
                 customerType = CustomerType.Organisation,
                 registrationDate = registrationDate,
+                liabilityStartDate = liabilityStartDate,
                 _,
                 _
               )
@@ -180,6 +184,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = None,
                 customerType = CustomerType.Organisation,
                 registrationDate = registrationDate,
+                liabilityStartDate = liabilityStartDate,
                 _,
                 _
               )
@@ -202,6 +207,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = None,
                 customerType = CustomerType.Organisation,
                 registrationDate = registrationDate,
+                liabilityStartDate = liabilityStartDate,
                 _,
                 _
               )
@@ -220,6 +226,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = Some(s.fullName.lastName),
                 customerType = CustomerType.Individual,
                 registrationDate = registrationDate,
+                liabilityStartDate = liabilityStartDate,
                 _,
                 _
               )
