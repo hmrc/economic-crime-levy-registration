@@ -57,7 +57,10 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
         when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(eclSubscription.validNel)
 
-        when(mockSubscriptionServiceService.subscribeToEcl(ArgumentMatchers.eq(eclSubscription))(any()))
+        when(
+          mockSubscriptionServiceService
+            .subscribeToEcl(ArgumentMatchers.eq(eclSubscription), ArgumentMatchers.eq(registration))(any())
+        )
           .thenReturn(Future.successful(subscriptionResponse))
 
         val result: Future[Result] =

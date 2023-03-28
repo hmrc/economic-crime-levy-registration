@@ -43,7 +43,7 @@ class RegistrationSubmissionController @Inject() (
       case Some(registration) =>
         registrationValidationService.validateRegistration(registration) match {
           case Valid(eclSubscription) =>
-            subscriptionService.subscribeToEcl(eclSubscription).map { response =>
+            subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
               Ok(Json.toJson(response))
             }
           case Invalid(e)             =>
