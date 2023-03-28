@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.config
 
-import javax.inject.{Inject, Singleton}
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.FiniteDuration
 
 @Singleton
 class AppConfig @Inject() (configuration: Configuration, servicesConfig: ServicesConfig) {
@@ -36,4 +38,9 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
 
   val integrationFrameworkEnvironment: String =
     configuration.get[String]("microservice.services.integration-framework.environment")
+
+  val enrolmentStoreProxyBaseUrl: String = servicesConfig.baseUrl("enrolment-store-proxy")
+
+  val knownFactsInProgressRetryAfter: FiniteDuration =
+    configuration.get[FiniteDuration]("knownFactsQueue.inProgressRetryAfter")
 }

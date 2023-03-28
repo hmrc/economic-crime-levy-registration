@@ -17,9 +17,11 @@
 package uk.gov.hmrc.economiccrimelevyregistration
 
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
+import org.bson.types.ObjectId
 import org.scalacheck.Gen.{choose, listOfN}
 import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
+import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
@@ -27,6 +29,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{CompanyProfile, IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
+import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import wolfendale.scalacheck.regexp.RegexpGen
 
 import java.time.{Instant, LocalDate}
@@ -406,6 +409,18 @@ trait EclTestData {
                                   )
                                 )
     } yield LimitedPartnershipType(limitedPartnershipType)
+  }
+
+  implicit val arbUpstreamErrorResponse: Arbitrary[UpstreamErrorResponse] = Arbitrary {
+    UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR)
+  }
+
+  implicit val arbSuccessfulHttpResponse: Arbitrary[HttpResponse] = Arbitrary {
+    HttpResponse(OK, "", Map.empty)
+  }
+
+  implicit val arbObjectId: Arbitrary[ObjectId] = Arbitrary {
+    ObjectId.get()
   }
 
   def alphaNumericString: String = Gen.alphaNumStr.retryUntil(_.nonEmpty).sample.get
