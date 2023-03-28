@@ -30,7 +30,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.{SchemaLoader, SchemaValidator}
 
 import java.time.format.DateTimeFormatter
-import java.time.{Clock, Instant, ZoneId}
+import java.time.{Clock, Instant, ZoneOffset}
 import javax.inject.Inject
 
 class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: SchemaValidator) {
@@ -144,10 +144,10 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     )
 
     def registrationDate: String =
-      DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault()).format(Instant.now(clock))
+      DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(Instant.now(clock))
 
     def liabilityStartDate: String =
-      DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault()).format(Instant.now(clock))
+      DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(Instant.now(clock))
 
     registration.entityType match {
       case Some(UkLimitedCompany)                                                              =>
