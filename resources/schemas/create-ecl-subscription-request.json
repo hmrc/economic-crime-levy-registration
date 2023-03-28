@@ -357,6 +357,7 @@
         "customerIdentification1",
         "customerType",
         "registrationDate",
+        "liabilityStartDate",
         "amlSupervisor",
         "businessSector"
       ],
@@ -373,7 +374,7 @@
         },
         "customerType": {
           "type": "string",
-          "description": "Customer Type=01 :Show Organisation Name or Customer Type=02 :Show Firstname & Lastname",
+          "description": "01 for individual and 02 for organisation",
           "enum": [
             "01",
             "02"
@@ -399,6 +400,10 @@
         },
         "registrationDate": {
           "description": "Date of Registration",
+          "$ref": "#/definitions/date_type"
+        },
+        "liabilityStartDate": {
+          "description": "Liability Start Date",
           "$ref": "#/definitions/date_type"
         },
         "amlSupervisor": {

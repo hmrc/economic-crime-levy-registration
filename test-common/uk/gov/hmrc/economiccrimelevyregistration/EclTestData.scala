@@ -208,6 +208,7 @@ trait EclTestData {
             lastName = None,
             customerType = "01",
             registrationDate = "2007-12-25",
+            liabilityStartDate = "2007-12-25",
             amlSupervisor = "Hmrc",
             businessSector = commonRegistrationData.registration.businessSector.get.toString
           ),
@@ -256,6 +257,7 @@ trait EclTestData {
             lastName = Some(soleTraderEntityJourneyData.fullName.lastName),
             customerType = "02",
             registrationDate = "2007-12-25",
+            liabilityStartDate = "2007-12-25",
             amlSupervisor = "Hmrc",
             businessSector = commonRegistrationData.registration.businessSector.get.toString
           ),
@@ -305,6 +307,7 @@ trait EclTestData {
             lastName = None,
             customerType = "01",
             registrationDate = "2007-12-25",
+            liabilityStartDate = "2007-12-25",
             amlSupervisor = "Hmrc",
             businessSector = commonRegistrationData.registration.businessSector.get.toString
           ),
@@ -358,6 +361,7 @@ trait EclTestData {
               lastName = None,
               customerType = "01",
               registrationDate = "2007-12-25",
+              liabilityStartDate = "2007-12-25",
               amlSupervisor = "Hmrc",
               businessSector = commonRegistrationData.registration.businessSector.get.toString
             ),
