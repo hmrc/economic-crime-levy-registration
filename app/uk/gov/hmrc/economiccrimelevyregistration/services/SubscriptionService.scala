@@ -25,7 +25,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.{KeyValue, KnownFactsWor
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +37,7 @@ class SubscriptionService @Inject() (
 )(implicit ec: ExecutionContext)
     extends Logging {
 
-  private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneId.systemDefault())
+  private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC)
 
   def subscribeToEcl(
     eclSubscription: EclSubscription
