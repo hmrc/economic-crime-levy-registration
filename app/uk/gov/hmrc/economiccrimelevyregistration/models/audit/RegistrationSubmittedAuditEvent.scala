@@ -16,19 +16,28 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.audit
 
-import play.api.libs.json.{JsValue, Json, OFormat}
+import play.api.libs.json._
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 
-case class RegistrationResult(status: String, eclReference: Option[String], failureReason: Option[String])
+sealed trait RequestStatus
 
-object RegistrationResult {
-  implicit val format: OFormat[RegistrationResult] = Json.format[RegistrationResult]
+object RequestStatus {
+  case object Success extends RequestStatus
+  case object Failed extends RequestStatus
+
+  implicit val writes: Writes[RequestStatus] = (o: RequestStatus) => JsString(o.toString)
 }
 
-case class EnrolmentResult(status: String, failureReason: Option[String])
+case class RegistrationResult(status: RequestStatus, eclReference: Option[String], failureReason: Option[String])
+
+object RegistrationResult {
+  implicit val writes: OWrites[RegistrationResult] = Json.writes[RegistrationResult]
+}
+
+case class EnrolmentResult(status: RequestStatus, failureReason: Option[String])
 
 object EnrolmentResult {
-  implicit val format: OFormat[EnrolmentResult] = Json.format[EnrolmentResult]
+  implicit val writes: OWrites[EnrolmentResult] = Json.writes[EnrolmentResult]
 }
 
 case class RegistrationSubmittedAuditEvent(
@@ -41,8 +50,5 @@ case class RegistrationSubmittedAuditEvent(
 }
 
 object RegistrationSubmittedAuditEvent {
-  val SuccessStatus = "SUCCESS"
-  val FailedStatus  = "FAILED"
-
-  implicit val format: OFormat[RegistrationSubmittedAuditEvent] = Json.format[RegistrationSubmittedAuditEvent]
+  implicit val writes: OWrites[RegistrationSubmittedAuditEvent] = Json.writes[RegistrationSubmittedAuditEvent]
 }

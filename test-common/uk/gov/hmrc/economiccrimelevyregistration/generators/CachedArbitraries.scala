@@ -20,6 +20,7 @@ import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitr
 import org.scalacheck.Arbitrary
 import org.scalacheck.derive.MkArbitrary
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
+import uk.gov.hmrc.economiccrimelevyregistration.models.audit.RequestStatus
 import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisorType, BusinessSector, EclAddress, EntityType, KnownFactsWorkItem, SubscriptionStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{CreateEnrolmentRequest, UpsertKnownFactsRequest}
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, RegistrationStatus, SoleTraderEntityJourneyData, VerificationStatus}
@@ -49,5 +50,6 @@ object CachedArbitraries extends EclTestData {
   implicit lazy val arbUpsertKnownFactsRequest: Arbitrary[UpsertKnownFactsRequest]                       = mkArb
   implicit lazy val arbEitherErrorOrHttpResponse: Arbitrary[Either[UpstreamErrorResponse, HttpResponse]] = mkArb
   implicit lazy val arbWorkItemKnownFactsWorkItem: Arbitrary[WorkItem[KnownFactsWorkItem]]               = mkArb
+  implicit lazy val arbRequestStatus: Arbitrary[RequestStatus]                                           = mkArb
 
 }

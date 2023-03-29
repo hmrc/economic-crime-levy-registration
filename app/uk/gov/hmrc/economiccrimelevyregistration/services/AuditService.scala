@@ -18,8 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import play.api.Logging
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
-import uk.gov.hmrc.economiccrimelevyregistration.models.audit.RegistrationSubmittedAuditEvent._
-import uk.gov.hmrc.economiccrimelevyregistration.models.audit.{EnrolmentResult, RegistrationResult, RegistrationSubmittedAuditEvent}
+import uk.gov.hmrc.economiccrimelevyregistration.models.audit.{EnrolmentResult, RegistrationResult, RegistrationSubmittedAuditEvent, RequestStatus}
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 
 import javax.inject.Inject
@@ -37,8 +36,8 @@ class AuditService @Inject() (
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
         registrationData = registrationData,
-        submissionResult = RegistrationResult(SuccessStatus, Some(eclReference), None),
-        enrolmentResult = Some(EnrolmentResult(SuccessStatus, None))
+        submissionResult = RegistrationResult(RequestStatus.Success, Some(eclReference), None),
+        enrolmentResult = Some(EnrolmentResult(RequestStatus.Success, None))
       ).extendedDataEvent
     )
 
@@ -49,7 +48,7 @@ class AuditService @Inject() (
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
         registrationData = registrationData,
-        submissionResult = RegistrationResult(FailedStatus, None, Some(failureReason)),
+        submissionResult = RegistrationResult(RequestStatus.Failed, None, Some(failureReason)),
         enrolmentResult = None
       ).extendedDataEvent
     )
@@ -62,8 +61,8 @@ class AuditService @Inject() (
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
         registrationData = registrationData,
-        submissionResult = RegistrationResult(SuccessStatus, Some(eclReference), None),
-        enrolmentResult = Some(EnrolmentResult(FailedStatus, Some(enrolmentFailureReason)))
+        submissionResult = RegistrationResult(RequestStatus.Success, Some(eclReference), None),
+        enrolmentResult = Some(EnrolmentResult(RequestStatus.Failed, Some(enrolmentFailureReason)))
       ).extendedDataEvent
     )
 
