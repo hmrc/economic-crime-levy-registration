@@ -21,7 +21,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.connectors.{IntegrationFramewor
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
-import uk.gov.hmrc.economiccrimelevyregistration.models.{KeyValue, KnownFactsWorkItem}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{KeyValue, KnownFactsWorkItem, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -33,26 +33,46 @@ import scala.concurrent.{ExecutionContext, Future}
 class SubscriptionService @Inject() (
   integrationFrameworkConnector: IntegrationFrameworkConnector,
   taxEnrolmentsConnector: TaxEnrolmentsConnector,
-  knownFactsQueueRepository: KnownFactsQueueRepository
+  knownFactsQueueRepository: KnownFactsQueueRepository,
+  auditService: AuditService
 )(implicit ec: ExecutionContext)
     extends Logging {
 
   private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC)
 
   def subscribeToEcl(
-    eclSubscription: EclSubscription
+    eclSubscription: EclSubscription,
+    registration: Registration
   )(implicit hc: HeaderCarrier): Future[CreateEclSubscriptionResponse] =
-    integrationFrameworkConnector.subscribeToEcl(eclSubscription).flatMap { response =>
-      taxEnrolmentsConnector.enrol(createEnrolmentRequest(response)).flatMap {
-        case Left(e)  =>
-          logger.error(s"Failed to enrol synchronously: ${e.message}")
-          knownFactsQueueRepository
-            .pushNew(KnownFactsWorkItem(response.eclReference, dateFormatter.format(response.processingDate)))
-            .map { _ =>
-              response
-            }
-        case Right(_) => Future.successful(response)
-      }
+    integrationFrameworkConnector.subscribeToEcl(eclSubscription).flatMap {
+      case Right(createSubscriptionSuccessResponse) =>
+        taxEnrolmentsConnector.enrol(createEnrolmentRequest(createSubscriptionSuccessResponse)).flatMap {
+          case Left(e)  =>
+            logger.error(s"Failed to enrol synchronously: ${e.message}")
+            auditService.successfulSubscriptionFailedEnrolment(
+              registration,
+              createSubscriptionSuccessResponse.eclReference,
+              e.getMessage()
+            )
+
+            knownFactsQueueRepository
+              .pushNew(
+                KnownFactsWorkItem(
+                  createSubscriptionSuccessResponse.eclReference,
+                  dateFormatter.format(createSubscriptionSuccessResponse.processingDate)
+                )
+              )
+              .map { _ =>
+                createSubscriptionSuccessResponse
+              }
+          case Right(_) =>
+            auditService
+              .successfulSubscriptionAndEnrolment(registration, createSubscriptionSuccessResponse.eclReference)
+            Future.successful(createSubscriptionSuccessResponse)
+        }
+      case Left(e)                                  =>
+        auditService.failedSubscription(registration, e.getMessage())
+        throw e
     }
 
   private def createEnrolmentRequest(subscriptionResponse: CreateEclSubscriptionResponse): CreateEnrolmentRequest =

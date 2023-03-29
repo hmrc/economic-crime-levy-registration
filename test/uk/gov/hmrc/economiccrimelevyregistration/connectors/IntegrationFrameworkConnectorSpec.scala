@@ -24,7 +24,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, Subscription, SubscriptionStatusResponse}
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdGenerator
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.{HttpClient, UpstreamErrorResponse}
 
 import scala.concurrent.Future
 
@@ -76,10 +76,10 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
   }
 
   "subscribeToEcl" should {
-    "return a subscription reference when the http client returns a subscription reference" in forAll {
+    "return either an error or create subscription response when the http client returns one" in forAll {
       (
         eclSubscription: EclSubscription,
-        createEclSubscriptionResponse: CreateEclSubscriptionResponse,
+        eitherResult: Either[UpstreamErrorResponse, CreateEclSubscriptionResponse],
         correlationId: String
       ) =>
         val expectedUrl =
@@ -94,20 +94,20 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
         when(mockCorrelationIdGenerator.generateCorrelationId).thenReturn(correlationId)
 
         when(
-          mockHttpClient.POST[Subscription, CreateEclSubscriptionResponse](
+          mockHttpClient.POST[Subscription, Either[UpstreamErrorResponse, CreateEclSubscriptionResponse]](
             ArgumentMatchers.eq(expectedUrl),
             ArgumentMatchers.eq(eclSubscription.subscription),
             ArgumentMatchers.eq(expectedHeaders)
           )(any(), any(), any(), any())
         )
-          .thenReturn(Future.successful(createEclSubscriptionResponse))
+          .thenReturn(Future.successful(eitherResult))
 
         val result = await(connector.subscribeToEcl(eclSubscription))
 
-        result shouldBe createEclSubscriptionResponse
+        result shouldBe eitherResult
 
         verify(mockHttpClient, times(1))
-          .POST[Subscription, CreateEclSubscriptionResponse](
+          .POST[Subscription, Either[UpstreamErrorResponse, CreateEclSubscriptionResponse]](
             ArgumentMatchers.eq(expectedUrl),
             ArgumentMatchers.eq(eclSubscription.subscription),
             ArgumentMatchers.eq(expectedHeaders)

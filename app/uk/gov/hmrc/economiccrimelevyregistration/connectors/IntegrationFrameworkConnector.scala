@@ -22,7 +22,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdGenerator
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,8 +50,8 @@ class IntegrationFrameworkConnector @Inject() (
 
   def subscribeToEcl(eclSubscription: EclSubscription)(implicit
     hc: HeaderCarrier
-  ): Future[CreateEclSubscriptionResponse] =
-    httpClient.POST[Subscription, CreateEclSubscriptionResponse](
+  ): Future[Either[UpstreamErrorResponse, CreateEclSubscriptionResponse]] =
+    httpClient.POST[Subscription, Either[UpstreamErrorResponse, CreateEclSubscriptionResponse]](
       s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}",
       eclSubscription.subscription,
       headers = integrationFrameworkHeaders
