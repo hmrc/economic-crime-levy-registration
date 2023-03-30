@@ -28,6 +28,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{CompanyProfile, IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import wolfendale.scalacheck.regexp.RegexpGen
@@ -206,7 +207,7 @@ trait EclTestData {
             organisationName = Some(incorporatedEntityJourneyData.companyProfile.companyName),
             firstName = None,
             lastName = None,
-            customerType = "01",
+            customerType = CustomerType.Organisation,
             registrationDate = "2007-12-25",
             liabilityStartDate = "2007-12-25",
             amlSupervisor = "Hmrc",
@@ -255,7 +256,7 @@ trait EclTestData {
             organisationName = None,
             firstName = Some(soleTraderEntityJourneyData.fullName.firstName),
             lastName = Some(soleTraderEntityJourneyData.fullName.lastName),
-            customerType = "02",
+            customerType = CustomerType.Individual,
             registrationDate = "2007-12-25",
             liabilityStartDate = "2007-12-25",
             amlSupervisor = "Hmrc",
@@ -305,7 +306,7 @@ trait EclTestData {
             organisationName = Some(companyProfile.companyName),
             firstName = None,
             lastName = None,
-            customerType = "01",
+            customerType = CustomerType.Organisation,
             registrationDate = "2007-12-25",
             liabilityStartDate = "2007-12-25",
             amlSupervisor = "Hmrc",
@@ -359,7 +360,7 @@ trait EclTestData {
               organisationName = Some(partnershipName),
               firstName = None,
               lastName = None,
-              customerType = "01",
+              customerType = CustomerType.Organisation,
               registrationDate = "2007-12-25",
               liabilityStartDate = "2007-12-25",
               amlSupervisor = "Hmrc",
