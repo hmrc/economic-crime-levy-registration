@@ -53,8 +53,8 @@ final case class LegalEntityDetails(
 
 object LegalEntityDetails {
   object CustomerType {
-    val Organisation = "01"
-    val Individual   = "02"
+    val Individual   = "01"
+    val Organisation = "02"
   }
 
   implicit val format: OFormat[LegalEntityDetails] = Json.format[LegalEntityDetails]
