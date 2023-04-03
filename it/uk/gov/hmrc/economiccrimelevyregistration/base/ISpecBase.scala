@@ -65,7 +65,8 @@ abstract class ISpecBase
   ) ++ setWireMockPort(
     "auth",
     "tax-enrolments",
-    "integration-framework"
+    "integration-framework",
+    "nrs"
   )
 
   override def fakeApplication(): Application =
