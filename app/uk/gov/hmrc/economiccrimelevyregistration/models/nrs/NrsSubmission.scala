@@ -82,5 +82,5 @@ object NrsMetadata {
 final case class NrsSubmission(payload: String, metadata: NrsMetadata)
 
 object NrsSubmission {
-  implicit val writes: OWrites[NrsSubmission] = Json.writes[NrsSubmission]
+  implicit val writes: OWrites[NrsSubmissionResponse] = Json.writes[NrsSubmissionResponse]
 }

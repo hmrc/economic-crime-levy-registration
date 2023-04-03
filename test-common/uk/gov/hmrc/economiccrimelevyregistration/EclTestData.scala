@@ -22,6 +22,8 @@ import org.scalacheck.Gen.{choose, listOfN}
 import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
+import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Individual, Organisation}
+import uk.gov.hmrc.auth.core.{AffinityGroup, Assistant, CredentialRole, User}
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
@@ -65,6 +67,14 @@ trait EclTestData {
 
   implicit val arbLocalDate: Arbitrary[LocalDate] = Arbitrary {
     LocalDate.now()
+  }
+
+  implicit val arbCredentialRole: Arbitrary[CredentialRole] = Arbitrary {
+    Gen.oneOf(User, Assistant)
+  }
+
+  implicit val arbAffinityGroup: Arbitrary[AffinityGroup] = Arbitrary {
+    Gen.oneOf(Organisation, Individual, Agent)
   }
 
   implicit val arbRegistration: Arbitrary[Registration] = Arbitrary {

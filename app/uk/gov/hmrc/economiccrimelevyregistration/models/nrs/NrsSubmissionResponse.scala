@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.models.requests
+package uk.gov.hmrc.economiccrimelevyregistration.models.nrs
 
-import play.api.mvc.{Request, WrappedRequest}
-import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.NrsIdentityData
+import play.api.libs.json.{Json, OWrites}
 
-case class AuthorisedRequest[A](request: Request[A], internalId: String, nrsIdentityData: NrsIdentityData)
-    extends WrappedRequest[A](request)
+final case class NrsSubmissionResponse(nrSubmissionId: String)
+
+object NrsSubmissionResponse {
+  implicit val writes: OWrites[NrsSubmissionResponse] = Json.writes[NrsSubmissionResponse]
+}

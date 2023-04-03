@@ -25,6 +25,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisorType, Busi
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{CreateEnrolmentRequest, UpsertKnownFactsRequest}
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, RegistrationStatus, SoleTraderEntityJourneyData, VerificationStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, CreateEclSubscriptionResponse, EclSubscription, EtmpSubscriptionStatus}
+import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.NrsIdentityData
 import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
@@ -51,5 +52,6 @@ object CachedArbitraries extends EclTestData {
   implicit lazy val arbEitherErrorOrHttpResponse: Arbitrary[Either[UpstreamErrorResponse, HttpResponse]] = mkArb
   implicit lazy val arbWorkItemKnownFactsWorkItem: Arbitrary[WorkItem[KnownFactsWorkItem]]               = mkArb
   implicit lazy val arbRequestStatus: Arbitrary[RequestStatus]                                           = mkArb
+  implicit lazy val arbNrsIdentityData: Arbitrary[NrsIdentityData]                                       = mkArb
 
 }
