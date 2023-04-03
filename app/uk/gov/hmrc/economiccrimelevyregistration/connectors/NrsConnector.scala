@@ -21,6 +21,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.{NrsSubmission, NrsSubmissionResponse}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.HttpReads.Implicits._
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,8 +37,7 @@ class NrsConnectorImpl @Inject() (appConfig: AppConfig, httpClient: HttpClient)(
   ec: ExecutionContext
 ) extends NrsConnector {
 
-  private val nrsSubmissionUrl: String =
-    s"${appConfig.nrsBaseUrl}/submission"
+  private val nrsSubmissionUrl: String = s"${appConfig.nrsBaseUrl}/submission"
 
   private def nrsHeaders: Seq[(String, String)] = Seq(
     (HeaderNames.CONTENT_TYPE, MimeTypes.JSON),
