@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
+import play.api.http.{HeaderNames, MimeTypes}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
+import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.{NrsSubmission, NrsSubmissionResponse}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
@@ -37,7 +39,13 @@ class NrsConnectorImpl @Inject() (appConfig: AppConfig, httpClient: HttpClient)(
   private val nrsSubmissionUrl: String =
     s"${appConfig.nrsBaseUrl}/submission"
 
+  private def nrsHeaders: Seq[(String, String)] = Seq(
+    (HeaderNames.CONTENT_TYPE, MimeTypes.JSON),
+    (CustomHeaderNames.ApiKey, appConfig.nrsApiKey)
+  )
+
   override def submitToNrs(nrsSubmission: NrsSubmission)(implicit
     hc: HeaderCarrier
-  ): Future[NrsSubmissionResponse] = ???
+  ): Future[NrsSubmissionResponse] =
+    httpClient.POST[NrsSubmission, NrsSubmissionResponse](nrsSubmissionUrl, nrsSubmission, headers = nrsHeaders)
 }

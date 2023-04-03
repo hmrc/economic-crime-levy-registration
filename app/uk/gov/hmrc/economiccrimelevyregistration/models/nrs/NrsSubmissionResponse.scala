@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.nrs
 
-import play.api.libs.json.{Json, OWrites}
+import play.api.libs.json.{Json, Reads}
 
 final case class NrsSubmissionResponse(nrSubmissionId: String)
 
 object NrsSubmissionResponse {
-  implicit val writes: OWrites[NrsSubmissionResponse] = Json.writes[NrsSubmissionResponse]
+  implicit val reads: Reads[NrsSubmissionResponse] = Json.reads[NrsSubmissionResponse]
 }
