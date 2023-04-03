@@ -40,6 +40,7 @@ final case class Registration(
   contactAddressIsUk: Option[Boolean],
   partnershipName: Option[String],
   privateBetaAccessCode: Option[String],
+  base64EncodedNrsSubmissionHtml: Option[String],
   lastUpdated: Option[Instant] = None
 )
 
@@ -64,6 +65,7 @@ object Registration {
     contactAddress = None,
     contactAddressIsUk = None,
     partnershipName = None,
-    privateBetaAccessCode = None
+    privateBetaAccessCode = None,
+    base64EncodedNrsSubmissionHtml = None
   )
 }
