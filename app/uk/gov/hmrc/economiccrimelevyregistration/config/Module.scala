@@ -18,10 +18,10 @@ package uk.gov.hmrc.economiccrimelevyregistration.config
 
 import com.google.inject.AbstractModule
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.economiccrimelevyregistration.connectors.{EnrolmentStoreProxyConnector, EnrolmentStoreProxyConnectorImpl}
+import uk.gov.hmrc.economiccrimelevyregistration.connectors.{EnrolmentStoreProxyConnector, EnrolmentStoreProxyConnectorImpl, TaxEnrolmentsConnector, TaxEnrolmentsConnectorImpl}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.{AuthorisedAction, BaseAuthorisedAction}
 import uk.gov.hmrc.economiccrimelevyregistration.services.KnownFactsQueuePullScheduler
-import uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors.StubEnrolmentStoreProxyConnector
+import uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors.{StubEnrolmentStoreProxyConnector, StubTaxEnrolmentsConnector}
 
 import java.time.{Clock, ZoneOffset}
 
@@ -32,7 +32,8 @@ class Module(environment: Environment, configuration: Configuration) extends Abs
     bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
     bind(classOf[KnownFactsQueuePullScheduler]).asEagerSingleton()
 
-    val enrolmentStoreProxyStubEnabled = configuration.get[Boolean]("features.enrolmentStoreProxyStubEnabled")
+    val enrolmentStoreProxyStubEnabled  = configuration.get[Boolean]("features.enrolmentStoreProxyStubEnabled")
+    val taxEnrolmentsFailureStubEnabled = configuration.get[Boolean]("features.taxEnrolmentsFailureStubEnabled")
 
     if (enrolmentStoreProxyStubEnabled) {
       bind(classOf[EnrolmentStoreProxyConnector])
@@ -41,6 +42,16 @@ class Module(environment: Environment, configuration: Configuration) extends Abs
     } else {
       bind(classOf[EnrolmentStoreProxyConnector])
         .to(classOf[EnrolmentStoreProxyConnectorImpl])
+        .asEagerSingleton()
+    }
+
+    if (taxEnrolmentsFailureStubEnabled) {
+      bind(classOf[TaxEnrolmentsConnector])
+        .to(classOf[StubTaxEnrolmentsConnector])
+        .asEagerSingleton()
+    } else {
+      bind(classOf[TaxEnrolmentsConnector])
+        .to(classOf[TaxEnrolmentsConnectorImpl])
         .asEagerSingleton()
     }
   }
