@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
+import akka.actor.ActorSystem
+import com.typesafe.config.Config
 import play.api.http.{HeaderNames, MimeTypes}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.{NrsSubmission, NrsSubmissionResponse}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, Retries, UpstreamErrorResponse}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 
 import javax.inject.{Inject, Singleton}
@@ -33,9 +35,15 @@ trait NrsConnector {
 }
 
 @Singleton
-class NrsConnectorImpl @Inject() (appConfig: AppConfig, httpClient: HttpClient)(implicit
+class NrsConnectorImpl @Inject() (
+  appConfig: AppConfig,
+  httpClient: HttpClient,
+  override val configuration: Config,
+  override val actorSystem: ActorSystem
+)(implicit
   ec: ExecutionContext
-) extends NrsConnector {
+) extends NrsConnector
+    with Retries {
 
   private val nrsSubmissionUrl: String = s"${appConfig.nrsBaseUrl}/submission"
 
@@ -44,8 +52,15 @@ class NrsConnectorImpl @Inject() (appConfig: AppConfig, httpClient: HttpClient)(
     (CustomHeaderNames.ApiKey, appConfig.nrsApiKey)
   )
 
+  private def retryCondition: PartialFunction[Exception, Boolean] = {
+    case e: UpstreamErrorResponse if UpstreamErrorResponse.Upstream5xxResponse.unapply(e).isDefined => true
+  }
+
   override def submitToNrs(nrsSubmission: NrsSubmission)(implicit
     hc: HeaderCarrier
   ): Future[NrsSubmissionResponse] =
-    httpClient.POST[NrsSubmission, NrsSubmissionResponse](nrsSubmissionUrl, nrsSubmission, headers = nrsHeaders)
+    retryFor[NrsSubmissionResponse]("NRS submission")(retryCondition)(
+      httpClient.POST[NrsSubmission, NrsSubmissionResponse](nrsSubmissionUrl, nrsSubmission, headers = nrsHeaders)
+    )
+
 }
