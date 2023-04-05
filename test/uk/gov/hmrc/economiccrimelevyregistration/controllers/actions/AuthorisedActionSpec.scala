@@ -56,14 +56,20 @@ class AuthorisedActionSpec extends SpecBase {
       Retrievals.itmpName and Retrievals.itmpDateOfBirth and Retrievals.itmpAddress
 
   "invokeBlock" should {
-    "execute the block and return the result if authorised" in {
-      when(mockAuthConnector.authorise(any(), ArgumentMatchers.eq(expectedRetrievals))(any(), any()))
-        .thenReturn(Future(Some("id")))
+    "execute the block and return the result if authorised" in forAll {
+      nrsRetrievals: Option[String] ~ Option[String] ~ ConfidenceLevel ~ Option[String] ~ Option[String] ~
+        Option[MdtpInformation] ~ Option[String] ~ LoginTimes ~
+        Option[Credentials] ~ Option[Name] ~ Option[LocalDate] ~ Option[String] ~ Option[String] ~
+        Option[AffinityGroup] ~ Option[String] ~ AgentInformation ~ Option[CredentialRole] ~
+        Option[String] ~ Option[String] ~
+        Option[ItmpName] ~ Option[LocalDate] ~ Option[ItmpAddress] =>
+        when(mockAuthConnector.authorise(any(), ArgumentMatchers.eq(expectedRetrievals))(any(), any()))
+          .thenReturn(Future(nrsRetrievals))
 
-      val result: Future[Result] = authorisedAction.invokeBlock(fakeRequest, testAction)
+        val result: Future[Result] = authorisedAction.invokeBlock(fakeRequest, testAction)
 
-      status(result)          shouldBe OK
-      contentAsString(result) shouldBe "Test"
+        status(result)          shouldBe OK
+        contentAsString(result) shouldBe "Test"
     }
 
     "return 401 unauthorized if there is an authorisation exception" in {
