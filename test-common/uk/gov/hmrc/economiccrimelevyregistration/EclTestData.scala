@@ -23,7 +23,9 @@ import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Individual, Organisation}
-import uk.gov.hmrc.auth.core.{AffinityGroup, Assistant, CredentialRole, User}
+import uk.gov.hmrc.auth.core.retrieve.{AgentInformation, Credentials, ItmpAddress, ItmpName, LoginTimes, MdtpInformation, Name, Retrieval, ~}
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
+import uk.gov.hmrc.auth.core.{AffinityGroup, Assistant, ConfidenceLevel, CredentialRole, User}
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
@@ -436,6 +438,80 @@ trait EclTestData {
 
   implicit val arbObjectId: Arbitrary[ObjectId] = Arbitrary {
     ObjectId.get()
+  }
+
+  implicit val arbNrsRetrievals: Arbitrary[Retrieval[
+    Option[String] ~ Option[String] ~ ConfidenceLevel ~ Option[String] ~ Option[String] ~
+      Option[MdtpInformation] ~ Option[String] ~ LoginTimes ~
+      Option[Credentials] ~ Option[Name] ~ Option[LocalDate] ~ Option[String] ~ Option[String] ~
+      Option[AffinityGroup] ~ Option[String] ~ AgentInformation ~ Option[CredentialRole] ~
+      Option[String] ~ Option[String] ~
+      Option[ItmpName] ~ Option[LocalDate] ~ Option[ItmpAddress]
+  ]] = Arbitrary {
+    for {
+      confidenceLevel    <- Arbitrary.arbitrary[Int]
+      internalId          = alphaNumericString
+      externalId          = alphaNumericString
+      nino               <- Arbitrary.arbitrary[String]
+      saUtr              <- Arbitrary.arbitrary[String]
+      deviceId           <- Arbitrary.arbitrary[String]
+      sessionId          <- Arbitrary.arbitrary[String]
+      credentialStrength <- Arbitrary.arbitrary[String]
+      currentLogin       <- Arbitrary.arbitrary[Instant]
+      previousLogin      <- Arbitrary.arbitrary[Instant]
+      providerId         <- Arbitrary.arbitrary[String]
+      providerType       <- Arbitrary.arbitrary[String]
+      name               <- Arbitrary.arbitrary[String]
+      lastName           <- Arbitrary.arbitrary[String]
+      dateOfBirth        <- Arbitrary.arbitrary[LocalDate]
+      postcode           <- Arbitrary.arbitrary[String]
+      email              <- emailAddress(132)
+      affinityGroup      <- Gen.oneOf(Organisation, Individual)
+      agentCode          <- Arbitrary.arbitrary[String]
+      agentId            <- Arbitrary.arbitrary[String]
+      agentFriendlyName  <- Arbitrary.arbitrary[String]
+      credentialRole     <- Gen.oneOf(User, Assistant)
+      description        <- Arbitrary.arbitrary[String]
+      groupIdentifier     = alphaNumericString
+      givenName          <- Arbitrary.arbitrary[String]
+      middleName         <- Arbitrary.arbitrary[String]
+      familyName         <- Arbitrary.arbitrary[String]
+      line1              <- Arbitrary.arbitrary[String]
+      line2              <- Arbitrary.arbitrary[String]
+      line3              <- Arbitrary.arbitrary[String]
+      line4              <- Arbitrary.arbitrary[String]
+      line5              <- Arbitrary.arbitrary[String]
+      countryName        <- Arbitrary.arbitrary[String]
+      countryCode        <- Arbitrary.arbitrary[String]
+    } yield Some(internalId) and Some(externalId) and ConfidenceLevel(confidenceLevel) and Some(nino) and Some(
+      saUtr
+    ) and
+      Some(MdtpInformation(deviceId, sessionId)) and Some(credentialStrength) and LoginTimes(
+        currentLogin,
+        Some(previousLogin)
+      ) and
+      Some(Credentials(providerId, providerType)) and Some(Name(Some(name), Some(lastName))) and Some(
+        dateOfBirth
+      ) and Some(postcode) and Some(email) and
+      Some(affinityGroup) and Some(agentCode) and AgentInformation(
+        Some(agentId),
+        Some(agentCode),
+        Some(agentFriendlyName)
+      ) and Some(credentialRole) and
+      Some(description) and Some(groupIdentifier) and
+      Some(ItmpName(Some(givenName), Some(middleName), Some(familyName))) and Some(dateOfBirth) and
+      Some(
+        ItmpAddress(
+          Some(line1),
+          Some(line2),
+          Some(line3),
+          Some(line4),
+          Some(line5),
+          Some(postcode),
+          Some(countryName),
+          Some(countryCode)
+        )
+      )
   }
 
   def alphaNumericString: String = Gen.alphaNumStr.retryUntil(_.nonEmpty).sample.get
