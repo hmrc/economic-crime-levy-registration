@@ -44,13 +44,12 @@ class NrsServiceSpec extends SpecBase {
         base64EncodedNrsSubmissionHtml: String,
         eclRegistrationReference: String,
         businessPartnerId: String,
-        internalId: String,
-        nrsIdentityData: NrsIdentityData
+        internalId: String
       ) =>
         when(mockNrsConnector.submitToNrs(ArgumentMatchers.eq(nrsSubmission))(any()))
           .thenReturn(Future.successful(nrsSubmissionResponse))
 
-        val request = AuthorisedRequest(fakeRequest, internalId, nrsIdentityData)
+        val request = AuthorisedRequest(fakeRequest, internalId, nrsSubmission.metadata.identityData)
 
         val result =
           await(
