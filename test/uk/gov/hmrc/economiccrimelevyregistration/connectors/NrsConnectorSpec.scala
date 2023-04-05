@@ -25,6 +25,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.http.{HttpClient, UpstreamErrorResponse}
 
+import java.time.Duration
 import scala.concurrent.Future
 
 class NrsConnectorSpec extends SpecBase {
@@ -74,6 +75,8 @@ class NrsConnectorSpec extends SpecBase {
       nrsSubmission: NrsSubmission =>
         val error = UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR)
 
+        when(mockConfig.getDurationList("http-verbs.retries.intervals")).thenReturn(List[Duration]("1s", "1s", "1s"))
+
         when(
           mockHttpClient.POST[NrsSubmission, NrsSubmissionResponse](
             ArgumentMatchers.eq(nrsSubmissionUrl),
@@ -85,7 +88,7 @@ class NrsConnectorSpec extends SpecBase {
             any(),
             any()
           )
-        ).thenReturn(Future.successful(error))
+        ).thenReturn(Future.failed(error))
 
         val result = intercept[UpstreamErrorResponse] {
           await(connector.submitToNrs(nrsSubmission))
