@@ -18,8 +18,14 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
+import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
+import uk.gov.hmrc.http.{HttpClient, UpstreamErrorResponse}
+
+import scala.concurrent.Future
 
 class NrsConnectorSpec extends SpecBase {
 
@@ -30,8 +36,76 @@ class NrsConnectorSpec extends SpecBase {
   val nrsSubmissionUrl: String   = s"${appConfig.nrsBaseUrl}/submission"
 
   "submitToNrs" should {
-    "" in {
-      pending
+    "return a NRS submission response when the http client returns a NRS submission response" in forAll {
+      (nrsSubmission: NrsSubmission, nrsSubmissionResponse: NrsSubmissionResponse) =>
+        when(
+          mockHttpClient.POST[NrsSubmission, NrsSubmissionResponse](
+            ArgumentMatchers.eq(nrsSubmissionUrl),
+            ArgumentMatchers.eq(nrsSubmission),
+            any()
+          )(
+            any(),
+            any(),
+            any(),
+            any()
+          )
+        ).thenReturn(Future.successful(nrsSubmissionResponse))
+
+        val result = await(connector.submitToNrs(nrsSubmission))
+
+        result shouldBe nrsSubmissionResponse
+
+        verify(mockHttpClient, times(1))
+          .POST[NrsSubmission, NrsSubmissionResponse](
+            ArgumentMatchers.eq(nrsSubmissionUrl),
+            ArgumentMatchers.eq(nrsSubmission),
+            any()
+          )(
+            any(),
+            any(),
+            any(),
+            any()
+          )
+
+        reset(mockHttpClient)
+    }
+
+    "return an error if the NRS submission fails after 4 attempts (original attempt + 3 retries)" in forAll {
+      nrsSubmission: NrsSubmission =>
+        val error = UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR)
+
+        when(
+          mockHttpClient.POST[NrsSubmission, NrsSubmissionResponse](
+            ArgumentMatchers.eq(nrsSubmissionUrl),
+            ArgumentMatchers.eq(nrsSubmission),
+            any()
+          )(
+            any(),
+            any(),
+            any(),
+            any()
+          )
+        ).thenReturn(Future.successful(error))
+
+        val result = intercept[UpstreamErrorResponse] {
+          await(connector.submitToNrs(nrsSubmission))
+        }
+
+        result shouldBe error
+
+        verify(mockHttpClient, times(4))
+          .POST[NrsSubmission, NrsSubmissionResponse](
+            ArgumentMatchers.eq(nrsSubmissionUrl),
+            ArgumentMatchers.eq(nrsSubmission),
+            any()
+          )(
+            any(),
+            any(),
+            any(),
+            any()
+          )
+
+        reset(mockHttpClient)
     }
   }
 
