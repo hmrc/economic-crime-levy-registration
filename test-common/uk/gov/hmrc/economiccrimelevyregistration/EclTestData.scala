@@ -440,17 +440,15 @@ trait EclTestData {
     ObjectId.get()
   }
 
-  implicit val arbNrsRetrievals: Arbitrary[
-    Option[String] ~ Option[String] ~ ConfidenceLevel ~ Option[String] ~ Option[String] ~
-      Option[MdtpInformation] ~ Option[String] ~ LoginTimes ~
-      Option[Credentials] ~ Option[Name] ~ Option[LocalDate] ~ Option[String] ~ Option[String] ~
-      Option[AffinityGroup] ~ Option[String] ~ AgentInformation ~ Option[CredentialRole] ~
-      Option[String] ~ Option[String] ~
-      Option[ItmpName] ~ Option[LocalDate] ~ Option[ItmpAddress]
-  ] = Arbitrary {
+  type AuthRetrievals = Option[String] ~ Option[String] ~ ConfidenceLevel ~ Option[String] ~ Option[String] ~
+    Option[MdtpInformation] ~ Option[String] ~ LoginTimes ~
+    Option[Credentials] ~ Option[Name] ~ Option[LocalDate] ~ Option[String] ~
+    Option[AffinityGroup] ~ Option[String] ~ AgentInformation ~ Option[CredentialRole] ~ Option[String] ~
+    Option[ItmpName] ~ Option[LocalDate] ~ Option[ItmpAddress]
+
+  def arbAuthRetrievals(internalId: Option[String]): Arbitrary[AuthRetrievals] = Arbitrary {
     for {
       confidenceLevel    <- Arbitrary.arbitrary[ConfidenceLevel]
-      internalId          = alphaNumericString
       externalId         <- Arbitrary.arbitrary[Option[String]]
       nino               <- Arbitrary.arbitrary[Option[String]]
       saUtr              <- Arbitrary.arbitrary[Option[String]]
@@ -460,22 +458,18 @@ trait EclTestData {
       credentials        <- Arbitrary.arbitrary[Option[Credentials]]
       name               <- Arbitrary.arbitrary[Option[Name]]
       dateOfBirth        <- Arbitrary.arbitrary[Option[LocalDate]]
-      postcode           <- Arbitrary.arbitrary[Option[String]]
       email              <- Arbitrary.arbitrary[Option[String]]
       affinityGroup      <- Arbitrary.arbitrary[Option[AffinityGroup]]
       agentInformation   <- Arbitrary.arbitrary[AgentInformation]
       credentialRole     <- Arbitrary.arbitrary[Option[CredentialRole]]
-      description        <- Arbitrary.arbitrary[Option[String]]
       groupIdentifier    <- Arbitrary.arbitrary[Option[String]]
       itmpName           <- Arbitrary.arbitrary[Option[ItmpName]]
       itmpAddress        <- Arbitrary.arbitrary[Option[ItmpAddress]]
-    } yield Some(internalId) and externalId and confidenceLevel and nino and saUtr and
+    } yield internalId and externalId and confidenceLevel and nino and saUtr and
       mdtpInformation and credentialStrength and loginTimes and
-      credentials and name and dateOfBirth and postcode and email and
+      credentials and name and dateOfBirth and email and
       affinityGroup and agentInformation.agentCode and agentInformation and credentialRole and
-      description and groupIdentifier and
-      itmpName and dateOfBirth and
-      itmpAddress
+      groupIdentifier and itmpName and dateOfBirth and itmpAddress
   }
 
   def alphaNumericString: String = Gen.alphaNumStr.retryUntil(_.nonEmpty).sample.get

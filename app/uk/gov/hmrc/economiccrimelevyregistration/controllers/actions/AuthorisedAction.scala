@@ -48,43 +48,41 @@ class BaseAuthorisedAction @Inject() (
   override def invokeBlock[A](request: Request[A], block: AuthorisedRequest[A] => Future[Result]): Future[Result] =
     authorised().retrieve(
       Retrievals.internalId and Retrievals.externalId and Retrievals.confidenceLevel and Retrievals.nino and Retrievals.saUtr and
-        Retrievals.mdtpInformation and Retrievals.credentialStrength and Retrievals.loginTimes and Retrievals.allUserDetails and Retrievals.allItmpUserDetails
+        Retrievals.mdtpInformation and Retrievals.credentialStrength and Retrievals.loginTimes and
+        Retrievals.credentials and Retrievals.name and Retrievals.dateOfBirth and Retrievals.email and
+        Retrievals.affinityGroup and Retrievals.agentCode and Retrievals.agentInformation and Retrievals.credentialRole and Retrievals.groupIdentifier and
+        Retrievals.itmpName and Retrievals.itmpDateOfBirth and Retrievals.itmpAddress
     ) {
       case optInternalId ~ optExternalId ~ confidenceLevel ~ optNino ~ optSaUtr ~
-          optMdtpInformation ~ optCredentialStrength ~ loginTimes ~ allUserDetails ~ allItmpUserDetails =>
-        (allUserDetails, allItmpUserDetails) match {
-          case (
-                optCredentials ~ optName ~ optDateOfBirth ~ _ ~ optEmail ~ optAffinityGroup ~ optAgentCode ~ agentInformation ~
-                optCredentialRole ~ _ ~ optGroupIdentifier,
-                optItmpName ~ optItmpDateOfBirth ~ optItmpAddress
-              ) =>
-            val internalId = optInternalId.getOrElse(throw new UnauthorizedException("Unable to retrieve internalId"))
+          optMdtpInformation ~ optCredentialStrength ~ loginTimes ~ optCredentials ~ optName ~ optDateOfBirth ~
+          optEmail ~ optAffinityGroup ~ optAgentCode ~ agentInformation ~ optCredentialRole ~ optGroupIdentifier ~
+          optItmpName ~ optItmpDateOfBirth ~ optItmpAddress =>
+        val internalId = optInternalId.getOrElse(throw new UnauthorizedException("Unable to retrieve internalId"))
 
-            val nrsIdentityData = NrsIdentityData(
-              internalId = internalId,
-              externalId = optExternalId,
-              agentCode = optAgentCode,
-              credentials = optCredentials,
-              confidenceLevel = confidenceLevel.level,
-              nino = optNino,
-              saUtr = optSaUtr,
-              name = optName,
-              dateOfBirth = optDateOfBirth,
-              email = optEmail,
-              agentInformation = agentInformation,
-              groupIdentifier = optGroupIdentifier,
-              credentialRole = optCredentialRole,
-              mdtpInformation = optMdtpInformation,
-              itmpName = optItmpName,
-              itmpDateOfBirth = optItmpDateOfBirth,
-              itmpAddress = optItmpAddress,
-              affinityGroup = optAffinityGroup,
-              credentialStrength = optCredentialStrength,
-              loginTimes = loginTimes
-            )
+        val nrsIdentityData = NrsIdentityData(
+          internalId = internalId,
+          externalId = optExternalId,
+          agentCode = optAgentCode,
+          credentials = optCredentials,
+          confidenceLevel = confidenceLevel.level,
+          nino = optNino,
+          saUtr = optSaUtr,
+          name = optName,
+          dateOfBirth = optDateOfBirth,
+          email = optEmail,
+          agentInformation = agentInformation,
+          groupIdentifier = optGroupIdentifier,
+          credentialRole = optCredentialRole,
+          mdtpInformation = optMdtpInformation,
+          itmpName = optItmpName,
+          itmpDateOfBirth = optItmpDateOfBirth,
+          itmpAddress = optItmpAddress,
+          affinityGroup = optAffinityGroup,
+          credentialStrength = optCredentialStrength,
+          loginTimes = loginTimes
+        )
 
-            block(AuthorisedRequest(request, internalId, nrsIdentityData))
-        }
+        block(AuthorisedRequest(request, internalId, nrsIdentityData))
     }(hc(request), executionContext) recover { case e: AuthorisationException =>
       Unauthorized(
         Json.toJson(
