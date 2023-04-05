@@ -44,10 +44,13 @@ class NrsServiceSpec extends SpecBase {
         base64EncodedNrsSubmissionHtml: String,
         eclRegistrationReference: String,
         businessPartnerId: String,
-        request: AuthorisedRequest[_]
+        internalId: String,
+        nrsIdentityData: NrsIdentityData
       ) =>
         when(mockNrsConnector.submitToNrs(ArgumentMatchers.eq(nrsSubmission))(any()))
           .thenReturn(Future.successful(nrsSubmissionResponse))
+
+        val request = AuthorisedRequest(fakeRequest, internalId, nrsIdentityData)
 
         val result =
           await(
@@ -61,7 +64,14 @@ class NrsServiceSpec extends SpecBase {
     }
 
     "throw an IllegalStateException when there is no base64 encoded NRS submission HTML" in forAll {
-      (eclRegistrationReference: String, businessPartnerId: String, request: AuthorisedRequest[_]) =>
+      (
+        eclRegistrationReference: String,
+        businessPartnerId: String,
+        internalId: String,
+        nrsIdentityData: NrsIdentityData
+      ) =>
+        val request = AuthorisedRequest(fakeRequest, internalId, nrsIdentityData)
+
         val result = intercept[IllegalStateException] {
           await(service.submitToNrs(None, eclRegistrationReference, businessPartnerId)(hc, request))
         }
@@ -75,12 +85,15 @@ class NrsServiceSpec extends SpecBase {
         base64EncodedNrsSubmissionHtml: String,
         eclRegistrationReference: String,
         businessPartnerId: String,
-        request: AuthorisedRequest[_]
+        internalId: String,
+        nrsIdentityData: NrsIdentityData
       ) =>
         val error = UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR)
 
         when(mockNrsConnector.submitToNrs(ArgumentMatchers.eq(nrsSubmission))(any()))
           .thenReturn(Future.failed(error))
+
+        val request = AuthorisedRequest(fakeRequest, internalId, nrsIdentityData)
 
         val result = intercept[UpstreamErrorResponse] {
           await(
