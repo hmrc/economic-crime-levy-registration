@@ -451,10 +451,10 @@ trait EclTestData {
     for {
       confidenceLevel    <- Arbitrary.arbitrary[ConfidenceLevel]
       internalId          = alphaNumericString
-      externalId          = Arbitrary.arbitrary[Option[String]]
+      externalId         <- Arbitrary.arbitrary[Option[String]]
       nino               <- Arbitrary.arbitrary[Option[String]]
       saUtr              <- Arbitrary.arbitrary[Option[String]]
-      mdtpInformation    <- Arbitrary.arbitrary[MdtpInformation]
+      mdtpInformation    <- Arbitrary.arbitrary[Option[MdtpInformation]]
       credentialStrength <- Arbitrary.arbitrary[Option[String]]
       loginTimes         <- Arbitrary.arbitrary[LoginTimes]
       credentials        <- Arbitrary.arbitrary[Option[Credentials]]
@@ -466,7 +466,7 @@ trait EclTestData {
       agentInformation   <- Arbitrary.arbitrary[AgentInformation]
       credentialRole     <- Arbitrary.arbitrary[Option[CredentialRole]]
       description        <- Arbitrary.arbitrary[Option[String]]
-      groupIdentifier     = Arbitrary.arbitrary[Option[String]]
+      groupIdentifier    <- Arbitrary.arbitrary[Option[String]]
       itmpName           <- Arbitrary.arbitrary[Option[ItmpName]]
       itmpAddress        <- Arbitrary.arbitrary[Option[ItmpAddress]]
     } yield Some(internalId) and externalId and confidenceLevel and nino and saUtr and
