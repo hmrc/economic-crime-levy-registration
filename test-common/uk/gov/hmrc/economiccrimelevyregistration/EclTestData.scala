@@ -38,6 +38,7 @@ import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import wolfendale.scalacheck.regexp.RegexpGen
 
 import java.time.{Instant, LocalDate}
+import java.util.Base64
 
 final case class ValidUkCompanyRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
 
@@ -125,26 +126,27 @@ trait EclTestData {
 
   implicit def arbCommonRegistrationData: Arbitrary[CommonRegistrationData] = Arbitrary {
     for {
-      businessSector     <- Arbitrary.arbitrary[BusinessSector]
-      eclAddress          = EclAddress(
-                              organisation = Some("Test Org Name"),
-                              addressLine1 = Some("Test Address Line 1"),
-                              addressLine2 = Some("Test Address Line 2"),
-                              addressLine3 = None,
-                              addressLine4 = None,
-                              region = Some("Test Region"),
-                              postCode = Some("AB12 3DE"),
-                              poBox = None,
-                              countryCode = "GB"
-                            )
-      relevantAp12Months <- Arbitrary.arbitrary[Boolean]
-      relevantApLength   <- Arbitrary.arbitrary[Int]
-      relevantApRevenue  <- Arbitrary.arbitrary[Long]
-      firstContactName   <- stringsWithMaxLength(160)
-      firstContactRole   <- stringsWithMaxLength(160)
-      firstContactEmail  <- emailAddress(132)
-      firstContactNumber <- telephoneNumber(24)
-      internalId          = alphaNumericString
+      businessSector                <- Arbitrary.arbitrary[BusinessSector]
+      eclAddress                     = EclAddress(
+                                         organisation = Some("Test Org Name"),
+                                         addressLine1 = Some("Test Address Line 1"),
+                                         addressLine2 = Some("Test Address Line 2"),
+                                         addressLine3 = None,
+                                         addressLine4 = None,
+                                         region = Some("Test Region"),
+                                         postCode = Some("AB12 3DE"),
+                                         poBox = None,
+                                         countryCode = "GB"
+                                       )
+      relevantAp12Months            <- Arbitrary.arbitrary[Boolean]
+      relevantApLength              <- Arbitrary.arbitrary[Int]
+      relevantApRevenue             <- Arbitrary.arbitrary[Long]
+      firstContactName              <- stringsWithMaxLength(160)
+      firstContactRole              <- stringsWithMaxLength(160)
+      firstContactEmail             <- emailAddress(132)
+      firstContactNumber            <- telephoneNumber(24)
+      internalId                     = alphaNumericString
+      base64EncodedNrsSubmissionHtml = Base64.getEncoder.encodeToString("<html>test html</html>".getBytes)
     } yield CommonRegistrationData(
       Registration
         .empty(internalId = internalId)
@@ -165,7 +167,8 @@ trait EclTestData {
             secondContact = Some(false)
           ),
           contactAddress = Some(eclAddress),
-          amlSupervisor = Some(AmlSupervisor(Hmrc, None))
+          amlSupervisor = Some(AmlSupervisor(Hmrc, None)),
+          base64EncodedNrsSubmissionHtml = Some(base64EncodedNrsSubmissionHtml)
         )
     )
   }
