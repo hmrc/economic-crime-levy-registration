@@ -19,6 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 import play.api.Logging
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{JsObject, JsString}
+import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.NrsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
@@ -32,7 +33,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit ec: ExecutionContext) extends Logging {
+class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock, appConfig: AppConfig)(implicit
+  ec: ExecutionContext
+) extends Logging {
 
   def submitToNrs(
     optBase64EncodedNrsSubmissionHtml: Option[String],
@@ -67,10 +70,16 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit e
       metadata = nrsMetadata
     )
 
-    nrsConnector.submitToNrs(nrsSubmission).map { nrsSubmissionResponse =>
-      logger.info(s"Success response received from NRS with submission ID: ${nrsSubmissionResponse.nrSubmissionId}")
-      nrsSubmissionResponse
-    }
+    nrsConnector
+      .submitToNrs(nrsSubmission)
+      .map { nrsSubmissionResponse =>
+        logger.info(s"Success response received from NRS with submission ID: ${nrsSubmissionResponse.nrSubmissionId}")
+        nrsSubmissionResponse
+      }
+      .recover { case e: Exception =>
+        logger.error(s"Failed to send NRS submission after initial attempt and 3 retries: ${e.getMessage}")
+        throw e
+      }
   }
 
   private def payloadSha256Checksum(base64EncodedNrsSubmissionHtml: String): String = {
