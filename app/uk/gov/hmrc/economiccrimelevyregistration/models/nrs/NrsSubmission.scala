@@ -80,7 +80,7 @@ final case class NrsMetadata(
 
 object NrsMetadata {
   implicit val userSubmissionTimestampWrites: Writes[Instant] = (instant: Instant) =>
-    JsString(DateTimeFormatter.ISO_INSTANT.format(instant.truncatedTo(ChronoUnit.SECONDS)))
+    JsString(DateTimeFormatter.ISO_INSTANT.format(instant.truncatedTo(ChronoUnit.MILLIS)))
   implicit val writes: OWrites[NrsMetadata]                   = Json.writes[NrsMetadata]
 }
 
