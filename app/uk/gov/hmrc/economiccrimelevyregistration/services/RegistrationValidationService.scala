@@ -146,8 +146,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     def registrationDate: String =
       DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(Instant.now(clock))
 
-    def liabilityStartDate: String =
-      DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(Instant.now(clock))
+    def liabilityStartDate: String = "2022-04-01"
 
     registration.entityType match {
       case Some(UkLimitedCompany)                                                              =>
