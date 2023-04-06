@@ -87,9 +87,8 @@ class NrsServiceSpec extends SpecBase {
     }
 
     "throw an exception when the submission fails" in forAll(
-      arbValidNrsSubmission(fakeRequest, stubClock).arbitrary,
-      Arbitrary.arbitrary[NrsSubmissionResponse]
-    ) { (validNrsSubmission: ValidNrsSubmission, nrsSubmissionResponse: NrsSubmissionResponse) =>
+      arbValidNrsSubmission(fakeRequest, stubClock).arbitrary
+    ) { validNrsSubmission: ValidNrsSubmission =>
       val error = UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR)
 
       when(mockNrsConnector.submitToNrs(ArgumentMatchers.eq(validNrsSubmission.nrsSubmission))(any()))
