@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.nrs
 
-import play.api.libs.json.{JsObject, Json, OWrites, Writes}
+import play.api.libs.json.{JsObject, JsString, Json, OWrites, Writes}
 import uk.gov.hmrc.auth.core.retrieve._
 import uk.gov.hmrc.auth.core.{AffinityGroup, CredentialRole}
 
 import java.time.{Instant, LocalDate}
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 final case class NrsSearchKeys(businessPartnerId: String, eclRegistrationReference: String)
 
@@ -77,7 +79,9 @@ final case class NrsMetadata(
 )
 
 object NrsMetadata {
-  implicit val writes: OWrites[NrsMetadata] = Json.writes[NrsMetadata]
+  implicit val userSubmissionTimestampWrites: Writes[Instant] = (instant: Instant) =>
+    JsString(DateTimeFormatter.ISO_INSTANT.format(instant.truncatedTo(ChronoUnit.SECONDS)))
+  implicit val writes: OWrites[NrsMetadata]                   = Json.writes[NrsMetadata]
 }
 
 final case class NrsSubmission(payload: String, metadata: NrsMetadata)

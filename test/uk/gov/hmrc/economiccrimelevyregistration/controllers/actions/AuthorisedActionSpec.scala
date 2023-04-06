@@ -81,7 +81,7 @@ class AuthorisedActionSpec extends SpecBase {
     }
 
     "throw an UnauthorizedException if there is no internal id" in forAll(arbAuthRetrievals(None).arbitrary) {
-      authRetrievals =>
+      authRetrievals: AuthRetrievals =>
         when(mockAuthConnector.authorise(any(), ArgumentMatchers.eq(expectedRetrievals))(any(), any()))
           .thenReturn(Future(authRetrievals))
 
