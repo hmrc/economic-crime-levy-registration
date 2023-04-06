@@ -67,7 +67,9 @@ class RegistrationSubmissionISpec extends ISpecBase {
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(subscriptionResponse)
 
-      verify(1, postRequestedFor(urlEqualTo("/submission")))
+      eventually {
+        verify(1, postRequestedFor(urlEqualTo("/submission")))
+      }
     }
 
     "retry the NRS submission call 3 times after the initial attempt if it fails with a 5xx response" in {

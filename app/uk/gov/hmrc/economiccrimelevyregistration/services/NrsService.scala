@@ -32,7 +32,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit ec: ExecutionContext) extends Logging {
+class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
+  ec: ExecutionContext
+) extends Logging {
 
   def submitToNrs(
     optBase64EncodedNrsSubmissionHtml: Option[String],
@@ -67,10 +69,16 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit e
       metadata = nrsMetadata
     )
 
-    nrsConnector.submitToNrs(nrsSubmission).map { nrsSubmissionResponse =>
-      logger.info(s"Success response received from NRS with submission ID: ${nrsSubmissionResponse.nrSubmissionId}")
-      nrsSubmissionResponse
-    }
+    nrsConnector
+      .submitToNrs(nrsSubmission)
+      .map { nrsSubmissionResponse =>
+        logger.info(s"Success response received from NRS with submission ID: ${nrsSubmissionResponse.nrSubmissionId}")
+        nrsSubmissionResponse
+      }
+      .recover { case e: Throwable =>
+        logger.error(s"Failed to send NRS submission after initial attempt and 3 retries: ${e.getMessage}")
+        throw e
+      }
   }
 
   private def payloadSha256Checksum(base64EncodedNrsSubmissionHtml: String): String = {
