@@ -21,7 +21,11 @@ import org.bson.types.ObjectId
 import org.scalacheck.Gen.{choose, listOfN}
 import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
+import play.api.libs.json.{JsObject, JsString}
+import play.api.mvc.AnyContentAsEmpty
+import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Individual, Organisation}
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve._
@@ -30,14 +34,18 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models._
-import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{CompanyProfile, IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
+import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
+import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
+import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
 import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import wolfendale.scalacheck.regexp.RegexpGen
 
-import java.time.{Instant, LocalDate}
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+import java.time.{Clock, Instant, LocalDate}
 import java.util.Base64
 
 final case class ValidUkCompanyRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
@@ -61,6 +69,13 @@ final case class ScottishOrGeneralPartnershipType(entityType: EntityType)
 final case class LimitedPartnershipType(entityType: EntityType)
 
 final case class CommonRegistrationData(registration: Registration)
+
+final case class ValidNrsSubmission(
+  base64EncodedNrsSubmissionHtml: String,
+  eclRegistrationReference: String,
+  businessPartnerId: String,
+  nrsSubmission: NrsSubmission
+)
 
 trait EclTestData {
 
@@ -474,6 +489,47 @@ trait EclTestData {
       affinityGroup and agentInformation.agentCode and agentInformation and credentialRole and
       groupIdentifier and itmpName and dateOfBirth and itmpAddress
   }
+
+  private def base64Encode(payload: String): String = Base64.getEncoder.encodeToString(payload.getBytes)
+
+  private def sha256Checksum(payload: String): String =
+    MessageDigest
+      .getInstance("SHA-256")
+      .digest(payload.getBytes(StandardCharsets.UTF_8))
+      .map("%02x".format(_))
+      .mkString
+
+  def arbValidNrsSubmission(request: FakeRequest[AnyContentAsEmpty.type], clock: Clock): Arbitrary[ValidNrsSubmission] =
+    Arbitrary {
+      for {
+        payload                  <- Arbitrary.arbitrary[String]
+        eclRegistrationReference <- Arbitrary.arbitrary[String]
+        businessPartnerId        <- Arbitrary.arbitrary[String]
+        nrsIdentityData          <- Arbitrary.arbitrary[NrsIdentityData]
+        authorisedRequest         = AuthorisedRequest(request, nrsIdentityData.internalId, nrsIdentityData)
+      } yield ValidNrsSubmission(
+        base64EncodedNrsSubmissionHtml = base64Encode(payload),
+        eclRegistrationReference = eclRegistrationReference,
+        businessPartnerId = businessPartnerId,
+        nrsSubmission = NrsSubmission(
+          payload = base64Encode(payload),
+          metadata = NrsMetadata(
+            businessId = "ecl",
+            notableEvent = "ecl-registration",
+            payloadContentType = MimeTypes.HTML,
+            payloadSha256Checksum = sha256Checksum(payload),
+            userSubmissionTimestamp = Instant.now(clock),
+            identityData = nrsIdentityData,
+            userAuthToken = authorisedRequest.headers.get(HeaderNames.AUTHORIZATION).get,
+            headerData = new JsObject(authorisedRequest.headers.toMap.map(x => x._1 -> JsString(x._2 mkString ","))),
+            searchKeys = NrsSearchKeys(
+              businessPartnerId = businessPartnerId,
+              eclRegistrationReference = eclRegistrationReference
+            )
+          )
+        )
+      )
+    }
 
   def alphaNumericString: String = Gen.alphaNumStr.retryUntil(_.nonEmpty).sample.get
 
