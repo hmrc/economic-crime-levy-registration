@@ -43,10 +43,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedReque
 import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import wolfendale.scalacheck.regexp.RegexpGen
 
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import java.time.{Clock, Instant, LocalDate}
-import java.util.Base64
 
 final case class ValidUkCompanyRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
 
@@ -78,6 +75,9 @@ final case class ValidNrsSubmission(
 )
 
 trait EclTestData {
+
+  private val base64EncodedNrsSubmissionHtml  = "PGh0bWw+PHRpdGxlPkhlbGxvIFdvcmxkITwvdGl0bGU+PC9odG1sPg=="
+  private val nrsSubmissionHtmlSha256Checksum = "38a8012d1af5587a9b37aef812810e31b2ddf7d405d20b5f1230a209d95c9d2b"
 
   implicit val arbInstant: Arbitrary[Instant] = Arbitrary {
     Instant.now()
@@ -141,27 +141,26 @@ trait EclTestData {
 
   implicit def arbCommonRegistrationData: Arbitrary[CommonRegistrationData] = Arbitrary {
     for {
-      businessSector                <- Arbitrary.arbitrary[BusinessSector]
-      eclAddress                     = EclAddress(
-                                         organisation = Some("Test Org Name"),
-                                         addressLine1 = Some("Test Address Line 1"),
-                                         addressLine2 = Some("Test Address Line 2"),
-                                         addressLine3 = None,
-                                         addressLine4 = None,
-                                         region = Some("Test Region"),
-                                         postCode = Some("AB12 3DE"),
-                                         poBox = None,
-                                         countryCode = "GB"
-                                       )
-      relevantAp12Months            <- Arbitrary.arbitrary[Boolean]
-      relevantApLength              <- Arbitrary.arbitrary[Int]
-      relevantApRevenue             <- Arbitrary.arbitrary[Long]
-      firstContactName              <- stringsWithMaxLength(160)
-      firstContactRole              <- stringsWithMaxLength(160)
-      firstContactEmail             <- emailAddress(132)
-      firstContactNumber            <- telephoneNumber(24)
-      internalId                     = alphaNumericString
-      base64EncodedNrsSubmissionHtml = Base64.getEncoder.encodeToString("<html>test html</html>".getBytes)
+      businessSector     <- Arbitrary.arbitrary[BusinessSector]
+      eclAddress          = EclAddress(
+                              organisation = Some("Test Org Name"),
+                              addressLine1 = Some("Test Address Line 1"),
+                              addressLine2 = Some("Test Address Line 2"),
+                              addressLine3 = None,
+                              addressLine4 = None,
+                              region = Some("Test Region"),
+                              postCode = Some("AB12 3DE"),
+                              poBox = None,
+                              countryCode = "GB"
+                            )
+      relevantAp12Months <- Arbitrary.arbitrary[Boolean]
+      relevantApLength   <- Arbitrary.arbitrary[Int]
+      relevantApRevenue  <- Arbitrary.arbitrary[Long]
+      firstContactName   <- stringsWithMaxLength(160)
+      firstContactRole   <- stringsWithMaxLength(160)
+      firstContactEmail  <- emailAddress(132)
+      firstContactNumber <- telephoneNumber(24)
+      internalId          = alphaNumericString
     } yield CommonRegistrationData(
       Registration
         .empty(internalId = internalId)
@@ -490,34 +489,24 @@ trait EclTestData {
       groupIdentifier and itmpName and dateOfBirth and itmpAddress
   }
 
-  private def base64Encode(payload: String): String = Base64.getEncoder.encodeToString(payload.getBytes)
-
-  private def sha256Checksum(payload: String): String =
-    MessageDigest
-      .getInstance("SHA-256")
-      .digest(payload.getBytes(StandardCharsets.UTF_8))
-      .map("%02x".format(_))
-      .mkString
-
   def arbValidNrsSubmission(request: FakeRequest[AnyContentAsEmpty.type], clock: Clock): Arbitrary[ValidNrsSubmission] =
     Arbitrary {
       for {
-        payload                  <- Arbitrary.arbitrary[String]
         eclRegistrationReference <- Arbitrary.arbitrary[String]
         businessPartnerId        <- Arbitrary.arbitrary[String]
         nrsIdentityData          <- Arbitrary.arbitrary[NrsIdentityData]
         authorisedRequest         = AuthorisedRequest(request, nrsIdentityData.internalId, nrsIdentityData)
       } yield ValidNrsSubmission(
-        base64EncodedNrsSubmissionHtml = base64Encode(payload),
+        base64EncodedNrsSubmissionHtml = base64EncodedNrsSubmissionHtml,
         eclRegistrationReference = eclRegistrationReference,
         businessPartnerId = businessPartnerId,
         nrsSubmission = NrsSubmission(
-          payload = base64Encode(payload),
+          payload = base64EncodedNrsSubmissionHtml,
           metadata = NrsMetadata(
             businessId = "ecl",
             notableEvent = "ecl-registration",
             payloadContentType = MimeTypes.HTML,
-            payloadSha256Checksum = sha256Checksum(payload),
+            payloadSha256Checksum = nrsSubmissionHtmlSha256Checksum,
             userSubmissionTimestamp = Instant.now(clock),
             identityData = nrsIdentityData,
             userAuthToken = authorisedRequest.headers.get(HeaderNames.AUTHORIZATION).get,

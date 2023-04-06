@@ -28,22 +28,15 @@ import uk.gov.hmrc.http.HttpReads.Implicits._
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-trait NrsConnector {
-  def submitToNrs(nrsSubmission: NrsSubmission)(implicit
-    hc: HeaderCarrier
-  ): Future[NrsSubmissionResponse]
-}
-
 @Singleton
-class NrsConnectorImpl @Inject() (
+class NrsConnector @Inject() (
   appConfig: AppConfig,
   httpClient: HttpClient,
   override val configuration: Config,
   override val actorSystem: ActorSystem
 )(implicit
   ec: ExecutionContext
-) extends NrsConnector
-    with Retries {
+) extends Retries {
 
   private val nrsSubmissionUrl: String = s"${appConfig.nrsBaseUrl}/submission"
 
@@ -56,7 +49,7 @@ class NrsConnectorImpl @Inject() (
     case e: UpstreamErrorResponse if UpstreamErrorResponse.Upstream5xxResponse.unapply(e).isDefined => true
   }
 
-  override def submitToNrs(nrsSubmission: NrsSubmission)(implicit
+  def submitToNrs(nrsSubmission: NrsSubmission)(implicit
     hc: HeaderCarrier
   ): Future[NrsSubmissionResponse] =
     retryFor[NrsSubmissionResponse]("NRS submission")(retryCondition)(

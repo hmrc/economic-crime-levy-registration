@@ -32,7 +32,7 @@ class NrsConnectorSpec extends SpecBase {
   val actorSystem: ActorSystem   = ActorSystem("test")
   val config: Config             = app.injector.instanceOf[Config]
   val mockHttpClient: HttpClient = mock[HttpClient]
-  val connector                  = new NrsConnectorImpl(appConfig, mockHttpClient, config, actorSystem)
+  val connector                  = new NrsConnector(appConfig, mockHttpClient, config, actorSystem)
   val nrsSubmissionUrl: String   = s"${appConfig.nrsBaseUrl}/submission"
 
   "submitToNrs" should {

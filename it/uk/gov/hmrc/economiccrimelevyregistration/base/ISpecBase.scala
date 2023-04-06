@@ -61,7 +61,6 @@ abstract class ISpecBase
   val additionalAppConfig: Map[String, Any] = Map(
     "metrics.enabled"              -> false,
     "auditing.enabled"             -> false,
-    "features.nrsStubEnabled"      -> false,
     "http-verbs.retries.intervals" -> List("1ms", "1ms", "1ms"),
     "application.router"           -> "testOnlyDoNotUseInAppConf.Routes"
   ) ++ setWireMockPort(

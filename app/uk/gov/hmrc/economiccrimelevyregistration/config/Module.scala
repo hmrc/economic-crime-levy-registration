@@ -18,10 +18,10 @@ package uk.gov.hmrc.economiccrimelevyregistration.config
 
 import com.google.inject.AbstractModule
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.economiccrimelevyregistration.connectors.{EnrolmentStoreProxyConnector, EnrolmentStoreProxyConnectorImpl, NrsConnector, NrsConnectorImpl}
+import uk.gov.hmrc.economiccrimelevyregistration.connectors.{EnrolmentStoreProxyConnector, EnrolmentStoreProxyConnectorImpl}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.{AuthorisedAction, BaseAuthorisedAction}
 import uk.gov.hmrc.economiccrimelevyregistration.services.KnownFactsQueuePullScheduler
-import uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors.{StubEnrolmentStoreProxyConnector, StubNrsConnector}
+import uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors.StubEnrolmentStoreProxyConnector
 
 import java.time.{Clock, ZoneOffset}
 
@@ -33,7 +33,6 @@ class Module(environment: Environment, configuration: Configuration) extends Abs
     bind(classOf[KnownFactsQueuePullScheduler]).asEagerSingleton()
 
     val enrolmentStoreProxyStubEnabled = configuration.get[Boolean]("features.enrolmentStoreProxyStubEnabled")
-    val nrsStubEnabled                 = configuration.get[Boolean]("features.nrsStubEnabled")
 
     if (enrolmentStoreProxyStubEnabled) {
       bind(classOf[EnrolmentStoreProxyConnector])
@@ -42,16 +41,6 @@ class Module(environment: Environment, configuration: Configuration) extends Abs
     } else {
       bind(classOf[EnrolmentStoreProxyConnector])
         .to(classOf[EnrolmentStoreProxyConnectorImpl])
-        .asEagerSingleton()
-    }
-
-    if (nrsStubEnabled) {
-      bind(classOf[NrsConnector])
-        .to(classOf[StubNrsConnector])
-        .asEagerSingleton()
-    } else {
-      bind(classOf[NrsConnector])
-        .to(classOf[NrsConnectorImpl])
         .asEagerSingleton()
     }
   }
