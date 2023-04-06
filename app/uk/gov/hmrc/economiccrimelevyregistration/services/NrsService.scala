@@ -19,7 +19,6 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 import play.api.Logging
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{JsObject, JsString}
-import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.NrsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
@@ -33,7 +32,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock, appConfig: AppConfig)(implicit
+class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
   ec: ExecutionContext
 ) extends Logging {
 
