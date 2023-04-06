@@ -28,7 +28,7 @@ import scala.concurrent.Future
 
 class TaxEnrolmentsConnectorSpec extends SpecBase {
   val mockHttpClient: HttpClient = mock[HttpClient]
-  val connector                  = new TaxEnrolmentsConnector(appConfig, mockHttpClient)
+  val connector                  = new TaxEnrolmentsConnectorImpl(appConfig, mockHttpClient)
 
   "enrol" should {
     "return either an upstream error response or http response" in forAll {
