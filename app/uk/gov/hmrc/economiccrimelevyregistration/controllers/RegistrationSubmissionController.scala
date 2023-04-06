@@ -22,7 +22,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationValidationService, SubscriptionService}
+import uk.gov.hmrc.economiccrimelevyregistration.services.{NrsService, RegistrationValidationService, SubscriptionService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
@@ -34,7 +34,8 @@ class RegistrationSubmissionController @Inject() (
   registrationRepository: RegistrationRepository,
   authorise: AuthorisedAction,
   registrationValidationService: RegistrationValidationService,
-  subscriptionService: SubscriptionService
+  subscriptionService: SubscriptionService,
+  nrsService: NrsService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -44,6 +45,12 @@ class RegistrationSubmissionController @Inject() (
         registrationValidationService.validateRegistration(registration) match {
           case Valid(eclSubscription) =>
             subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
+              nrsService.submitToNrs(
+                registration.base64EncodedNrsSubmissionHtml,
+                response.eclReference,
+                eclSubscription.businessPartnerId
+              )
+
               Ok(Json.toJson(response))
             }
           case Invalid(e)             =>

@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers.actions
 
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import play.api.mvc.{BodyParsers, Request, Result}
 import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.http.UnauthorizedException
 
@@ -36,9 +38,19 @@ class AuthorisedActionSpec extends SpecBase {
     Future(Ok("Test"))
   }
 
+  private val expectedRetrievals =
+    Retrievals.internalId and Retrievals.externalId and Retrievals.confidenceLevel and Retrievals.nino and Retrievals.saUtr and
+      Retrievals.mdtpInformation and Retrievals.credentialStrength and Retrievals.loginTimes and
+      Retrievals.credentials and Retrievals.name and Retrievals.dateOfBirth and Retrievals.email and
+      Retrievals.affinityGroup and Retrievals.agentCode and Retrievals.agentInformation and Retrievals.credentialRole and Retrievals.groupIdentifier and
+      Retrievals.itmpName and Retrievals.itmpDateOfBirth and Retrievals.itmpAddress
+
   "invokeBlock" should {
-    "execute the block and return the result if authorised" in {
-      when(mockAuthConnector.authorise[Option[String]](any(), any())(any(), any())).thenReturn(Future(Some("id")))
+    "execute the block and return the result if authorised" in forAll(
+      arbAuthRetrievals(Some(alphaNumericString)).arbitrary
+    ) { authRetrievals: AuthRetrievals =>
+      when(mockAuthConnector.authorise(any(), ArgumentMatchers.eq(expectedRetrievals))(any(), any()))
+        .thenReturn(Future(authRetrievals))
 
       val result: Future[Result] = authorisedAction.invokeBlock(fakeRequest, testAction)
 
@@ -68,14 +80,16 @@ class AuthorisedActionSpec extends SpecBase {
       }
     }
 
-    "throw an UnauthorizedException if there is no internal id" in {
-      when(mockAuthConnector.authorise[Option[String]](any(), any())(any(), any())).thenReturn(Future(None))
+    "throw an UnauthorizedException if there is no internal id" in forAll(arbAuthRetrievals(None).arbitrary) {
+      authRetrievals: AuthRetrievals =>
+        when(mockAuthConnector.authorise(any(), ArgumentMatchers.eq(expectedRetrievals))(any(), any()))
+          .thenReturn(Future(authRetrievals))
 
-      val result = intercept[UnauthorizedException] {
-        await(authorisedAction.invokeBlock(fakeRequest, testAction))
-      }
+        val result = intercept[UnauthorizedException] {
+          await(authorisedAction.invokeBlock(fakeRequest, testAction))
+        }
 
-      result.message shouldBe "Unable to retrieve internalId"
+        result.message shouldBe "Unable to retrieve internalId"
     }
   }
 
