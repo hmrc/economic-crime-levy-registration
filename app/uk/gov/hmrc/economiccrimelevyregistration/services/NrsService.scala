@@ -75,7 +75,7 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
         logger.info(s"Success response received from NRS with submission ID: ${nrsSubmissionResponse.nrSubmissionId}")
         nrsSubmissionResponse
       }
-      .recover { case e: Exception =>
+      .recover { case e: Throwable =>
         logger.error(s"Failed to send NRS submission after initial attempt and 3 retries: ${e.getMessage}")
         throw e
       }
