@@ -25,7 +25,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.{CustomerType, StartOfFirstEclFinancialYear}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.{SchemaLoader, SchemaValidator}
 
@@ -146,8 +146,6 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     def registrationDate: String =
       DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(Instant.now(clock))
 
-    def liabilityStartDate: String = "2022-04-01"
-
     registration.entityType match {
       case Some(UkLimitedCompany)                                                              =>
         grsJourneyData match {
@@ -161,7 +159,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = None,
                 customerType = CustomerType.Organisation,
                 registrationDate = registrationDate,
-                liabilityStartDate = liabilityStartDate,
+                liabilityStartDate = StartOfFirstEclFinancialYear,
                 _,
                 _
               )
@@ -183,7 +181,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = None,
                 customerType = CustomerType.Organisation,
                 registrationDate = registrationDate,
-                liabilityStartDate = liabilityStartDate,
+                liabilityStartDate = StartOfFirstEclFinancialYear,
                 _,
                 _
               )
@@ -206,7 +204,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = None,
                 customerType = CustomerType.Organisation,
                 registrationDate = registrationDate,
-                liabilityStartDate = liabilityStartDate,
+                liabilityStartDate = StartOfFirstEclFinancialYear,
                 _,
                 _
               )
@@ -225,7 +223,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = Some(s.fullName.lastName),
                 customerType = CustomerType.Individual,
                 registrationDate = registrationDate,
-                liabilityStartDate = liabilityStartDate,
+                liabilityStartDate = StartOfFirstEclFinancialYear,
                 _,
                 _
               )

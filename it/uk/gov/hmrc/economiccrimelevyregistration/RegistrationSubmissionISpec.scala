@@ -11,6 +11,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.KeyValue
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{CreateEnrolmentRequest, EclEnrolment}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponse
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.StartOfFirstEclFinancialYear
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 
 import java.time.format.DateTimeFormatter
@@ -26,13 +27,13 @@ class RegistrationSubmissionISpec extends ISpecBase {
         random[CreateEclSubscriptionResponse]
           .copy(processingDate = Instant.parse("2007-12-25T10:15:30.00Z"))
 
-      val registrationDate   = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+      val registrationDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
 
       stubSubscribeToEcl(
         validRegistration.expectedEclSubscription.copy(subscription =
           validRegistration.expectedEclSubscription.subscription.copy(
             legalEntityDetails = validRegistration.expectedEclSubscription.subscription.legalEntityDetails
-              .copy(registrationDate = registrationDate, liabilityStartDate = "2022-04-01")
+              .copy(registrationDate = registrationDate, liabilityStartDate = StartOfFirstEclFinancialYear)
           )
         ),
         subscriptionResponse
@@ -79,13 +80,13 @@ class RegistrationSubmissionISpec extends ISpecBase {
         random[CreateEclSubscriptionResponse]
           .copy(processingDate = Instant.parse("2007-12-25T10:15:30.00Z"))
 
-      val registrationDate   = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+      val registrationDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
 
       stubSubscribeToEcl(
         validRegistration.expectedEclSubscription.copy(subscription =
           validRegistration.expectedEclSubscription.subscription.copy(
             legalEntityDetails = validRegistration.expectedEclSubscription.subscription.legalEntityDetails
-              .copy(registrationDate = registrationDate, liabilityStartDate = "2022-04-01")
+              .copy(registrationDate = registrationDate, liabilityStartDate = StartOfFirstEclFinancialYear)
           )
         ),
         subscriptionResponse

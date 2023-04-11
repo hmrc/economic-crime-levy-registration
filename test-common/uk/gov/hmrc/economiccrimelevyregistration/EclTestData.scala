@@ -21,8 +21,8 @@ import org.bson.types.ObjectId
 import org.scalacheck.Gen.{choose, listOfN}
 import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
-import play.api.http.{HeaderNames, MimeTypes}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{JsObject, JsString}
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
@@ -36,7 +36,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.{CustomerType, StartOfFirstEclFinancialYear}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
@@ -238,7 +238,7 @@ trait EclTestData {
             lastName = None,
             customerType = CustomerType.Organisation,
             registrationDate = "2007-12-25",
-            liabilityStartDate = "2022-04-01",
+            liabilityStartDate = StartOfFirstEclFinancialYear,
             amlSupervisor = "Hmrc",
             businessSector = commonRegistrationData.registration.businessSector.get.toString
           ),
@@ -287,7 +287,7 @@ trait EclTestData {
             lastName = Some(soleTraderEntityJourneyData.fullName.lastName),
             customerType = CustomerType.Individual,
             registrationDate = "2007-12-25",
-            liabilityStartDate = "2022-04-01",
+            liabilityStartDate = StartOfFirstEclFinancialYear,
             amlSupervisor = "Hmrc",
             businessSector = commonRegistrationData.registration.businessSector.get.toString
           ),
@@ -337,7 +337,7 @@ trait EclTestData {
             lastName = None,
             customerType = CustomerType.Organisation,
             registrationDate = "2007-12-25",
-            liabilityStartDate = "2022-04-01",
+            liabilityStartDate = StartOfFirstEclFinancialYear,
             amlSupervisor = "Hmrc",
             businessSector = commonRegistrationData.registration.businessSector.get.toString
           ),
@@ -391,7 +391,7 @@ trait EclTestData {
               lastName = None,
               customerType = CustomerType.Organisation,
               registrationDate = "2007-12-25",
-              liabilityStartDate = "2022-04-01",
+              liabilityStartDate = StartOfFirstEclFinancialYear,
               amlSupervisor = "Hmrc",
               businessSector = commonRegistrationData.registration.businessSector.get.toString
             ),
