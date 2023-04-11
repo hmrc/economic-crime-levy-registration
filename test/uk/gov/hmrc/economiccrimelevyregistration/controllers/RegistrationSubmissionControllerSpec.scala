@@ -28,7 +28,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErr
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationValidationService, SubscriptionService}
+import uk.gov.hmrc.economiccrimelevyregistration.services.{NrsService, RegistrationValidationService, SubscriptionService}
 
 import scala.concurrent.Future
 
@@ -37,13 +37,15 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
   val mockRegistrationValidationService: RegistrationValidationService = mock[RegistrationValidationService]
   val mockSubscriptionServiceService: SubscriptionService              = mock[SubscriptionService]
   val mockRegistrationRepository: RegistrationRepository               = mock[RegistrationRepository]
+  val mockNrsService: NrsService                                       = mock[NrsService]
 
   val controller = new RegistrationSubmissionController(
     cc,
     mockRegistrationRepository,
     fakeAuthorisedAction,
     mockRegistrationValidationService,
-    mockSubscriptionServiceService
+    mockSubscriptionServiceService,
+    mockNrsService
   )
 
   "submitRegistration" should {
@@ -68,6 +70,10 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
         status(result)        shouldBe OK
         contentAsJson(result) shouldBe Json.toJson(subscriptionResponse)
+
+        verify(mockNrsService, times(1)).submitToNrs(any(), any(), any())(any(), any())
+
+        reset(mockNrsService)
     }
 
     "return 500 INTERNAL_SERVER_ERROR with validation errors in the JSON response body when the registration data is invalid" in forAll {

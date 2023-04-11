@@ -21,19 +21,29 @@ import org.bson.types.ObjectId
 import org.scalacheck.Gen.{choose, listOfN}
 import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
+import play.api.libs.json.{JsObject, JsString}
+import play.api.mvc.AnyContentAsEmpty
+import play.api.test.FakeRequest
+import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Individual, Organisation}
+import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.retrieve._
+import uk.gov.hmrc.auth.core.syntax.retrieved.authSyntaxForRetrieved
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models._
-import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{CompanyProfile, IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
+import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
+import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
+import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
 import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import wolfendale.scalacheck.regexp.RegexpGen
 
-import java.time.{Instant, LocalDate}
+import java.time.{Clock, Instant, LocalDate}
 
 final case class ValidUkCompanyRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
 
@@ -57,7 +67,17 @@ final case class LimitedPartnershipType(entityType: EntityType)
 
 final case class CommonRegistrationData(registration: Registration)
 
+final case class ValidNrsSubmission(
+  base64EncodedNrsSubmissionHtml: String,
+  eclRegistrationReference: String,
+  businessPartnerId: String,
+  nrsSubmission: NrsSubmission
+)
+
 trait EclTestData {
+
+  private val base64EncodedNrsSubmissionHtml  = "PGh0bWw+PHRpdGxlPkhlbGxvIFdvcmxkITwvdGl0bGU+PC9odG1sPg=="
+  private val nrsSubmissionHtmlSha256Checksum = "38a8012d1af5587a9b37aef812810e31b2ddf7d405d20b5f1230a209d95c9d2b"
 
   implicit val arbInstant: Arbitrary[Instant] = Arbitrary {
     Instant.now()
@@ -65,6 +85,14 @@ trait EclTestData {
 
   implicit val arbLocalDate: Arbitrary[LocalDate] = Arbitrary {
     LocalDate.now()
+  }
+
+  implicit val arbCredentialRole: Arbitrary[CredentialRole] = Arbitrary {
+    Gen.oneOf(User, Assistant)
+  }
+
+  implicit val arbAffinityGroup: Arbitrary[AffinityGroup] = Arbitrary {
+    Gen.oneOf(Organisation, Individual, Agent)
   }
 
   implicit val arbRegistration: Arbitrary[Registration] = Arbitrary {
@@ -153,7 +181,8 @@ trait EclTestData {
             secondContact = Some(false)
           ),
           contactAddress = Some(eclAddress),
-          amlSupervisor = Some(AmlSupervisor(Hmrc, None))
+          amlSupervisor = Some(AmlSupervisor(Hmrc, None)),
+          base64EncodedNrsSubmissionHtml = Some(base64EncodedNrsSubmissionHtml)
         )
     )
   }
@@ -427,6 +456,69 @@ trait EclTestData {
   implicit val arbObjectId: Arbitrary[ObjectId] = Arbitrary {
     ObjectId.get()
   }
+
+  type AuthRetrievals = Option[String] ~ Option[String] ~ ConfidenceLevel ~ Option[String] ~ Option[String] ~
+    Option[MdtpInformation] ~ Option[String] ~ LoginTimes ~
+    Option[Credentials] ~ Option[Name] ~ Option[LocalDate] ~ Option[String] ~
+    Option[AffinityGroup] ~ Option[String] ~ AgentInformation ~ Option[CredentialRole] ~ Option[String] ~
+    Option[ItmpName] ~ Option[LocalDate] ~ Option[ItmpAddress]
+
+  def arbAuthRetrievals(internalId: Option[String]): Arbitrary[AuthRetrievals] = Arbitrary {
+    for {
+      confidenceLevel    <- Arbitrary.arbitrary[ConfidenceLevel]
+      externalId         <- Arbitrary.arbitrary[Option[String]]
+      nino               <- Arbitrary.arbitrary[Option[String]]
+      saUtr              <- Arbitrary.arbitrary[Option[String]]
+      mdtpInformation    <- Arbitrary.arbitrary[Option[MdtpInformation]]
+      credentialStrength <- Arbitrary.arbitrary[Option[String]]
+      loginTimes         <- Arbitrary.arbitrary[LoginTimes]
+      credentials        <- Arbitrary.arbitrary[Option[Credentials]]
+      name               <- Arbitrary.arbitrary[Option[Name]]
+      dateOfBirth        <- Arbitrary.arbitrary[Option[LocalDate]]
+      email              <- Arbitrary.arbitrary[Option[String]]
+      affinityGroup      <- Arbitrary.arbitrary[Option[AffinityGroup]]
+      agentInformation   <- Arbitrary.arbitrary[AgentInformation]
+      credentialRole     <- Arbitrary.arbitrary[Option[CredentialRole]]
+      groupIdentifier    <- Arbitrary.arbitrary[Option[String]]
+      itmpName           <- Arbitrary.arbitrary[Option[ItmpName]]
+      itmpAddress        <- Arbitrary.arbitrary[Option[ItmpAddress]]
+    } yield internalId and externalId and confidenceLevel and nino and saUtr and
+      mdtpInformation and credentialStrength and loginTimes and
+      credentials and name and dateOfBirth and email and
+      affinityGroup and agentInformation.agentCode and agentInformation and credentialRole and
+      groupIdentifier and itmpName and dateOfBirth and itmpAddress
+  }
+
+  def arbValidNrsSubmission(request: FakeRequest[AnyContentAsEmpty.type], clock: Clock): Arbitrary[ValidNrsSubmission] =
+    Arbitrary {
+      for {
+        eclRegistrationReference <- Arbitrary.arbitrary[String]
+        businessPartnerId        <- Arbitrary.arbitrary[String]
+        nrsIdentityData          <- Arbitrary.arbitrary[NrsIdentityData]
+        authorisedRequest         = AuthorisedRequest(request, nrsIdentityData.internalId, nrsIdentityData)
+      } yield ValidNrsSubmission(
+        base64EncodedNrsSubmissionHtml = base64EncodedNrsSubmissionHtml,
+        eclRegistrationReference = eclRegistrationReference,
+        businessPartnerId = businessPartnerId,
+        nrsSubmission = NrsSubmission(
+          payload = base64EncodedNrsSubmissionHtml,
+          metadata = NrsMetadata(
+            businessId = "ecl",
+            notableEvent = "ecl-registration",
+            payloadContentType = MimeTypes.HTML,
+            payloadSha256Checksum = nrsSubmissionHtmlSha256Checksum,
+            userSubmissionTimestamp = Instant.now(clock),
+            identityData = nrsIdentityData,
+            userAuthToken = authorisedRequest.headers.get(HeaderNames.AUTHORIZATION).get,
+            headerData = new JsObject(authorisedRequest.headers.toMap.map(x => x._1 -> JsString(x._2 mkString ","))),
+            searchKeys = NrsSearchKeys(
+              businessPartnerId = businessPartnerId,
+              eclRegistrationReference = eclRegistrationReference
+            )
+          )
+        )
+      )
+    }
 
   def alphaNumericString: String = Gen.alphaNumStr.retryUntil(_.nonEmpty).sample.get
 

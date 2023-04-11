@@ -43,4 +43,8 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
 
   val knownFactsInProgressRetryAfter: FiniteDuration =
     configuration.get[FiniteDuration]("knownFactsQueue.inProgressRetryAfter")
+
+  val nrsBaseUrl: String = servicesConfig.baseUrl("nrs")
+
+  val nrsApiKey: String = configuration.get[String]("microservice.services.nrs.apiKey")
 }
