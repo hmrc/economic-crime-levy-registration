@@ -25,8 +25,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TestOnlyEnrolmentStoreProxyConnector @Inject() (appConfig: AppConfig, httpClient: HttpClient)(implicit
-  ec: ExecutionContext
+class TestOnlyEnrolmentStoreProxyConnector @Inject()(appConfig: AppConfig, httpClient: HttpClient)(implicit
+                                                                                                   ec: ExecutionContext
 ) {
 
   private val enrolmentStoreUrl: String =
@@ -40,11 +40,7 @@ class TestOnlyEnrolmentStoreProxyConnector @Inject() (appConfig: AppConfig, http
 
   def deEnrol(groupId: String, eclReference: String)(implicit hc: HeaderCarrier): Future[Unit] =
     httpClient
-      .DELETE[Either[UpstreamErrorResponse, HttpResponse]](
+      .DELETE[HttpResponse](
         s"$enrolmentStoreUrl/groups/$groupId/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}"
-      )
-      .map {
-        case Left(e)  => throw e
-        case Right(_) => ()
-      }
+      ).map(_ => ())
 }
