@@ -59,13 +59,15 @@ abstract class ISpecBase
   private val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
 
   val additionalAppConfig: Map[String, Any] = Map(
-    "metrics.enabled"    -> false,
-    "auditing.enabled"   -> false,
-    "application.router" -> "testOnlyDoNotUseInAppConf.Routes"
+    "metrics.enabled"              -> false,
+    "auditing.enabled"             -> false,
+    "http-verbs.retries.intervals" -> List("1ms", "1ms", "1ms"),
+    "application.router"           -> "testOnlyDoNotUseInAppConf.Routes"
   ) ++ setWireMockPort(
     "auth",
     "tax-enrolments",
-    "integration-framework"
+    "integration-framework",
+    "nrs"
   )
 
   override def fakeApplication(): Application =
@@ -95,7 +97,9 @@ abstract class ISpecBase
   override protected def afterEach(): Unit = {
     resetWireMock()
     callRoute(
-      FakeRequest(uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers.routes.TestOnlyController.clearAllData),
+      FakeRequest(
+        uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers.routes.TestOnlyController.clearAllData
+      ),
       requiresAuth = false
     ).futureValue
     super.afterEach()

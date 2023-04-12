@@ -18,11 +18,11 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.grs
 
 import play.api.libs.json.{Json, OFormat}
 
-import java.util.Date
+import java.time.LocalDate
 
 final case class SoleTraderEntityJourneyData(
   fullName: FullName,
-  dateOfBirth: Date,
+  dateOfBirth: LocalDate,
   nino: Option[String],
   sautr: Option[String],
   identifiersMatch: Boolean,

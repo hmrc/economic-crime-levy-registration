@@ -25,13 +25,21 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorR
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+trait TaxEnrolmentsConnector {
+  def enrol(
+    createEnrolmentRequest: CreateEnrolmentRequest
+  )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, HttpResponse]]
+}
+
 @Singleton
-class TaxEnrolmentsConnector @Inject() (appConfig: AppConfig, httpClient: HttpClient)(implicit ec: ExecutionContext) {
+class TaxEnrolmentsConnectorImpl @Inject() (appConfig: AppConfig, httpClient: HttpClient)(implicit
+  ec: ExecutionContext
+) extends TaxEnrolmentsConnector {
 
   private val taxEnrolmentsUrl: String =
     s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$ServiceName/enrolment"
 
-  def enrol(
+  override def enrol(
     createEnrolmentRequest: CreateEnrolmentRequest
   )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, HttpResponse]] =
     httpClient

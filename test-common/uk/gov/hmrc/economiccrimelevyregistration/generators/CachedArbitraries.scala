@@ -21,10 +21,11 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.derive.MkArbitrary
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.models.audit.RequestStatus
-import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisorType, BusinessSector, EclAddress, EntityType, KnownFactsWorkItem, SubscriptionStatus}
-import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{CreateEnrolmentRequest, UpsertKnownFactsRequest}
-import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, RegistrationStatus, SoleTraderEntityJourneyData, VerificationStatus}
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Channel, CreateEclSubscriptionResponse, EclSubscription, EtmpSubscriptionStatus}
+import uk.gov.hmrc.economiccrimelevyregistration.models._
+import uk.gov.hmrc.economiccrimelevyregistration.models.eacd._
+import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
+import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import uk.gov.hmrc.mongo.workitem.WorkItem
 
@@ -51,5 +52,8 @@ object CachedArbitraries extends EclTestData {
   implicit lazy val arbEitherErrorOrHttpResponse: Arbitrary[Either[UpstreamErrorResponse, HttpResponse]] = mkArb
   implicit lazy val arbWorkItemKnownFactsWorkItem: Arbitrary[WorkItem[KnownFactsWorkItem]]               = mkArb
   implicit lazy val arbRequestStatus: Arbitrary[RequestStatus]                                           = mkArb
+  implicit lazy val arbNrsIdentityData: Arbitrary[NrsIdentityData]                                       = mkArb
+  implicit lazy val arbNrsSubmission: Arbitrary[NrsSubmission]                                           = mkArb
+  implicit lazy val arbNrsSubmissionResponse: Arbitrary[NrsSubmissionResponse]                           = mkArb
 
 }
