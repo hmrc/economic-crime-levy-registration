@@ -70,6 +70,6 @@ class TestOnlyController @Inject() (
             }
         )
       )
-      .map(_ => Ok("TODO"))
+      .map(_ => Ok("Successfully removed all references that were used for enrolment in QA."))
   }
 }
