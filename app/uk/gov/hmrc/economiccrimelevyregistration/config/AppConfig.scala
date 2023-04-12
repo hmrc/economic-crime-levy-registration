@@ -41,6 +41,8 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
 
   val enrolmentStoreProxyBaseUrl: String = servicesConfig.baseUrl("enrolment-store-proxy")
 
+  val eclStubs: String = servicesConfig.baseUrl("ecl-stubs")
+
   val knownFactsInProgressRetryAfter: FiniteDuration =
     configuration.get[FiniteDuration]("knownFactsQueue.inProgressRetryAfter")
 }

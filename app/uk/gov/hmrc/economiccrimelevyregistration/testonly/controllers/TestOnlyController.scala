@@ -20,7 +20,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors.TestOnlyTaxEnrolmentsConnector
+import uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors.{EclStubsConnector, TestOnlyEnrolmentStoreProxyConnector, TestOnlyTaxEnrolmentsConnector}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
@@ -31,7 +31,9 @@ class TestOnlyController @Inject() (
   cc: ControllerComponents,
   registrationRepository: RegistrationRepository,
   testOnlyTaxEnrolmentsConnector: TestOnlyTaxEnrolmentsConnector,
-  authorise: AuthorisedAction
+  testOnlyEnrolmentStoreProxyConnector: TestOnlyEnrolmentStoreProxyConnector,
+  authorise: AuthorisedAction,
+  eclStubsConnector: EclStubsConnector
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -54,4 +56,20 @@ class TestOnlyController @Inject() (
       )
   }
 
+  def deEnrolStubReferences(): Action[AnyContent] = Action.async { implicit request =>
+    eclStubsConnector.getEclReferenceList
+      .map(
+        _.map(reference =>
+          testOnlyEnrolmentStoreProxyConnector
+            .fetchGroupId(reference)
+            .map { ref =>
+              ref.principalGroupIds.map(_.map { groupId =>
+                testOnlyEnrolmentStoreProxyConnector
+                  .deEnrol(groupId, reference)
+              })
+            }
+        )
+      )
+      .map(_ => Ok("TODO"))
+  }
 }
