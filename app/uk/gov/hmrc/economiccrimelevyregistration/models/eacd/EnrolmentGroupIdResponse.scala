@@ -19,8 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.eacd
 import play.api.libs.json.{Json, OFormat}
 
 final case class EnrolmentGroupIdResponse(
-  principalGroupIds: Option[Seq[String]],
-  delegatedGroupIds: Option[Seq[String]]
+  principalGroupIds: Seq[String]
 )
 
 object EnrolmentGroupIdResponse {

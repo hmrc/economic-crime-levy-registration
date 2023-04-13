@@ -1,4 +1,4 @@
 GET        /clear-all                              uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers.TestOnlyController.clearAllData
 GET        /clear-current                          uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers.TestOnlyController.clearCurrentData
 GET        /de-enrol/:groupId/:eclReference        uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers.TestOnlyController.deEnrol(groupId, eclReference)
-GET        /de-enrol/stub-ecl-references           uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers.TestOnlyController.deEnrolStubReferences
+GET        /de-enrol/stub-ecl-references           uk.gov.hmrc.economiccrimelevyregistration.testonly.controllers.TestOnlyController.deEnrolStubEclReferences

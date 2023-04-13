@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors
 
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
 import javax.inject.{Inject, Singleton}
@@ -27,9 +28,11 @@ class EclStubsConnector @Inject() (
   httpClient: HttpClient,
   appConfig: AppConfig
 )(implicit ec: ExecutionContext) {
-  def getEclReferenceList(implicit hc: HeaderCarrier): Future[List[String]] =
+
+  def getStubEclReferences(implicit hc: HeaderCarrier): Future[Seq[String]] =
     httpClient
-      .GET[List[String]](
-        s"${appConfig.eclStubs}/enrolments/cleanup-references"
+      .GET[Seq[String]](
+        s"${appConfig.eclStubsBaseUrl}/enrolments/cleanup-references"
       )
+
 }

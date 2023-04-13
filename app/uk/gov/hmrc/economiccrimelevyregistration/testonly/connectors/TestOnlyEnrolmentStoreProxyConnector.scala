@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors
 
+import play.api.http.Status.{NOT_FOUND, NO_CONTENT}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{EclEnrolment, EnrolmentGroupIdResponse}
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.HttpReadsInstances.readEitherOf
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads, HttpResponse, UpstreamErrorResponse}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,18 +32,28 @@ class TestOnlyEnrolmentStoreProxyConnector @Inject() (appConfig: AppConfig, http
 ) {
 
   private val enrolmentStoreUrl: String =
-    s"${appConfig.enrolmentStoreProxyBaseUrl}/enrolment-store-proxy/enrolment-store/"
+    s"${appConfig.enrolmentStoreProxyBaseUrl}/enrolment-store-proxy/enrolment-store"
 
-  def fetchGroupId(eclReference: String)(implicit hc: HeaderCarrier): Future[EnrolmentGroupIdResponse] =
-    httpClient
-      .GET[EnrolmentGroupIdResponse](
-        s"$enrolmentStoreUrl/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}/groups"
-      )
+  private def readOptionOfNotFoundOrNoContent[A: HttpReads]: HttpReads[Option[A]] = HttpReads[HttpResponse]
+    .flatMap(_.status match {
+      case NOT_FOUND | NO_CONTENT => HttpReads.pure(None)
+      case _                      =>
+        HttpReads[A].map(Some.apply)
+    })
 
-  def deEnrol(groupId: String, eclReference: String)(implicit hc: HeaderCarrier): Future[Unit] =
+  def getAllocatedPrincipalGroupIds(
+    eclReference: String
+  )(implicit hc: HeaderCarrier): Future[Option[EnrolmentGroupIdResponse]] =
     httpClient
-      .DELETE[HttpResponse](
+      .GET[Option[EnrolmentGroupIdResponse]](
+        s"$enrolmentStoreUrl/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}/groups?type=principal&ignore-assignments=true"
+      )(readOptionOfNotFoundOrNoContent, hc, ec)
+
+  def deEnrol(groupId: String, eclReference: String)(implicit
+    hc: HeaderCarrier
+  ): Future[Either[UpstreamErrorResponse, HttpResponse]] =
+    httpClient
+      .DELETE[Either[UpstreamErrorResponse, HttpResponse]](
         s"$enrolmentStoreUrl/groups/$groupId/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}"
       )
-      .map(_ => ())
 }
