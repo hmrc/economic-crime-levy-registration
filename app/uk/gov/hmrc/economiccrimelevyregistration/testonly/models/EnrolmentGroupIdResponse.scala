@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.models.eacd
+package uk.gov.hmrc.economiccrimelevyregistration.testonly.models
 
 import play.api.libs.json.{Json, OFormat}
 
