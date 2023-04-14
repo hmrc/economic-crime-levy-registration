@@ -36,6 +36,9 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
   val integrationFrameworkBearerToken: String =
     configuration.get[String]("microservice.services.integration-framework.bearerToken")
 
+  val getSubscriptionStatusBearerToken: String =
+    configuration.get[String]("microservice.services.integration-framework.getSubscriptionStatusBearerToken")
+
   val integrationFrameworkEnvironment: String =
     configuration.get[String]("microservice.services.integration-framework.environment")
 
