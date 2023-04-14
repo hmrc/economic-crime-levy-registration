@@ -34,8 +34,8 @@ class IntegrationFrameworkConnector @Inject() (
   correlationIdGenerator: CorrelationIdGenerator
 )(implicit ec: ExecutionContext) {
 
-  private def integrationFrameworkHeaders: Seq[(String, String)] = Seq(
-    (HeaderNames.AUTHORIZATION, s"Bearer ${appConfig.integrationFrameworkBearerToken}"),
+  private def integrationFrameworkHeaders(bearerToken: String): Seq[(String, String)] = Seq(
+    (HeaderNames.AUTHORIZATION, s"Bearer $bearerToken"),
     (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
     (CustomHeaderNames.CorrelationId, correlationIdGenerator.generateCorrelationId)
   )
@@ -45,7 +45,7 @@ class IntegrationFrameworkConnector @Inject() (
   )(implicit hc: HeaderCarrier): Future[SubscriptionStatusResponse] =
     httpClient.GET[SubscriptionStatusResponse](
       s"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status",
-      headers = integrationFrameworkHeaders
+      headers = integrationFrameworkHeaders(appConfig.getSubscriptionStatusBearerToken)
     )
 
   def subscribeToEcl(eclSubscription: EclSubscription)(implicit
@@ -54,7 +54,7 @@ class IntegrationFrameworkConnector @Inject() (
     httpClient.POST[Subscription, Either[UpstreamErrorResponse, CreateEclSubscriptionResponse]](
       s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}",
       eclSubscription.subscription,
-      headers = integrationFrameworkHeaders
+      headers = integrationFrameworkHeaders(appConfig.integrationFrameworkBearerToken)
     )
 
 }
