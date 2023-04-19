@@ -40,4 +40,10 @@ class ChannelSpec extends SpecBase {
       result shouldBe a[JsError]
     }
   }
+
+  "writes" should {
+    "return the channel serialized to its JSON representation" in forAll { channel: Channel =>
+      Json.toJson(channel) shouldBe JsString(channel.toString)
+    }
+  }
 }
