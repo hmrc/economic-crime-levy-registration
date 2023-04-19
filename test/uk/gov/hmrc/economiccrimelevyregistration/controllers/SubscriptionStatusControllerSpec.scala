@@ -23,16 +23,19 @@ import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.IntegrationFrameworkConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.SubscriptionStatusResponse
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 import scala.concurrent.Future
 
 class SubscriptionStatusControllerSpec extends SpecBase {
 
   val mockIntegrationFrameworkConnector: IntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
+  val mockAuditConnector: AuditConnector                               = mock[AuditConnector]
 
   val controller = new SubscriptionStatusController(
     cc,
     mockIntegrationFrameworkConnector,
+    mockAuditConnector,
     fakeAuthorisedAction
   )
 
@@ -47,6 +50,10 @@ class SubscriptionStatusControllerSpec extends SpecBase {
 
         status(result)        shouldBe OK
         contentAsJson(result) shouldBe Json.toJson(subscriptionStatusResponse.toEclSubscriptionStatus)
+
+        verify(mockAuditConnector, times(1)).sendExtendedEvent(any())(any(), any())
+
+        reset(mockAuditConnector)
     }
   }
 

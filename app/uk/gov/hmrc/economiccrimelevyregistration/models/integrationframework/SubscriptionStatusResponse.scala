@@ -61,6 +61,8 @@ object EtmpSubscriptionStatus {
         }
       case e: JsError          => e
     }
+
+  implicit val writes: Writes[EtmpSubscriptionStatus] = (o: EtmpSubscriptionStatus) => JsString(o.toString)
 }
 
 sealed trait Channel
@@ -79,6 +81,8 @@ object Channel {
         }
       case e: JsError          => e
     }
+
+  implicit val writes: Writes[Channel] = (o: Channel) => JsString(o.toString)
 }
 
 final case class SubscriptionStatusResponse(

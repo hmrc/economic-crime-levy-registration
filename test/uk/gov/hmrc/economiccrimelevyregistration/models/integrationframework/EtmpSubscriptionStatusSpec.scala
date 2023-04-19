@@ -18,6 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
 import play.api.libs.json.{JsBoolean, JsError, JsString, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 
 class EtmpSubscriptionStatusSpec extends SpecBase {
@@ -57,6 +58,13 @@ class EtmpSubscriptionStatusSpec extends SpecBase {
       val result = Json.fromJson[EtmpSubscriptionStatus](JsBoolean(true))
 
       result shouldBe a[JsError]
+    }
+  }
+
+  "writes" should {
+    "return the subscription status serialized to its JSON representation" in forAll {
+      subscriptionStatus: EtmpSubscriptionStatus =>
+        Json.toJson(subscriptionStatus) shouldBe JsString(subscriptionStatus.toString)
     }
   }
 }

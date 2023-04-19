@@ -20,6 +20,8 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.IntegrationFrameworkConnector
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
+import uk.gov.hmrc.economiccrimelevyregistration.models.audit.{AuditSubscriptionStatus, SubscriptionStatusRetrievedAuditEvent}
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
@@ -29,6 +31,7 @@ import scala.concurrent.ExecutionContext
 class SubscriptionStatusController @Inject() (
   cc: ControllerComponents,
   integrationFrameworkConnector: IntegrationFrameworkConnector,
+  auditConnector: AuditConnector,
   authorise: AuthorisedAction
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
@@ -36,7 +39,21 @@ class SubscriptionStatusController @Inject() (
   def getSubscriptionStatus(businessPartnerId: String): Action[AnyContent] = authorise.async { implicit request =>
     integrationFrameworkConnector
       .getSubscriptionStatus(businessPartnerId)
-      .map(subscriptionStatusResponse => Ok(Json.toJson(subscriptionStatusResponse.toEclSubscriptionStatus)))
+      .map { subscriptionStatusResponse =>
+        auditConnector.sendExtendedEvent(
+          SubscriptionStatusRetrievedAuditEvent(
+            request.internalId,
+            businessPartnerId,
+            AuditSubscriptionStatus(
+              subscriptionStatusResponse.subscriptionStatus,
+              subscriptionStatusResponse.idValue,
+              subscriptionStatusResponse.channel
+            )
+          ).extendedDataEvent
+        )
+
+        Ok(Json.toJson(subscriptionStatusResponse.toEclSubscriptionStatus))
+      }
   }
 
 }
