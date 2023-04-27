@@ -35,7 +35,6 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.{CustomerType, StartOfFirstEclFinancialYear}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
@@ -100,21 +99,6 @@ trait EclTestData {
       registration <- MkArbitrary[Registration].arbitrary.arbitrary
       internalId   <- Gen.nonEmptyListOf(Arbitrary.arbitrary[Char]).map(_.mkString)
     } yield registration.copy(internalId = internalId)
-  }
-
-  implicit val arbSubscriptionStatusResponse: Arbitrary[SubscriptionStatusResponse] = Arbitrary {
-    for {
-      etmpSubscriptionStatus   <- Arbitrary.arbitrary[EtmpSubscriptionStatus]
-      idType                    = if (etmpSubscriptionStatus == Successful) Some("ZECL") else None
-      eclRegistrationReference <- Arbitrary.arbitrary[String]
-      idValue                   = if (etmpSubscriptionStatus == Successful) Some(eclRegistrationReference) else None
-      channel                  <- Arbitrary.arbitrary[Option[Channel]]
-    } yield SubscriptionStatusResponse(
-      etmpSubscriptionStatus,
-      idType,
-      idValue,
-      channel
-    )
   }
 
   def alphaNumStringsWithMaxLength(maxLength: Int): Gen[String] =

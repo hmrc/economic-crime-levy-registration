@@ -16,21 +16,18 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
-import org.scalacheck.Arbitrary
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.Channel._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 
 class SubscriptionStatusResponseSpec extends SpecBase {
 
   "toEclSubscriptionStatus" should {
     "return Subscribed with the ECL registration reference when the id type is ZECL" in forAll {
-      (idValue: String, channel: Option[Channel]) =>
+      (idValue: String, channel: Option[Channel], etmpSubscriptionStatus: EtmpSubscriptionStatus) =>
         val subscriptionStatusResponse = SubscriptionStatusResponse(
-          subscriptionStatus = Successful,
+          subscriptionStatus = etmpSubscriptionStatus,
           idType = Some("ZECL"),
           idValue = Some(idValue),
           channel = channel
@@ -41,10 +38,7 @@ class SubscriptionStatusResponseSpec extends SpecBase {
         result shouldBe EclSubscriptionStatus(Subscribed(idValue))
     }
 
-    "return NotSubscribed when the subscription status is not Successful and there is no id type or value" in forAll(
-      Arbitrary.arbitrary[EtmpSubscriptionStatus].retryUntil(_ != Successful),
-      Arbitrary.arbitrary[Option[Channel]]
-    ) {
+    "return NotSubscribed when there is no id type or value" in forAll {
       (
         subscriptionStatus: EtmpSubscriptionStatus,
         channel: Option[Channel]
@@ -59,58 +53,6 @@ class SubscriptionStatusResponseSpec extends SpecBase {
         val result = subscriptionStatusResponse.toEclSubscriptionStatus
 
         result shouldBe EclSubscriptionStatus(NotSubscribed)
-    }
-
-    "throw an IllegalStateException when the id type something other than ZECL" in forAll(
-      Arbitrary.arbitrary[String].retryUntil(_ != "ZECL"),
-      Arbitrary.arbitrary[String],
-      Arbitrary.arbitrary[Option[Channel]],
-      Arbitrary.arbitrary[EtmpSubscriptionStatus]
-    ) {
-      (
-        idType: String,
-        idValue: String,
-        channel: Option[Channel],
-        subscriptionStatus: EtmpSubscriptionStatus
-      ) =>
-        val subscriptionStatusResponse = SubscriptionStatusResponse(
-          subscriptionStatus = subscriptionStatus,
-          idType = Some(idType),
-          idValue = Some(idValue),
-          channel = channel
-        )
-
-        val result = intercept[IllegalStateException] {
-          subscriptionStatusResponse.toEclSubscriptionStatus
-        }
-
-        result.getMessage shouldBe s"Subscription status $subscriptionStatus returned with unexpected idType $idType and value $idValue"
-    }
-
-    "throw an IllegalStateException when the subscription status is successful but there is no id type or value" in forAll(
-      Table(
-        ("idType", "idValue"),
-        (None, None),
-        (Some("ZECL"), None),
-        (None, Some(testEclRegistrationReference))
-      )
-    ) {
-      (
-        idType: Option[String],
-        idValue: Option[String]
-      ) =>
-        val subscriptionStatusResponse = SubscriptionStatusResponse(
-          subscriptionStatus = Successful,
-          idType = idType,
-          idValue = idValue,
-          channel = Some(Online)
-        )
-
-        val result = intercept[IllegalStateException] {
-          subscriptionStatusResponse.toEclSubscriptionStatus
-        }
-
-        result.getMessage shouldBe "Subscription status is Successful but there is no id type or value"
     }
   }
 
