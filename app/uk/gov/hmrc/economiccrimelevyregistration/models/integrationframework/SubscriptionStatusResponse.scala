@@ -19,7 +19,6 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 import play.api.libs.json._
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus._
 
 sealed trait EtmpSubscriptionStatus
 
@@ -97,15 +96,9 @@ final case class SubscriptionStatusResponse(
       idType,
       idValue
     ) match {
-      case (Successful, Some("ZECL"), Some(eclRegistrationReference))                           =>
+      case (_, Some("ZECL"), Some(eclRegistrationReference)) =>
         EclSubscriptionStatus(Subscribed(eclRegistrationReference))
-      case (Successful, None, None) | (Successful, Some(_), None) | (Successful, None, Some(_)) =>
-        throw new IllegalStateException("Subscription status is Successful but there is no id type or value")
-      case (subscriptionStatus, Some(idType), Some(idValue))                                    =>
-        throw new IllegalStateException(
-          s"Subscription status $subscriptionStatus returned with unexpected idType $idType and value $idValue"
-        )
-      case _                                                                                    => EclSubscriptionStatus(NotSubscribed)
+      case _                                                 => EclSubscriptionStatus(NotSubscribed)
     }
 }
 
