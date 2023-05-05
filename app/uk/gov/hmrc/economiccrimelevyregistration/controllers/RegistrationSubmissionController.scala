@@ -51,7 +51,7 @@ class RegistrationSubmissionController @Inject() (
                 eclSubscription.businessPartnerId
               )
 
-              Ok(Json.toJson(response))
+              Ok(Json.toJson(response.success))
             }
           case Invalid(e)             =>
             Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))

@@ -66,7 +66,7 @@ class RegistrationSubmissionISpec extends ISpecBase {
       )
 
       status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(subscriptionResponse)
+      contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
 
       eventually {
         verify(1, postRequestedFor(urlEqualTo("/submission")))
@@ -118,7 +118,7 @@ class RegistrationSubmissionISpec extends ISpecBase {
       )
 
       status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(subscriptionResponse)
+      contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
 
       eventually {
         verify(4, postRequestedFor(urlEqualTo("/submission")))

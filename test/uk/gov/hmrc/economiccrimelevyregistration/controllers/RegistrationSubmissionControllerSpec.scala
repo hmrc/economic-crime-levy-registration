@@ -69,7 +69,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
           controller.submitRegistration(registration.internalId)(fakeRequest)
 
         status(result)        shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(subscriptionResponse)
+        contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
 
         verify(mockNrsService, times(1)).submitToNrs(any(), any(), any())(any(), any())
 
