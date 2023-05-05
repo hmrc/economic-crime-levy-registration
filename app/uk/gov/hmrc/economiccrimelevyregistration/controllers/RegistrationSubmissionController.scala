@@ -47,11 +47,11 @@ class RegistrationSubmissionController @Inject() (
             subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
               nrsService.submitToNrs(
                 registration.base64EncodedNrsSubmissionHtml,
-                response.eclReference,
+                response.success.eclReference,
                 eclSubscription.businessPartnerId
               )
 
-              Ok(Json.toJson(response))
+              Ok(Json.toJson(response.success))
             }
           case Invalid(e)             =>
             Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
