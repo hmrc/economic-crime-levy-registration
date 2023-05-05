@@ -62,7 +62,7 @@ class SubscriptionServiceSpec extends SpecBase {
 
         verify(mockAuditService, times(1)).successfulSubscriptionAndEnrolment(
           ArgumentMatchers.eq(registration),
-          ArgumentMatchers.eq(subscriptionResponse.eclReference)
+          ArgumentMatchers.eq(subscriptionResponse.success.eclReference)
         )
 
         reset(mockAuditService)
@@ -75,8 +75,9 @@ class SubscriptionServiceSpec extends SpecBase {
         subscriptionResponse: CreateEclSubscriptionResponse,
         workItem: WorkItem[KnownFactsWorkItem]
       ) =>
-        val updatedSubscriptionResponse =
-          subscriptionResponse.copy(processingDate = Instant.parse("2007-12-25T10:15:30.00Z"))
+        val updatedSubscriptionResponse = CreateEclSubscriptionResponse(success =
+          subscriptionResponse.success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
+        )
 
         val error = UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR)
 
@@ -87,7 +88,10 @@ class SubscriptionServiceSpec extends SpecBase {
           .thenReturn(Future.successful(Left(error)))
 
         val expectedKnownFactsWorkItem =
-          KnownFactsWorkItem(eclReference = updatedSubscriptionResponse.eclReference, eclRegistrationDate = "20071225")
+          KnownFactsWorkItem(
+            eclReference = updatedSubscriptionResponse.success.eclReference,
+            eclRegistrationDate = "20071225"
+          )
 
         when(mockKnownFactsQueueRepository.pushNew(ArgumentMatchers.eq(expectedKnownFactsWorkItem), any(), any()))
           .thenReturn(Future.successful(workItem.copy(item = expectedKnownFactsWorkItem)))
@@ -103,7 +107,7 @@ class SubscriptionServiceSpec extends SpecBase {
 
         verify(mockAuditService, times(1)).successfulSubscriptionFailedEnrolment(
           ArgumentMatchers.eq(registration),
-          ArgumentMatchers.eq(subscriptionResponse.eclReference),
+          ArgumentMatchers.eq(subscriptionResponse.success.eclReference),
           ArgumentMatchers.eq(error.getMessage())
         )
 

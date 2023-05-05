@@ -51,15 +51,15 @@ class SubscriptionService @Inject() (
             logger.error(s"Failed to enrol synchronously: ${e.message}")
             auditService.successfulSubscriptionFailedEnrolment(
               registration,
-              createSubscriptionSuccessResponse.eclReference,
+              createSubscriptionSuccessResponse.success.eclReference,
               e.getMessage()
             )
 
             knownFactsQueueRepository
               .pushNew(
                 KnownFactsWorkItem(
-                  createSubscriptionSuccessResponse.eclReference,
-                  dateFormatter.format(createSubscriptionSuccessResponse.processingDate)
+                  createSubscriptionSuccessResponse.success.eclReference,
+                  dateFormatter.format(createSubscriptionSuccessResponse.success.processingDate)
                 )
               )
               .map { _ =>
@@ -67,7 +67,7 @@ class SubscriptionService @Inject() (
               }
           case Right(_) =>
             auditService
-              .successfulSubscriptionAndEnrolment(registration, createSubscriptionSuccessResponse.eclReference)
+              .successfulSubscriptionAndEnrolment(registration, createSubscriptionSuccessResponse.success.eclReference)
             Future.successful(createSubscriptionSuccessResponse)
         }
       case Left(e)                                  =>
@@ -77,7 +77,7 @@ class SubscriptionService @Inject() (
 
   private def createEnrolmentRequest(subscriptionResponse: CreateEclSubscriptionResponse): CreateEnrolmentRequest =
     CreateEnrolmentRequest(
-      identifiers = Seq(KeyValue(IdentifierKey, subscriptionResponse.eclReference)),
-      verifiers = Seq(KeyValue(VerifierKey, dateFormatter.format(subscriptionResponse.processingDate)))
+      identifiers = Seq(KeyValue(IdentifierKey, subscriptionResponse.success.eclReference)),
+      verifiers = Seq(KeyValue(VerifierKey, dateFormatter.format(subscriptionResponse.success.processingDate)))
     )
 }

@@ -23,9 +23,9 @@ class RegistrationSubmissionISpec extends ISpecBase {
       stubAuthorised()
 
       val validRegistration    = random[ValidUkCompanyRegistration]
-      val subscriptionResponse =
-        random[CreateEclSubscriptionResponse]
-          .copy(processingDate = Instant.parse("2007-12-25T10:15:30.00Z"))
+      val subscriptionResponse = CreateEclSubscriptionResponse(success =
+        random[CreateEclSubscriptionResponse].success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
+      )
 
       val registrationDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
 
@@ -41,7 +41,8 @@ class RegistrationSubmissionISpec extends ISpecBase {
 
       stubEnrol(
         CreateEnrolmentRequest(
-          identifiers = Seq(KeyValue(key = EclEnrolment.IdentifierKey, value = subscriptionResponse.eclReference)),
+          identifiers =
+            Seq(KeyValue(key = EclEnrolment.IdentifierKey, value = subscriptionResponse.success.eclReference)),
           verifiers = Seq(KeyValue(key = EclEnrolment.VerifierKey, value = "20071225"))
         )
       )
@@ -76,9 +77,9 @@ class RegistrationSubmissionISpec extends ISpecBase {
       stubAuthorised()
 
       val validRegistration    = random[ValidUkCompanyRegistration]
-      val subscriptionResponse =
-        random[CreateEclSubscriptionResponse]
-          .copy(processingDate = Instant.parse("2007-12-25T10:15:30.00Z"))
+      val subscriptionResponse = CreateEclSubscriptionResponse(success =
+        random[CreateEclSubscriptionResponse].success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
+      )
 
       val registrationDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
 
@@ -94,7 +95,8 @@ class RegistrationSubmissionISpec extends ISpecBase {
 
       stubEnrol(
         CreateEnrolmentRequest(
-          identifiers = Seq(KeyValue(key = EclEnrolment.IdentifierKey, value = subscriptionResponse.eclReference)),
+          identifiers =
+            Seq(KeyValue(key = EclEnrolment.IdentifierKey, value = subscriptionResponse.success.eclReference)),
           verifiers = Seq(KeyValue(key = EclEnrolment.VerifierKey, value = "20071225"))
         )
       )
