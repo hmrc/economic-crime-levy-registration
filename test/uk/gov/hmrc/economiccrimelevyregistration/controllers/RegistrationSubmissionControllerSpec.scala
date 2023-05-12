@@ -71,7 +71,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         status(result)        shouldBe OK
         contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
 
-        verify(mockNrsService, times(1)).submitToNrs(any(), any(), any())(any(), any())
+        verify(mockNrsService, times(1)).submitToNrs(any(), any())(any(), any())
 
         reset(mockNrsService)
     }

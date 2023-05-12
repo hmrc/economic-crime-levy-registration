@@ -57,8 +57,7 @@ class NrsServiceSpec extends SpecBase {
         await(
           service.submitToNrs(
             Some(validNrsSubmission.base64EncodedNrsSubmissionHtml),
-            validNrsSubmission.eclRegistrationReference,
-            validNrsSubmission.businessPartnerId
+            validNrsSubmission.eclRegistrationReference
           )(hc, request)
         )
 
@@ -78,8 +77,7 @@ class NrsServiceSpec extends SpecBase {
         await(
           service.submitToNrs(
             None,
-            validNrsSubmission.eclRegistrationReference,
-            validNrsSubmission.businessPartnerId
+            validNrsSubmission.eclRegistrationReference
           )(hc, request)
         )
       }

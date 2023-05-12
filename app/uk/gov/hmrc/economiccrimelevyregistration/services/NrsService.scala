@@ -38,8 +38,7 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
 
   def submitToNrs(
     optBase64EncodedNrsSubmissionHtml: Option[String],
-    eclRegistrationReference: String,
-    businessPartnerId: String
+    eclRegistrationReference: String
   )(implicit hc: HeaderCarrier, request: AuthorisedRequest[_]): Future[NrsSubmissionResponse] = {
     val userAuthToken: String                  = request.headers.get(HeaderNames.AUTHORIZATION).get
     val headerData: JsObject                   = new JsObject(request.headers.toMap.map(x => x._1 -> JsString(x._2 mkString ",")))
@@ -47,10 +46,7 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
       throw new IllegalStateException("Base64 encoded NRS submission HTML not found in registration data")
     )
 
-    val nrsSearchKeys: NrsSearchKeys = NrsSearchKeys(
-      businessPartnerId = businessPartnerId,
-      eclRegistrationReference = eclRegistrationReference
-    )
+    val nrsSearchKeys: NrsSearchKeys = NrsSearchKeys(eclRegistrationReference = eclRegistrationReference)
 
     val nrsMetadata = NrsMetadata(
       businessId = "ecl",
