@@ -47,8 +47,7 @@ class RegistrationSubmissionController @Inject() (
             subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
               nrsService.submitToNrs(
                 registration.base64EncodedNrsSubmissionHtml,
-                response.success.eclReference,
-                eclSubscription.businessPartnerId
+                response.success.eclReference
               )
 
               Ok(Json.toJson(response.success))

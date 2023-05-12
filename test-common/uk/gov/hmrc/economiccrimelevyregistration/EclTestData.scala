@@ -69,7 +69,6 @@ final case class CommonRegistrationData(registration: Registration)
 final case class ValidNrsSubmission(
   base64EncodedNrsSubmissionHtml: String,
   eclRegistrationReference: String,
-  businessPartnerId: String,
   nrsSubmission: NrsSubmission
 )
 
@@ -477,13 +476,11 @@ trait EclTestData {
     Arbitrary {
       for {
         eclRegistrationReference <- Arbitrary.arbitrary[String]
-        businessPartnerId        <- Arbitrary.arbitrary[String]
         nrsIdentityData          <- Arbitrary.arbitrary[NrsIdentityData]
         authorisedRequest         = AuthorisedRequest(request, nrsIdentityData.internalId, nrsIdentityData)
       } yield ValidNrsSubmission(
         base64EncodedNrsSubmissionHtml = base64EncodedNrsSubmissionHtml,
         eclRegistrationReference = eclRegistrationReference,
-        businessPartnerId = businessPartnerId,
         nrsSubmission = NrsSubmission(
           payload = base64EncodedNrsSubmissionHtml,
           metadata = NrsMetadata(
@@ -496,7 +493,6 @@ trait EclTestData {
             userAuthToken = authorisedRequest.headers.get(HeaderNames.AUTHORIZATION).get,
             headerData = new JsObject(authorisedRequest.headers.toMap.map(x => x._1 -> JsString(x._2 mkString ","))),
             searchKeys = NrsSearchKeys(
-              businessPartnerId = businessPartnerId,
               eclRegistrationReference = eclRegistrationReference
             )
           )
