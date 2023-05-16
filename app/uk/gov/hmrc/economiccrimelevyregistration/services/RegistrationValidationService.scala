@@ -147,7 +147,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(Instant.now(clock))
 
     registration.entityType match {
-      case Some(UkLimitedCompany | UnlimitedCompany)                                                              =>
+      case Some(UkLimitedCompany | UnlimitedCompany)                                           =>
         grsJourneyData match {
           case (Some(i), None, None) =>
             (

@@ -193,13 +193,14 @@ trait EclTestData {
 
   implicit val arbValidUkCompanyRegistration: Arbitrary[ValidUkCompanyRegistration] = Arbitrary {
     for {
+      entityType                    <- Gen.oneOf(Seq(UkLimitedCompany, UnlimitedCompany))
       businessPartnerId             <- RegexpGen.from(Regex.businessPartnerId)
       incorporatedEntityJourneyData <- Arbitrary.arbitrary[IncorporatedEntityJourneyData]
       ctutr                         <- RegexpGen.from(Regex.customerIdentificationNumber)
       commonRegistrationData        <- Arbitrary.arbitrary[CommonRegistrationData]
     } yield ValidUkCompanyRegistration(
       commonRegistrationData.registration.copy(
-        entityType = Some(UkLimitedCompany),
+        entityType = Some(entityType),
         incorporatedEntityJourneyData = Some(
           incorporatedEntityJourneyData.copy(
             ctutr = ctutr,
