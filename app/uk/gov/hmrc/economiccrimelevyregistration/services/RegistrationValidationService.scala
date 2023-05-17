@@ -193,7 +193,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
           case (None, Some(p), None) =>
             (
               validateOptExists(p.sautr, "Partnership SA UTR"),
-              validateOptExists(p.postcode, "Partnership postcode"),
+              validateOptExists(p.postcode.map(_.replaceAll("\\s+", "")), "Partnership postcode"),
               validateOptExists(registration.partnershipName, "Partnership name")
             ).mapN { (sautr, postcode, partnershipName) =>
               LegalEntityDetails(
