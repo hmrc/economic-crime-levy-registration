@@ -36,9 +36,9 @@ object EntitySubType {
           case "RegisteredSociety"         => JsSuccess(RegisteredSociety)
           case "NonUKEstablishment"        => JsSuccess(NonUKEstablishment)
           case "UnincorporatedAssociation" => JsSuccess(UnincorporatedAssociation)
-          case s                           => JsError(s"$s is not a valid EntityType")
+          case s                           => JsError(s"$s is not a valid EntitySubType")
         }
-      case e: JsError                      => e
+      case e: JsError          => e
     }
 
     override def writes(o: EntitySubType): JsValue = JsString(o.toString)

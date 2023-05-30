@@ -28,11 +28,11 @@ object UtrType {
     override def reads(json: JsValue): JsResult[UtrType] = json.validate[String] match {
       case JsSuccess(value, _) =>
         value match {
-          case "SaUre" => JsSuccess(SaUtr)
+          case "SaUtr" => JsSuccess(SaUtr)
           case "CtUtr" => JsSuccess(CtUtr)
-          case s       => JsError(s"$s is not a valid EntityType")
+          case s       => JsError(s"$s is not a valid UtrType")
         }
-      case e: JsError  => e
+      case e: JsError          => e
     }
 
     override def writes(o: UtrType): JsValue = JsString(o.toString)
