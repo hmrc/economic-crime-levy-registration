@@ -19,14 +19,14 @@ package uk.gov.hmrc.economiccrimelevyregistration.models
 import play.api.libs.json.{Json, OFormat}
 
 final case class OtherEntityJourneyData(
-                                         entityType: Option[OtherEntityType],
-                                         charityRegistrationNumber: Option[String],
-                                         companyRegistrationNumber: Option[String],
-                                         utrType: Option[UtrType],
-                                         ctUtr: Option[String],
-                                         saUtr: Option[String],
-                                         overseasTaxIdentifier: Option[String],
-                                         postcode: Option[String]
+  entityType: Option[OtherEntityType],
+  charityRegistrationNumber: Option[String],
+  companyRegistrationNumber: Option[String],
+  utrType: Option[UtrType],
+  ctUtr: Option[String],
+  saUtr: Option[String],
+  overseasTaxIdentifier: Option[String],
+  postcode: Option[String]
 )
 
 object OtherEntityJourneyData {

@@ -36,7 +36,7 @@ object OtherEntityType {
           case "RegisteredSociety"         => JsSuccess(RegisteredSociety)
           case "NonUKEstablishment"        => JsSuccess(NonUKEstablishment)
           case "UnincorporatedAssociation" => JsSuccess(UnincorporatedAssociation)
-          case s                           => JsError(s"$s is not a valid EntitySubType")
+          case s                           => JsError(s"$s is not a valid OtherEntityType")
         }
       case e: JsError          => e
     }
