@@ -18,17 +18,17 @@ package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue}
 
-sealed trait EntitySubType
+sealed trait OtherEntityType
 
-object EntitySubType {
-  case object Charity extends EntitySubType
-  case object Trust extends EntitySubType
-  case object RegisteredSociety extends EntitySubType
-  case object NonUKEstablishment extends EntitySubType
-  case object UnincorporatedAssociation extends EntitySubType
+object OtherEntityType {
+  case object Charity extends OtherEntityType
+  case object Trust extends OtherEntityType
+  case object RegisteredSociety extends OtherEntityType
+  case object NonUKEstablishment extends OtherEntityType
+  case object UnincorporatedAssociation extends OtherEntityType
 
-  implicit val format: Format[EntitySubType] = new Format[EntitySubType] {
-    override def reads(json: JsValue): JsResult[EntitySubType] = json.validate[String] match {
+  implicit val format: Format[OtherEntityType] = new Format[OtherEntityType] {
+    override def reads(json: JsValue): JsResult[OtherEntityType] = json.validate[String] match {
       case JsSuccess(value, _) =>
         value match {
           case "Charity"                   => JsSuccess(Charity)
@@ -41,6 +41,6 @@ object EntitySubType {
       case e: JsError          => e
     }
 
-    override def writes(o: EntitySubType): JsValue = JsString(o.toString)
+    override def writes(o: OtherEntityType): JsValue = JsString(o.toString)
   }
 }
