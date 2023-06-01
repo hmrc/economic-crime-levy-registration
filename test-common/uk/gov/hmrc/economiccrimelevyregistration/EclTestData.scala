@@ -39,6 +39,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.Leg
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
+import uk.gov.hmrc.economiccrimelevyregistration.utils.StringUtils._
 import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import wolfendale.scalacheck.regexp.RegexpGen
 
@@ -230,7 +231,8 @@ trait EclTestData {
           primaryContactDetails = SubscriptionContactDetails(
             name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
             positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
-            telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+            telephone =
+              commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace,
             emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
           ),
           secondaryContactDetails = None
@@ -279,7 +281,8 @@ trait EclTestData {
           primaryContactDetails = SubscriptionContactDetails(
             name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
             positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
-            telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+            telephone =
+              commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace,
             emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
           ),
           secondaryContactDetails = None
@@ -329,7 +332,8 @@ trait EclTestData {
           primaryContactDetails = SubscriptionContactDetails(
             name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
             positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
-            telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+            telephone =
+              commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace,
             emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
           ),
           secondaryContactDetails = None
@@ -383,7 +387,8 @@ trait EclTestData {
             primaryContactDetails = SubscriptionContactDetails(
               name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
               positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
-              telephone = commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get,
+              telephone =
+                commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace,
               emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
             ),
             secondaryContactDetails = None
