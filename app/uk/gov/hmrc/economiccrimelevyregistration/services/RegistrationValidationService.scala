@@ -27,6 +27,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErr
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.{CustomerType, StartOfFirstEclFinancialYear}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
+import uk.gov.hmrc.economiccrimelevyregistration.utils.StringUtils._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.{SchemaLoader, SchemaValidator}
 
 import java.time.format.DateTimeFormatter
@@ -109,7 +110,12 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         s"$firstOrSecond contact number"
       )
     ).mapN { (name, role, email, number) =>
-      SubscriptionContactDetails(name = name, positionInCompany = role, telephone = number, emailAddress = email)
+      SubscriptionContactDetails(
+        name = name,
+        positionInCompany = role,
+        telephone = number.removeWhitespace,
+        emailAddress = email
+      )
     }
 
   private def validateSecondContactDetails(
@@ -193,7 +199,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
           case (None, Some(p), None) =>
             (
               validateOptExists(p.sautr, "Partnership SA UTR"),
-              validateOptExists(p.postcode.map(_.replaceAll("\\s+", "")), "Partnership postcode"),
+              validateOptExists(p.postcode.map(_.removeWhitespace), "Partnership postcode"),
               validateOptExists(registration.partnershipName, "Partnership name")
             ).mapN { (sautr, postcode, partnershipName) =>
               LegalEntityDetails(
