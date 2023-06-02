@@ -31,15 +31,4 @@ final case class OtherEntityJourneyData(
 
 object OtherEntityJourneyData {
   implicit val format: OFormat[OtherEntityJourneyData] = Json.format[OtherEntityJourneyData]
-
-  def apply(): OtherEntityJourneyData = OtherEntityJourneyData(
-    entityType = None,
-    charityRegistrationNumber = None,
-    companyRegistrationNumber = None,
-    utrType = None,
-    ctUtr = None,
-    saUtr = None,
-    overseasTaxIdentifier = None,
-    postcode = None
-  )
 }
