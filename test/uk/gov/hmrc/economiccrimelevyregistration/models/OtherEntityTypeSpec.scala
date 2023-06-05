@@ -22,10 +22,11 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 
 class OtherEntityTypeSpec extends SpecBase {
   "writes" should {
-    "return the other entity type serialized to its JSON representation" in forAll { (otherOntityType: OtherEntityType) =>
-      val result = Json.toJson(otherOntityType)
+    "return the other entity type serialized to its JSON representation" in forAll {
+      (otherOntityType: OtherEntityType) =>
+        val result = Json.toJson(otherOntityType)
 
-      result shouldBe JsString(otherOntityType.toString)
+        result shouldBe JsString(otherOntityType.toString)
     }
   }
 
