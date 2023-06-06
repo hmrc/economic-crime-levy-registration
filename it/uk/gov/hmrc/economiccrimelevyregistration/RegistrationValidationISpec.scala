@@ -31,7 +31,7 @@ class RegistrationValidationISpec extends ISpecBase {
     "return 204 NO_CONTENT when the registration data is valid" in {
       stubAuthorised()
 
-      val validRegistration = random[ValidUkCompanyRegistration]
+      val validRegistration = random[ValidIncorporatedEntityRegistration]
 
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(

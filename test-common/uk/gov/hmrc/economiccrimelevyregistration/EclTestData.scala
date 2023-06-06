@@ -45,7 +45,10 @@ import wolfendale.scalacheck.regexp.RegexpGen
 
 import java.time.{Clock, Instant, LocalDate}
 
-final case class ValidUkCompanyRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
+final case class ValidIncorporatedEntityRegistration(
+  registration: Registration,
+  expectedEclSubscription: EclSubscription
+)
 
 final case class ValidSoleTraderRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
 
@@ -192,14 +195,14 @@ trait EclTestData {
     } yield companyProfile.copy(companyName = companyName, companyNumber = companyNumber)
   }
 
-  implicit val arbValidUkCompanyRegistration: Arbitrary[ValidUkCompanyRegistration] = Arbitrary {
+  implicit val arbValidIncorporatedEntityRegistration: Arbitrary[ValidIncorporatedEntityRegistration] = Arbitrary {
     for {
-      entityType                    <- Gen.oneOf(Seq(UkLimitedCompany, UnlimitedCompany))
+      entityType                    <- Gen.oneOf(Seq(UkLimitedCompany, UnlimitedCompany, RegisteredSociety))
       businessPartnerId             <- RegexpGen.from(Regex.businessPartnerId)
       incorporatedEntityJourneyData <- Arbitrary.arbitrary[IncorporatedEntityJourneyData]
       ctutr                         <- RegexpGen.from(Regex.customerIdentificationNumber)
       commonRegistrationData        <- Arbitrary.arbitrary[CommonRegistrationData]
-    } yield ValidUkCompanyRegistration(
+    } yield ValidIncorporatedEntityRegistration(
       commonRegistrationData.registration.copy(
         entityType = Some(entityType),
         incorporatedEntityJourneyData = Some(
