@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
-import cats.data.Validated.Valid
+import cats.data.Validated.{Valid, invalid}
 import cats.data.ValidatedNel
 import cats.implicits._
+import play.api.data.validation.Invalid
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
+import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
@@ -38,16 +40,22 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
 
   type ValidationResult[A] = ValidatedNel[DataValidationError, A]
 
-  def validateRegistration(registration: Registration): ValidationResult[EclSubscription] =
-    transformToEclSubscription(registration) match {
-      case Valid(eclSubscription) =>
-        schemaValidator
-          .validateAgainstJsonSchema(
-            eclSubscription.subscription,
-            SchemaLoader.loadSchema("create-ecl-subscription-request.json")
-          )
-          .map(_ => eclSubscription)
-      case invalid                => invalid
+  def validateRegistration(registration: Registration): ValidationResult[EclSubscription] = {
+    registration.entityType match {
+      case Some(Other) =>
+        validateOtherEntity(registration)
+      case Some(_)     =>
+        transformToEclSubscription(registration) match {
+          case Valid(eclSubscription) =>
+            schemaValidator
+              .validateAgainstJsonSchema(
+                eclSubscription.subscription,
+                SchemaLoader.loadSchema("create-ecl-subscription-request.json")
+              )
+              .map(_ => eclSubscription)
+          case invalid                => invalid
+        }
+      }
     }
 
   private def transformToEclSubscription(registration: Registration): ValidationResult[EclSubscription] =
@@ -90,7 +98,8 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
             correspondenceAddressDetails = contactAddress,
             primaryContactDetails = firstContactDetails,
             secondaryContactDetails = secondContactDetails
-          )
+          ),
+          registration = None
         )
     }
 
@@ -326,4 +335,40 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
 
   private def missingErrorMessage(missingDataDescription: String): String = s"$missingDataDescription is missing"
 
+  private def validateOtherEntity(registration: Registration): ValidationResult[EclSubscription] =
+    validateCommonData(registration) match {
+      case Left(registration)                => registration.optOtherEntityJourneyData match {
+        case Some(journey)                   => journey.businessName match {
+          case Some(value) if !value.isBlank => journey.entityType match {
+            case Some(Charity)               => validateCharity(registration, journey)
+            case _                           => ???
+          }
+          case _                             => DataValidationError(DataMissing, missingErrorMessage("business name")).invalidNel
+        }
+        case _                               => DataValidationError(DataMissing, missingErrorMessage("other entity data")).invalidNel
+      }
+      case Right(error)                      => error
+    }
+
+  private def validRegistration(registration: Registration): ValidationResult[EclSubscription] =
+    Valid(EclSubscription(registration.internalId, Subscription.empty(), Some(registration)))
+
+  private def validateCommonData(registration: Registration): Either[Registration, ValidationResult[EclSubscription]] =
+    List(
+      registration.amlSupervisor,
+      registration.relevantAp12Months,
+      registration.relevantApRevenue
+    ).exists(!_.nonEmpty) match {
+      case true  => Right(DataValidationError(DataMissing, missingErrorMessage("common attributes")).invalidNel)
+      case false => Left(registration)
+    }
+
+  private def validateCharity(registration: Registration, journey: OtherEntityJourneyData): ValidationResult[EclSubscription] =
+    journey.charityRegistrationNumber match {
+      case Some(value) if !value.isBlank   => journey.companyRegistrationNumber match {
+        case Some(value) if !value.isBlank => validRegistration(registration)
+        case _                             => DataValidationError(DataMissing, missingErrorMessage("company registration number")).invalidNel
+      }
+      case _                               => DataValidationError(DataMissing, missingErrorMessage("charity registration number")).invalidNel
+    }
 }

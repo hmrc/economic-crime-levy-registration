@@ -17,10 +17,12 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 
 final case class EclSubscription(
   businessPartnerId: String,
-  subscription: Subscription
+  subscription: Subscription,
+  registration: Option[Registration]
 )
 
 object EclSubscription {
@@ -36,6 +38,13 @@ final case class Subscription(
 
 object Subscription {
   implicit val format: OFormat[Subscription] = Json.format[Subscription]
+
+  def empty(): Subscription = Subscription(
+    LegalEntityDetails("", None, None, None, None, "", "", "", "", ""),
+    CorrespondenceAddressDetails("", None, None, None, None, None),
+    SubscriptionContactDetails("", "", "", ""),
+    None
+  )
 }
 
 final case class LegalEntityDetails(
