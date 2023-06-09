@@ -236,7 +236,8 @@ trait EclTestData {
             emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
           ),
           secondaryContactDetails = None
-        )
+        ),
+        registration = None
       )
     )
   }
@@ -286,7 +287,8 @@ trait EclTestData {
             emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
           ),
           secondaryContactDetails = None
-        )
+        ),
+        registration = None
       )
     )
   }
@@ -337,7 +339,8 @@ trait EclTestData {
             emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
           ),
           secondaryContactDetails = None
-        )
+        ),
+        registration = None
       )
     )
   }
@@ -392,7 +395,8 @@ trait EclTestData {
               emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
             ),
             secondaryContactDetails = None
-          )
+          ),
+          registration = None
         )
       )
     }

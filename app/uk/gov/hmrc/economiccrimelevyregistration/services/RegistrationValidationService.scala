@@ -40,11 +40,11 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
 
   type ValidationResult[A] = ValidatedNel[DataValidationError, A]
 
-  def validateRegistration(registration: Registration): ValidationResult[EclSubscription] = {
+  def validateRegistration(registration: Registration): ValidationResult[EclSubscription] =
     registration.entityType match {
       case Some(Other) =>
         validateOtherEntity(registration)
-      case Some(_)     =>
+      case _           =>
         transformToEclSubscription(registration) match {
           case Valid(eclSubscription) =>
             schemaValidator
@@ -55,7 +55,6 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
               .map(_ => eclSubscription)
           case invalid                => invalid
         }
-      }
     }
 
   private def transformToEclSubscription(registration: Registration): ValidationResult[EclSubscription] =
@@ -337,17 +336,20 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
 
   private def validateOtherEntity(registration: Registration): ValidationResult[EclSubscription] =
     validateCommonData(registration) match {
-      case Left(registration)                => registration.optOtherEntityJourneyData match {
-        case Some(journey)                   => journey.businessName match {
-          case Some(value) if !value.isBlank => journey.entityType match {
-            case Some(Charity)               => validateCharity(registration, journey)
-            case _                           => ???
-          }
-          case _                             => DataValidationError(DataMissing, missingErrorMessage("business name")).invalidNel
+      case Left(registration) =>
+        registration.optOtherEntityJourneyData match {
+          case Some(journey) =>
+            journey.businessName match {
+              case Some(value) if !value.isBlank =>
+                journey.entityType match {
+                  case Some(Charity) => validateCharity(registration, journey)
+                  case _             => ???
+                }
+              case _                             => DataValidationError(DataMissing, missingErrorMessage("business name")).invalidNel
+            }
+          case _             => DataValidationError(DataMissing, missingErrorMessage("other entity data")).invalidNel
         }
-        case _                               => DataValidationError(DataMissing, missingErrorMessage("other entity data")).invalidNel
-      }
-      case Right(error)                      => error
+      case Right(error)       => error
     }
 
   private def validRegistration(registration: Registration): ValidationResult[EclSubscription] =
@@ -363,12 +365,16 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       case false => Left(registration)
     }
 
-  private def validateCharity(registration: Registration, journey: OtherEntityJourneyData): ValidationResult[EclSubscription] =
+  private def validateCharity(
+    registration: Registration,
+    journey: OtherEntityJourneyData
+  ): ValidationResult[EclSubscription] =
     journey.charityRegistrationNumber match {
-      case Some(value) if !value.isBlank   => journey.companyRegistrationNumber match {
-        case Some(value) if !value.isBlank => validRegistration(registration)
-        case _                             => DataValidationError(DataMissing, missingErrorMessage("company registration number")).invalidNel
-      }
-      case _                               => DataValidationError(DataMissing, missingErrorMessage("charity registration number")).invalidNel
+      case Some(value) if !value.isBlank =>
+        journey.companyRegistrationNumber match {
+          case Some(value) if !value.isBlank => validRegistration(registration)
+          case _                             => DataValidationError(DataMissing, missingErrorMessage("company registration number")).invalidNel
+        }
+      case _                             => DataValidationError(DataMissing, missingErrorMessage("charity registration number")).invalidNel
     }
 }
