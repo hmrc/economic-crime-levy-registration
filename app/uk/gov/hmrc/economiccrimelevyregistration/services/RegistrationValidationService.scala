@@ -21,6 +21,7 @@ import cats.data.ValidatedNel
 import cats.implicits._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
+import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
@@ -41,12 +42,16 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
   def validateRegistration(registration: Registration): ValidationResult[EclSubscription] =
     transformToEclSubscription(registration) match {
       case Valid(eclSubscription) =>
-        schemaValidator
-          .validateAgainstJsonSchema(
-            eclSubscription.subscription,
-            SchemaLoader.loadSchema("create-ecl-subscription-request.json")
-          )
-          .map(_ => eclSubscription)
+        registration.entityType match {
+          case Some(Other) => Valid(eclSubscription)
+          case _           =>
+            schemaValidator
+              .validateAgainstJsonSchema(
+                eclSubscription.subscription,
+                SchemaLoader.loadSchema("create-ecl-subscription-request.json")
+              )
+              .map(_ => eclSubscription)
+        }
       case invalid                => invalid
     }
 
@@ -133,7 +138,10 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       .orElse(registration.partnershipEntityJourneyData.flatMap(_.registration.registeredBusinessPartnerId))
       .orElse(registration.soleTraderEntityJourneyData.flatMap(_.registration.registeredBusinessPartnerId))
 
-    validateOptExists(optBusinessPartnerId, "Business partner ID")
+    registration.entityType match {
+      case Some(Other) => Valid("OK")
+      case _           => validateOptExists(optBusinessPartnerId, "Business partner ID")
+    }
   }
 
   private def validateLegalEntityDetails(
@@ -236,10 +244,10 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
             }
           case _                     => DataValidationError(DataMissing, missingErrorMessage("Sole trader data")).invalidNel
         }
+      case Some(Other)                                                                         => validateOtherEntity(registration)
       case _                                                                                   =>
         DataValidationError(DataMissing, missingErrorMessage("Entity type")).invalidNel
     }
-
   }
 
   private def validateSoleTraderIdentifiers(
@@ -325,5 +333,37 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     }
 
   private def missingErrorMessage(missingDataDescription: String): String = s"$missingDataDescription is missing"
+
+  private def validateOtherEntity(
+    registration: Registration
+  ): ValidationResult[(String, String) => LegalEntityDetails] =
+    registration.optOtherEntityJourneyData match {
+      case Some(journey) =>
+        journey.businessName match {
+          case Some(value) if !value.isBlank =>
+            journey.entityType match {
+              case Some(Charity) => validateCharity(registration, journey)
+              case _             => ???
+            }
+          case _                             => DataValidationError(DataMissing, missingErrorMessage("business name")).invalidNel
+        }
+      case _             => DataValidationError(DataMissing, missingErrorMessage("other entity data")).invalidNel
+    }
+
+  private def validRegistration(a: String, b: String): LegalEntityDetails =
+    LegalEntityDetails("", None, None, None, None, "", "", "", "", "")
+
+  private def validateCharity(
+    registration: Registration,
+    journey: OtherEntityJourneyData
+  ): ValidationResult[(String, String) => LegalEntityDetails] =
+    journey.charityRegistrationNumber match {
+      case Some(value) if !value.isBlank =>
+        journey.companyRegistrationNumber match {
+          case Some(value) if !value.isBlank => Valid(validRegistration)
+          case _                             => DataValidationError(DataMissing, missingErrorMessage("company registration number")).invalidNel
+        }
+      case _                             => DataValidationError(DataMissing, missingErrorMessage("charity registration number")).invalidNel
+    }
 
 }
