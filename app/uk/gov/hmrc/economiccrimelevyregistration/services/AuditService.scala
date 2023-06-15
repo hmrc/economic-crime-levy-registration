@@ -19,6 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 import play.api.Logging
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.models.audit.{EnrolmentResult, RegistrationResult, RegistrationSubmittedAuditEvent, RequestStatus}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 
 import javax.inject.Inject
@@ -32,7 +33,7 @@ class AuditService @Inject() (
   def successfulSubscriptionAndEnrolment(
     registrationData: Registration,
     eclReference: String
-  ): Future[AuditResult] =
+  )(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
         registrationData = registrationData,
@@ -44,7 +45,7 @@ class AuditService @Inject() (
   def failedSubscription(
     registrationData: Registration,
     failureReason: String
-  ): Future[AuditResult] =
+  )(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
         registrationData = registrationData,
@@ -57,7 +58,7 @@ class AuditService @Inject() (
     registrationData: Registration,
     eclReference: String,
     enrolmentFailureReason: String
-  ): Future[AuditResult] =
+  )(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
         registrationData = registrationData,
