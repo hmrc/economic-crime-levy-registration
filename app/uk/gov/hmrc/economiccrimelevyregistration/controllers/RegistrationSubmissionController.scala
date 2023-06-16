@@ -43,16 +43,20 @@ class RegistrationSubmissionController @Inject() (
     registrationRepository.get(id).flatMap {
       case Some(registration) =>
         registrationValidationService.validateRegistration(registration) match {
-          case Valid(eclSubscription) =>
-            subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
-              nrsService.submitToNrs(
-                registration.base64EncodedNrsSubmissionHtml,
-                response.success.eclReference
-              )
+          case Valid(either) =>
+            either match {
+              case Left(eclSubscription) =>
+                subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
+                  nrsService.submitToNrs(
+                    registration.base64EncodedNrsSubmissionHtml,
+                    response.success.eclReference
+                  )
 
-              Ok(Json.toJson(response.success))
+                  Ok(Json.toJson(response.success))
+                }
+              case _                     => Future.successful(BadRequest)
             }
-          case Invalid(e)             =>
+          case Invalid(e)    =>
             Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
         }
       case None               => Future.successful(NotFound)

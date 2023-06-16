@@ -28,6 +28,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{Finan
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EclSubscription
 import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, AmlSupervisorType, ContactDetails, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.utils.SchemaValidator
 
@@ -42,6 +43,16 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
   val service = new RegistrationValidationService(stubClock, mockSchemaValidator)
 
+  def validateAndCheck(registration: Registration, expected: EclSubscription) = {
+    val result = service.validateRegistration(registration)
+    result shouldBe Valid(Left(expected))
+  }
+
+  def validateAndCheck(registration: Registration) = {
+    val result = service.validateRegistration(registration)
+    result shouldBe Valid(Right(registration))
+  }
+
   "validateRegistration" should {
     "return the ECL subscription if the registration for a UK company is valid" in forAll {
       validUkCompanyRegistration: ValidUkCompanyRegistration =>
@@ -52,9 +63,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
           )(any())
         ).thenReturn(validUkCompanyRegistration.expectedEclSubscription.subscription.validNel)
 
-        val result = service.validateRegistration(validUkCompanyRegistration.registration)
-
-        result shouldBe Valid(validUkCompanyRegistration.expectedEclSubscription)
+        validateAndCheck(validUkCompanyRegistration.registration, validUkCompanyRegistration.expectedEclSubscription)
     }
 
     "return the ECL subscription if the registration for a sole trader is valid" in forAll {
@@ -66,9 +75,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
           )(any())
         ).thenReturn(validSoleTraderRegistration.expectedEclSubscription.subscription.validNel)
 
-        val result = service.validateRegistration(validSoleTraderRegistration.registration)
-
-        result shouldBe Valid(validSoleTraderRegistration.expectedEclSubscription)
+        validateAndCheck(validSoleTraderRegistration.registration, validSoleTraderRegistration.expectedEclSubscription)
     }
 
     "return the ECL subscription if the registration for a limited partnership is valid" in forAll {
@@ -80,9 +87,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
           )(any())
         ).thenReturn(validLimitedPartnershipRegistration.expectedEclSubscription.subscription.validNel)
 
-        val result = service.validateRegistration(validLimitedPartnershipRegistration.registration)
-
-        result shouldBe Valid(validLimitedPartnershipRegistration.expectedEclSubscription)
+        validateAndCheck(
+          validLimitedPartnershipRegistration.registration,
+          validLimitedPartnershipRegistration.expectedEclSubscription
+        )
     }
 
     "return the ECL subscription if the registration for a scottish or general partnership is valid" in forAll {
@@ -94,9 +102,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
           )(any())
         ).thenReturn(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription.subscription.validNel)
 
-        val result = service.validateRegistration(validScottishOrGeneralPartnershipRegistration.registration)
-
-        result shouldBe Valid(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription)
+        validateAndCheck(
+          validScottishOrGeneralPartnershipRegistration.registration,
+          validScottishOrGeneralPartnershipRegistration.expectedEclSubscription
+        )
     }
 
     "return a non-empty list of errors when unconditional mandatory registration data items are missing" in {
@@ -374,6 +383,11 @@ class RegistrationValidationServiceSpec extends SpecBase {
             "Sole trader SA UTR or NINO is missing"
           )
         )
+    }
+
+    "return the registration if the registration for a charity is valid" in forAll {
+      (validCharityRegistration: ValidCharityRegistration) =>
+        validateAndCheck(validCharityRegistration.registration)
     }
   }
 }

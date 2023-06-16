@@ -43,7 +43,10 @@ final case class Registration(
   base64EncodedNrsSubmissionHtml: Option[String],
   optOtherEntityJourneyData: Option[OtherEntityJourneyData],
   lastUpdated: Option[Instant] = None
-)
+) {
+  def otherEntityJourneyData: OtherEntityJourneyData =
+    optOtherEntityJourneyData.getOrElse(OtherEntityJourneyData.empty())
+}
 
 object Registration {
   implicit val format: OFormat[Registration] = Json.format[Registration]
