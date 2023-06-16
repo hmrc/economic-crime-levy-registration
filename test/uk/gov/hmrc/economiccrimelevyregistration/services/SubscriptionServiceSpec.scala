@@ -63,7 +63,7 @@ class SubscriptionServiceSpec extends SpecBase {
         verify(mockAuditService, times(1)).successfulSubscriptionAndEnrolment(
           ArgumentMatchers.eq(registration),
           ArgumentMatchers.eq(subscriptionResponse.success.eclReference)
-        )
+        )(any())
 
         reset(mockAuditService)
     }
@@ -109,7 +109,7 @@ class SubscriptionServiceSpec extends SpecBase {
           ArgumentMatchers.eq(registration),
           ArgumentMatchers.eq(subscriptionResponse.success.eclReference),
           ArgumentMatchers.eq(error.getMessage())
-        )
+        )(any())
 
         reset(mockAuditService)
     }
@@ -131,7 +131,7 @@ class SubscriptionServiceSpec extends SpecBase {
         result shouldBe error
 
         verify(mockAuditService, times(1))
-          .failedSubscription(ArgumentMatchers.eq(registration), ArgumentMatchers.eq(error.getMessage()))
+          .failedSubscription(ArgumentMatchers.eq(registration), ArgumentMatchers.eq(error.getMessage()))(any())
 
         reset(mockAuditService)
     }
