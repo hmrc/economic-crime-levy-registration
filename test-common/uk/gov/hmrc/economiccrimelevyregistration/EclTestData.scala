@@ -33,6 +33,7 @@ import uk.gov.hmrc.auth.core.syntax.retrieved.authSyntaxForRetrieved
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
+import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.{CustomerType, StartOfFirstEclFinancialYear}
@@ -71,6 +72,10 @@ final case class ValidNrsSubmission(
   base64EncodedNrsSubmissionHtml: String,
   eclRegistrationReference: String,
   nrsSubmission: NrsSubmission
+)
+
+final case class ValidCharityRegistration(
+  registration: Registration
 )
 
 trait EclTestData {
@@ -511,4 +516,28 @@ trait EclTestData {
   val testBusinessPartnerId: String                = alphaNumericString
   val testEclRegistrationReference: String         = alphaNumericString
   val testOtherRegimeRegistrationReference: String = alphaNumericString
+
+  implicit val arbValidCharityRegistration: Arbitrary[ValidCharityRegistration] = Arbitrary {
+    for {
+      businessName           <- Arbitrary.arbitrary[String]
+      charityNumber          <- Arbitrary.arbitrary[String]
+      companyNumber          <- Arbitrary.arbitrary[String]
+      commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
+    } yield ValidCharityRegistration(
+      commonRegistrationData.registration.copy(
+        entityType = Some(Other),
+        incorporatedEntityJourneyData = None,
+        partnershipEntityJourneyData = None,
+        soleTraderEntityJourneyData = None,
+        optOtherEntityJourneyData = Some(
+          commonRegistrationData.registration.otherEntityJourneyData.copy(
+            entityType = Some(Charity),
+            businessName = Some(businessName),
+            charityRegistrationNumber = Some(charityNumber),
+            companyRegistrationNumber = Some(companyNumber)
+          )
+        )
+      )
+    )
+  }
 }

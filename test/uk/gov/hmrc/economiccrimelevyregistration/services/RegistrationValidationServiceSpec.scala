@@ -25,6 +25,7 @@ import uk.gov.hmrc.economiccrimelevyregistration._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
@@ -53,8 +54,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         ).thenReturn(validUkCompanyRegistration.expectedEclSubscription.subscription.validNel)
 
         val result = service.validateRegistration(validUkCompanyRegistration.registration)
-
-        result shouldBe Valid(validUkCompanyRegistration.expectedEclSubscription)
+        result shouldBe Valid(Left(validUkCompanyRegistration.expectedEclSubscription))
     }
 
     "return the ECL subscription if the registration for a sole trader is valid" in forAll {
@@ -67,8 +67,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         ).thenReturn(validSoleTraderRegistration.expectedEclSubscription.subscription.validNel)
 
         val result = service.validateRegistration(validSoleTraderRegistration.registration)
-
-        result shouldBe Valid(validSoleTraderRegistration.expectedEclSubscription)
+        result shouldBe Valid(Left(validSoleTraderRegistration.expectedEclSubscription))
     }
 
     "return the ECL subscription if the registration for a limited partnership is valid" in forAll {
@@ -81,8 +80,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         ).thenReturn(validLimitedPartnershipRegistration.expectedEclSubscription.subscription.validNel)
 
         val result = service.validateRegistration(validLimitedPartnershipRegistration.registration)
-
-        result shouldBe Valid(validLimitedPartnershipRegistration.expectedEclSubscription)
+        result shouldBe Valid(Left(validLimitedPartnershipRegistration.expectedEclSubscription))
     }
 
     "return the ECL subscription if the registration for a scottish or general partnership is valid" in forAll {
@@ -95,8 +93,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         ).thenReturn(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription.subscription.validNel)
 
         val result = service.validateRegistration(validScottishOrGeneralPartnershipRegistration.registration)
-
-        result shouldBe Valid(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription)
+        result shouldBe Valid(Left(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription))
     }
 
     "return a non-empty list of errors when unconditional mandatory registration data items are missing" in {
@@ -374,6 +371,58 @@ class RegistrationValidationServiceSpec extends SpecBase {
             "Sole trader SA UTR or NINO is missing"
           )
         )
+    }
+
+    "return errors if the registration for a other entity is invalid" in {
+      val invalidRegistration = Registration
+        .empty("")
+        .copy(
+          entityType = Some(Other)
+        )
+      val expectedErrors      = Seq(
+        DataValidationError(DataMissing, "Carried out AML regulated activity choice is missing"),
+        DataValidationError(DataMissing, "Relevant AP 12 months choice is missing"),
+        DataValidationError(DataMissing, "Relevant AP revenue is missing"),
+        DataValidationError(DataMissing, "Revenue meets threshold flag is missing"),
+        DataValidationError(DataMissing, "AML supervisor is missing"),
+        DataValidationError(DataMissing, "Business sector is missing"),
+        DataValidationError(DataMissing, "First contact name is missing"),
+        DataValidationError(DataMissing, "First contact role is missing"),
+        DataValidationError(DataMissing, "First contact email is missing"),
+        DataValidationError(DataMissing, "First contact number is missing"),
+        DataValidationError(DataMissing, "Contact address is missing"),
+        DataValidationError(DataMissing, "Second contact choice is missing"),
+        DataValidationError(DataMissing, "Other entity type is missing"),
+        DataValidationError(DataMissing, "Other entity data is missing"),
+        DataValidationError(DataMissing, "Business name is missing")
+      )
+      val result              = service.validateRegistration(invalidRegistration)
+      result.isValid shouldBe false
+      result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+    }
+
+    "return the registration if the registration for a charity is valid" in forAll {
+      (validCharityRegistration: ValidCharityRegistration) =>
+        val result = service.validateRegistration(validCharityRegistration.registration)
+        result shouldBe Valid(Right(validCharityRegistration.registration))
+    }
+
+    "return errors if the registration for a charity is invalid" in forAll {
+      (validCharityRegistration: ValidCharityRegistration) =>
+        val otherEntityJourneyData     = validCharityRegistration.registration.otherEntityJourneyData.copy(
+          charityRegistrationNumber = None,
+          companyRegistrationNumber = None
+        )
+        val invalidCharityRegistration = validCharityRegistration.registration.copy(
+          optOtherEntityJourneyData = Some(otherEntityJourneyData)
+        )
+        val expectedErrors             = Seq(
+          DataValidationError(DataMissing, "Charity registration number is missing"),
+          DataValidationError(DataMissing, "Company registration number is missing")
+        )
+        val result                     = service.validateRegistration(invalidCharityRegistration)
+        result.isValid shouldBe false
+        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
   }
 }
