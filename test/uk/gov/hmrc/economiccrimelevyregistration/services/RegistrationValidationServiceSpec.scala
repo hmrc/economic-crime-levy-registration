@@ -25,6 +25,7 @@ import uk.gov.hmrc.economiccrimelevyregistration._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
@@ -372,19 +373,32 @@ class RegistrationValidationServiceSpec extends SpecBase {
         )
     }
 
-    "return errors if the registration for a other entity is invalid" in forAll {
-      (validCharityRegistration: ValidCharityRegistration) =>
-        val invalidRegistration = validCharityRegistration.registration.copy(
-          optOtherEntityJourneyData = None
+    "return errors if the registration for a other entity is invalid" in {
+      val invalidRegistration = Registration
+        .empty("")
+        .copy(
+          entityType = Some(Other)
         )
-        val expectedErrors      = Seq(
-          DataValidationError(DataMissing, "Other entity data is missing"),
-          DataValidationError(DataMissing, "Other entity type is missing"),
-          DataValidationError(DataMissing, "Business name is missing")
-        )
-        val result              = service.validateRegistration(invalidRegistration)
-        result.isValid shouldBe false
-        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+      val expectedErrors      = Seq(
+        DataValidationError(DataMissing, "Carried out AML regulated activity choice is missing"),
+        DataValidationError(DataMissing, "Relevant AP 12 months choice is missing"),
+        DataValidationError(DataMissing, "Relevant AP revenue is missing"),
+        DataValidationError(DataMissing, "Revenue meets threshold flag is missing"),
+        DataValidationError(DataMissing, "AML supervisor is missing"),
+        DataValidationError(DataMissing, "Business sector is missing"),
+        DataValidationError(DataMissing, "First contact name is missing"),
+        DataValidationError(DataMissing, "First contact role is missing"),
+        DataValidationError(DataMissing, "First contact email is missing"),
+        DataValidationError(DataMissing, "First contact number is missing"),
+        DataValidationError(DataMissing, "Contact address is missing"),
+        DataValidationError(DataMissing, "Second contact choice is missing"),
+        DataValidationError(DataMissing, "Other entity type is missing"),
+        DataValidationError(DataMissing, "Other entity data is missing"),
+        DataValidationError(DataMissing, "Business name is missing")
+      )
+      val result              = service.validateRegistration(invalidRegistration)
+      result.isValid shouldBe false
+      result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
 
     "return the registration if the registration for a charity is valid" in forAll {
