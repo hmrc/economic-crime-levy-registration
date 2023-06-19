@@ -345,6 +345,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       validateOptExists(registration.businessSector, "Business sector"),
       validateContactDetails("First", registration.contacts.firstContactDetails),
       validateSecondContactDetails(registration.contacts),
+      validateEclAddress(registration.contactAddress),
       validateAmlRegulatedActivity(registration),
       validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
       validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
@@ -363,6 +364,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       }
     ).mapN {
       (
+        _,
         _,
         _,
         _,

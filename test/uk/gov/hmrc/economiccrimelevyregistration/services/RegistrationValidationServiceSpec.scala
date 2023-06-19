@@ -28,7 +28,6 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{Finan
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EclSubscription
 import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, AmlSupervisorType, ContactDetails, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.utils.SchemaValidator
 
@@ -378,9 +377,14 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidRegistration = validCharityRegistration.registration.copy(
           optOtherEntityJourneyData = None
         )
+        val expectedErrors      = Seq(
+          DataValidationError(DataMissing, "Other entity data is missing"),
+          DataValidationError(DataMissing, "Other entity type is missing"),
+          DataValidationError(DataMissing, "Business name is missing")
+        )
         val result              = service.validateRegistration(invalidRegistration)
         result.isValid shouldBe false
-        result.leftMap(nec => nec.toList.isEmpty shouldBe false)
+        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
 
     "return the registration if the registration for a charity is valid" in forAll {
@@ -392,19 +396,19 @@ class RegistrationValidationServiceSpec extends SpecBase {
     "return errors if the registration for a charity is invalid" in forAll {
       (validCharityRegistration: ValidCharityRegistration) =>
         val otherEntityJourneyData     = validCharityRegistration.registration.otherEntityJourneyData.copy(
-          charityRegistrationNumber = None
+          charityRegistrationNumber = None,
+          companyRegistrationNumber = None
         )
         val invalidCharityRegistration = validCharityRegistration.registration.copy(
           optOtherEntityJourneyData = Some(otherEntityJourneyData)
         )
+        val expectedErrors             = Seq(
+          DataValidationError(DataMissing, "Charity registration number is missing"),
+          DataValidationError(DataMissing, "Company registration number is missing")
+        )
         val result                     = service.validateRegistration(invalidCharityRegistration)
         result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain only DataValidationError(
-            DataMissing,
-            "Charity registration number is missing"
-          )
-        )
+        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
   }
 }
