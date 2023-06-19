@@ -22,7 +22,7 @@ class RegistrationSubmissionISpec extends ISpecBase {
     "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid" in {
       stubAuthorised()
 
-      val validRegistration    = random[ValidUkCompanyRegistration]
+      val validRegistration    = random[ValidIncorporatedEntityRegistration]
       val subscriptionResponse = CreateEclSubscriptionResponse(success =
         random[CreateEclSubscriptionResponse].success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
       )
@@ -76,7 +76,7 @@ class RegistrationSubmissionISpec extends ISpecBase {
     "retry the NRS submission call 3 times after the initial attempt if it fails with a 5xx response" in {
       stubAuthorised()
 
-      val validRegistration    = random[ValidUkCompanyRegistration]
+      val validRegistration    = random[ValidIncorporatedEntityRegistration]
       val subscriptionResponse = CreateEclSubscriptionResponse(success =
         random[CreateEclSubscriptionResponse].success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
       )

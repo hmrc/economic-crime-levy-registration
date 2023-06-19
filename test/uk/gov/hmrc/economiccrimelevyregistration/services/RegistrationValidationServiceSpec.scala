@@ -44,17 +44,17 @@ class RegistrationValidationServiceSpec extends SpecBase {
   val service = new RegistrationValidationService(stubClock, mockSchemaValidator)
 
   "validateRegistration" should {
-    "return the ECL subscription if the registration for a UK company is valid" in forAll {
-      validUkCompanyRegistration: ValidUkCompanyRegistration =>
+    "return the ECL subscription if the registration for an incorporated entity is valid" in forAll {
+      validIncorporatedEntityRegistration: ValidIncorporatedEntityRegistration =>
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(validUkCompanyRegistration.expectedEclSubscription.subscription),
+            ArgumentMatchers.eq(validIncorporatedEntityRegistration.expectedEclSubscription.subscription),
             any()
           )(any())
-        ).thenReturn(validUkCompanyRegistration.expectedEclSubscription.subscription.validNel)
+        ).thenReturn(validIncorporatedEntityRegistration.expectedEclSubscription.subscription.validNel)
 
-        val result = service.validateRegistration(validUkCompanyRegistration.registration)
-        result shouldBe Valid(Left(validUkCompanyRegistration.expectedEclSubscription))
+        val result = service.validateRegistration(validIncorporatedEntityRegistration.registration)
+        result shouldBe Valid(Left(validIncorporatedEntityRegistration.expectedEclSubscription))
     }
 
     "return the ECL subscription if the registration for a sole trader is valid" in forAll {
@@ -122,8 +122,8 @@ class RegistrationValidationServiceSpec extends SpecBase {
       result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
 
-    "return errors if the entity type is uk limited company but there is no incorporated entity data in the registration" in forAll {
-      validRegistration: ValidUkCompanyRegistration =>
+    "return errors if the entity type is an incorporated entity type but there is no incorporated entity data in the registration" in forAll {
+      validRegistration: ValidIncorporatedEntityRegistration =>
         val invalidRegistration = validRegistration.registration.copy(incorporatedEntityJourneyData = None)
 
         val result = service.validateRegistration(invalidRegistration)
@@ -141,7 +141,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return an error if the relevant AP is not 12 months and the relevant AP length is missing" in forAll {
-      validRegistration: ValidUkCompanyRegistration =>
+      validRegistration: ValidIncorporatedEntityRegistration =>
         val invalidRegistration =
           validRegistration.registration.copy(relevantAp12Months = Some(false), relevantApLength = None)
 
@@ -190,7 +190,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return an error if the registration data does not contain the business partner ID" in forAll {
-      (validRegistration: ValidUkCompanyRegistration, incorporatedEntityJourneyData: IncorporatedEntityJourneyData) =>
+      (
+        validRegistration: ValidIncorporatedEntityRegistration,
+        incorporatedEntityJourneyData: IncorporatedEntityJourneyData
+      ) =>
         val invalidRegistration = validRegistration.registration
           .copy(incorporatedEntityJourneyData =
             Some(
@@ -212,7 +215,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return errors if the second contact choice is true and there are no second contact details in the registration data" in forAll {
-      (validRegistration: ValidUkCompanyRegistration) =>
+      (validRegistration: ValidIncorporatedEntityRegistration) =>
         val validContacts       = validRegistration.registration.contacts
         val invalidRegistration = validRegistration.registration.copy(contacts =
           validContacts.copy(secondContact = Some(true), secondContactDetails = ContactDetails(None, None, None, None))
@@ -232,7 +235,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return an error if the registration data contains the AML regulated activity choice as false" in forAll {
-      validRegistration: ValidUkCompanyRegistration =>
+      validRegistration: ValidIncorporatedEntityRegistration =>
         val invalidRegistration = validRegistration.registration
           .copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(false))
 
@@ -248,9 +251,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return an error if the registration data contains GC or FCA as the AML supervisor" in forAll(
-      Arbitrary.arbitrary[ValidUkCompanyRegistration],
+      Arbitrary.arbitrary[ValidIncorporatedEntityRegistration],
       Gen.oneOf(GamblingCommission, FinancialConductAuthority)
-    ) { (validRegistration: ValidUkCompanyRegistration, gcOrFca: AmlSupervisorType) =>
+    ) { (validRegistration: ValidIncorporatedEntityRegistration, gcOrFca: AmlSupervisorType) =>
       val invalidRegistration = validRegistration.registration
         .copy(amlSupervisor = Some(AmlSupervisor(gcOrFca, None)))
 
@@ -266,7 +269,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return an error if the registration data contains the revenue meets threshold flag as false" in forAll {
-      validRegistration: ValidUkCompanyRegistration =>
+      validRegistration: ValidIncorporatedEntityRegistration =>
         val invalidRegistration = validRegistration.registration
           .copy(revenueMeetsThreshold = Some(false))
 
@@ -282,7 +285,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return an error if the contact address contains no address lines" in forAll {
-      validRegistration: ValidUkCompanyRegistration =>
+      validRegistration: ValidIncorporatedEntityRegistration =>
         val invalidRegistration = validRegistration.registration
           .copy(contactAddress =
             validRegistration.registration.contactAddress.map(_.copy(None, None, None, None, None, None, None, None))

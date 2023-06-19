@@ -23,7 +23,6 @@ sealed trait OtherEntityType
 object OtherEntityType {
   case object Charity extends OtherEntityType
   case object Trust extends OtherEntityType
-  case object RegisteredSociety extends OtherEntityType
   case object NonUKEstablishment extends OtherEntityType
   case object UnincorporatedAssociation extends OtherEntityType
 
@@ -33,7 +32,6 @@ object OtherEntityType {
         value match {
           case "Charity"                   => JsSuccess(Charity)
           case "Trust"                     => JsSuccess(Trust)
-          case "RegisteredSociety"         => JsSuccess(RegisteredSociety)
           case "NonUKEstablishment"        => JsSuccess(NonUKEstablishment)
           case "UnincorporatedAssociation" => JsSuccess(UnincorporatedAssociation)
           case s                           => JsError(s"$s is not a valid OtherEntityType")
