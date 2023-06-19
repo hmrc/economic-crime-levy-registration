@@ -382,8 +382,8 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
   ): ValidationResult[Either[EclSubscription, Registration]] = {
     val otherEntityJourneyData = registration.otherEntityJourneyData
     (
-      validateOptExists(otherEntityJourneyData.charityRegistrationNumber, "Charity reference number"),
-      validateOptExists(otherEntityJourneyData.companyRegistrationNumber, "Company reference number")
+      validateOptExists(otherEntityJourneyData.charityRegistrationNumber, "Charity registration number"),
+      validateOptExists(otherEntityJourneyData.companyRegistrationNumber, "Company registration number")
     ).mapN {
       (
         _,
