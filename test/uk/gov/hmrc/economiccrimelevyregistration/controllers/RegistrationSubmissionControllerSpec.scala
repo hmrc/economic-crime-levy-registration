@@ -57,7 +57,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
       ) =>
         when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
-        when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(eclSubscription.validNel)
+        when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(Left(eclSubscription).validNel)
 
         when(
           mockSubscriptionServiceService
