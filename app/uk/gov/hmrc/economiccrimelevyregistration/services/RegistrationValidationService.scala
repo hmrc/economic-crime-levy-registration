@@ -44,17 +44,16 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       case Some(Other) => validateOtherEntity(registration)
       case _           =>
         transformToEclSubscription(registration) match {
-          case Valid(either) =>
-            either match {
-              case Left(eclSubscription) =>
-                schemaValidator
-                  .validateAgainstJsonSchema(
-                    eclSubscription.subscription,
-                    SchemaLoader.loadSchema("create-ecl-subscription-request.json")
-                  )
-                  .map(_ => either)
-            }
-          case invalid       => invalid
+          case Valid(Left(eclSubscription)) =>
+            schemaValidator
+              .validateAgainstJsonSchema(
+                eclSubscription.subscription,
+                SchemaLoader.loadSchema("create-ecl-subscription-request.json")
+              )
+              .map(_ => Left(eclSubscription))
+          case Valid(Right(_))              =>
+            DataValidationError(DataInvalid, "Data was not transformed into a valid ECL subscription").invalidNel
+          case invalid                      => invalid
         }
     }
 
