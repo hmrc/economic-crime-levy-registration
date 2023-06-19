@@ -339,8 +339,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
 
   private def validateOtherEntity(
     registration: Registration
-  ): ValidationResult[Either[EclSubscription, Registration]] = {
-    val otherEntityJourneyData = registration.otherEntityJourneyData
+  ): ValidationResult[Either[EclSubscription, Registration]] =
     (
       validateAmlSupervisor(registration),
       validateOptExists(registration.businessSector, "Business sector"),
@@ -356,9 +355,14 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       ),
       validateRevenueMeetsThreshold(registration),
       validateOptExists(registration.optOtherEntityJourneyData, "other entity data"),
-      validateCharity(registration, otherEntityJourneyData)
+      validateOptExists(registration.otherEntityJourneyData.businessName, "business name"),
+      registration.otherEntityJourneyData.entityType match {
+        case Some(Charity) => validateCharity(registration)
+        case _             => ???
+      }
     ).mapN {
       (
+        _,
         _,
         _,
         _,
@@ -372,24 +376,20 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         _
       ) => Right(registration)
     }
-  }
 
   private def validateCharity(
-    registration: Registration,
-    data: OtherEntityJourneyData
-  ): ValidationResult[Either[EclSubscription, Registration]] =
-    data.entityType match {
-      case Some(Charity) =>
-        (
-          validateOptExists(data.charityRegistrationNumber, "Charity reference number"),
-          validateOptExists(data.companyRegistrationNumber, "Company reference number")
-        ).mapN {
-          (
-            _,
-            _
-          ) =>
-            Right(registration)
-        }
-      case _             => Valid(Right(registration))
+    registration: Registration
+  ): ValidationResult[Either[EclSubscription, Registration]] = {
+    val otherEntityJourneyData = registration.otherEntityJourneyData
+    (
+      validateOptExists(otherEntityJourneyData.charityRegistrationNumber, "Charity reference number"),
+      validateOptExists(otherEntityJourneyData.companyRegistrationNumber, "Company reference number")
+    ).mapN {
+      (
+        _,
+        _
+      ) =>
+        Right(registration)
     }
+  }
 }

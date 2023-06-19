@@ -43,16 +43,6 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
   val service = new RegistrationValidationService(stubClock, mockSchemaValidator)
 
-  def validateAndCheck(registration: Registration, expected: EclSubscription) = {
-    val result = service.validateRegistration(registration)
-    result shouldBe Valid(Left(expected))
-  }
-
-  def validateAndCheck(registration: Registration) = {
-    val result = service.validateRegistration(registration)
-    result shouldBe Valid(Right(registration))
-  }
-
   "validateRegistration" should {
     "return the ECL subscription if the registration for a UK company is valid" in forAll {
       validUkCompanyRegistration: ValidUkCompanyRegistration =>
@@ -63,7 +53,8 @@ class RegistrationValidationServiceSpec extends SpecBase {
           )(any())
         ).thenReturn(validUkCompanyRegistration.expectedEclSubscription.subscription.validNel)
 
-        validateAndCheck(validUkCompanyRegistration.registration, validUkCompanyRegistration.expectedEclSubscription)
+        val result = service.validateRegistration(validUkCompanyRegistration.registration)
+        result shouldBe Valid(Left(validUkCompanyRegistration.expectedEclSubscription))
     }
 
     "return the ECL subscription if the registration for a sole trader is valid" in forAll {
@@ -75,7 +66,8 @@ class RegistrationValidationServiceSpec extends SpecBase {
           )(any())
         ).thenReturn(validSoleTraderRegistration.expectedEclSubscription.subscription.validNel)
 
-        validateAndCheck(validSoleTraderRegistration.registration, validSoleTraderRegistration.expectedEclSubscription)
+        val result = service.validateRegistration(validSoleTraderRegistration.registration)
+        result shouldBe Valid(Left(validSoleTraderRegistration.expectedEclSubscription))
     }
 
     "return the ECL subscription if the registration for a limited partnership is valid" in forAll {
@@ -87,10 +79,8 @@ class RegistrationValidationServiceSpec extends SpecBase {
           )(any())
         ).thenReturn(validLimitedPartnershipRegistration.expectedEclSubscription.subscription.validNel)
 
-        validateAndCheck(
-          validLimitedPartnershipRegistration.registration,
-          validLimitedPartnershipRegistration.expectedEclSubscription
-        )
+        val result = service.validateRegistration(validLimitedPartnershipRegistration.registration)
+        result shouldBe Valid(Left(validLimitedPartnershipRegistration.expectedEclSubscription))
     }
 
     "return the ECL subscription if the registration for a scottish or general partnership is valid" in forAll {
@@ -102,10 +92,8 @@ class RegistrationValidationServiceSpec extends SpecBase {
           )(any())
         ).thenReturn(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription.subscription.validNel)
 
-        validateAndCheck(
-          validScottishOrGeneralPartnershipRegistration.registration,
-          validScottishOrGeneralPartnershipRegistration.expectedEclSubscription
-        )
+        val result = service.validateRegistration(validScottishOrGeneralPartnershipRegistration.registration)
+        result shouldBe Valid(Left(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription))
     }
 
     "return a non-empty list of errors when unconditional mandatory registration data items are missing" in {
@@ -387,7 +375,8 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
     "return the registration if the registration for a charity is valid" in forAll {
       (validCharityRegistration: ValidCharityRegistration) =>
-        validateAndCheck(validCharityRegistration.registration)
+        val result = service.validateRegistration(validCharityRegistration.registration)
+        result shouldBe Valid(Right(validCharityRegistration.registration))
     }
   }
 }
