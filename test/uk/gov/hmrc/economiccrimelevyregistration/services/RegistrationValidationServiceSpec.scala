@@ -373,10 +373,38 @@ class RegistrationValidationServiceSpec extends SpecBase {
         )
     }
 
+    "return errors if the registration for a other entity is invalid" in forAll {
+      (validCharityRegistration: ValidCharityRegistration) =>
+        val invalidRegistration = validCharityRegistration.registration.copy(
+          optOtherEntityJourneyData = None
+        )
+        val result              = service.validateRegistration(invalidRegistration)
+        result.isValid shouldBe false
+        result.leftMap(nec => nec.toList.isEmpty shouldBe false)
+    }
+
     "return the registration if the registration for a charity is valid" in forAll {
       (validCharityRegistration: ValidCharityRegistration) =>
         val result = service.validateRegistration(validCharityRegistration.registration)
         result shouldBe Valid(Right(validCharityRegistration.registration))
+    }
+
+    "return errors if the registration for a charity is invalid" in forAll {
+      (validCharityRegistration: ValidCharityRegistration) =>
+        val otherEntityJourneyData     = validCharityRegistration.registration.otherEntityJourneyData.copy(
+          charityRegistrationNumber = None
+        )
+        val invalidCharityRegistration = validCharityRegistration.registration.copy(
+          optOtherEntityJourneyData = Some(otherEntityJourneyData)
+        )
+        val result                     = service.validateRegistration(invalidCharityRegistration)
+        result.isValid shouldBe false
+        result.leftMap(nec =>
+          nec.toList should contain only DataValidationError(
+            DataMissing,
+            "Charity registration number is missing"
+          )
+        )
     }
   }
 }

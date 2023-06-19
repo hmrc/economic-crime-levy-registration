@@ -354,9 +354,10 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         "Relevant AP length"
       ),
       validateRevenueMeetsThreshold(registration),
-      validateOptExists(registration.optOtherEntityJourneyData, "other entity data"),
-      validateOptExists(registration.otherEntityJourneyData.businessName, "business name"),
+      validateOptExists(registration.optOtherEntityJourneyData, "Other entity data"),
+      validateOptExists(registration.otherEntityJourneyData.businessName, "Business name"),
       registration.otherEntityJourneyData.entityType match {
+        case None          => DataValidationError(DataMissing, missingErrorMessage("Other entity type")).invalidNel
         case Some(Charity) => validateCharity(registration)
         case _             => ???
       }
