@@ -403,7 +403,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     val otherEntityJourneyData = registration.otherEntityJourneyData
 
     val validatedCtUtr =
-      validateOptExists(otherEntityJourneyData.ctUtr, "Presence of corporation Tax Unique Taxpayer Reference")
+      validateOptExists(otherEntityJourneyData.isCtUtrPresent, "Presence of corporation Tax Unique Taxpayer Reference")
         .map(_ => Right(registration))
 
     if (validatedCtUtr.isValid && otherEntityJourneyData.isCtUtrPresent.get) {

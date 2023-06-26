@@ -33,7 +33,7 @@ import uk.gov.hmrc.auth.core.syntax.retrieved.authSyntaxForRetrieved
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.Charity
+import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, UnincorporatedAssociation}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.{CustomerType, StartOfFirstEclFinancialYear}
@@ -78,6 +78,10 @@ final case class ValidNrsSubmission(
 )
 
 final case class ValidCharityRegistration(
+  registration: Registration
+)
+
+final case class UnincorporatedAssociationRegistration(
   registration: Registration
 )
 
@@ -538,6 +542,30 @@ trait EclTestData {
             businessName = Some(businessName),
             charityRegistrationNumber = Some(charityNumber),
             companyRegistrationNumber = Some(companyNumber)
+          )
+        )
+      )
+    )
+  }
+
+  implicit val arbUnincorporatedAssociationRegistration: Arbitrary[UnincorporatedAssociationRegistration] = Arbitrary {
+    for {
+      businessName           <- Arbitrary.arbitrary[String]
+      ctUtr                  <- Arbitrary.arbitrary[String]
+      isCtUtrPresent         <- Arbitrary.arbitrary[Boolean]
+      commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
+    } yield UnincorporatedAssociationRegistration(
+      commonRegistrationData.registration.copy(
+        entityType = Some(Other),
+        incorporatedEntityJourneyData = None,
+        partnershipEntityJourneyData = None,
+        soleTraderEntityJourneyData = None,
+        optOtherEntityJourneyData = Some(
+          commonRegistrationData.registration.otherEntityJourneyData.copy(
+            entityType = Some(UnincorporatedAssociation),
+            businessName = Some(businessName),
+            isCtUtrPresent = Some(isCtUtrPresent),
+            ctUtr = Some(ctUtr)
           )
         )
       )
