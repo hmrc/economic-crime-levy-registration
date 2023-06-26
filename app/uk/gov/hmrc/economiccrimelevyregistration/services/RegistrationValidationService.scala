@@ -401,17 +401,14 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     registration: Registration
   ): ValidationResult[Either[EclSubscription, Registration]] = {
     val otherEntityJourneyData = registration.otherEntityJourneyData
-
-    val validatedCtUtr =
-      validateOptExists(otherEntityJourneyData.isCtUtrPresent, "Presence of corporation Tax Unique Taxpayer Reference")
-        .map(_ => Right(registration))
-
-    if (validatedCtUtr.isValid && otherEntityJourneyData.isCtUtrPresent.get) {
-      validateOptExists(otherEntityJourneyData.ctUtr, "Corporation Tax Unique Taxpayer Reference")
-        .map(_ => Right(registration))
-    } else {
-      validatedCtUtr
-    }
+    (
+    validateOptExists(otherEntityJourneyData.isCtUtrPresent, "Corporation Tax Unique Taxpayer Reference choice"),
+    validateConditionalOptExists(
+      otherEntityJourneyData.ctUtr,
+      otherEntityJourneyData.isCtUtrPresent.contains(true),
+      "Corporation Tax Unique Taxpayer Reference"
+    )
+    ).mapN((_, _) => Right(registration))
 
   }
 }

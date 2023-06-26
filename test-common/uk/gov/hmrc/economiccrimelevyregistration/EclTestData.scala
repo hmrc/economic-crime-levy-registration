@@ -81,7 +81,7 @@ final case class ValidCharityRegistration(
   registration: Registration
 )
 
-final case class UnincorporatedAssociationRegistration(
+final case class ValidUnincorporatedAssociationRegistration(
   registration: Registration
 )
 
@@ -548,13 +548,13 @@ trait EclTestData {
     )
   }
 
-  implicit val arbUnincorporatedAssociationRegistration: Arbitrary[UnincorporatedAssociationRegistration] = Arbitrary {
+  implicit val arbUnincorporatedAssociationRegistration: Arbitrary[ValidUnincorporatedAssociationRegistration] = Arbitrary {
     for {
       businessName           <- Arbitrary.arbitrary[String]
       ctUtr                  <- Arbitrary.arbitrary[String]
       isCtUtrPresent         <- Arbitrary.arbitrary[Boolean]
       commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
-    } yield UnincorporatedAssociationRegistration(
+    } yield ValidUnincorporatedAssociationRegistration(
       commonRegistrationData.registration.copy(
         entityType = Some(Other),
         incorporatedEntityJourneyData = None,

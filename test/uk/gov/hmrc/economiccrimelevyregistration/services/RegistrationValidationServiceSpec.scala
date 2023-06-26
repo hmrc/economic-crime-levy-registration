@@ -429,7 +429,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return errors if the registration for a unincorporated association is invalid when isCtUtrPresent flag is not present" in forAll {
-      (unincorporatedAssociationRegistration: UnincorporatedAssociationRegistration) =>
+      (unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration) =>
         val otherEntityJourneyData                       = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
           isCtUtrPresent = None,
           ctUtr = None
@@ -438,7 +438,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
           optOtherEntityJourneyData = Some(otherEntityJourneyData)
         )
         val expectedErrors                               = Seq(
-          DataValidationError(DataMissing, "Presence of corporation Tax Unique Taxpayer Reference is missing")
+          DataValidationError(DataMissing, "Corporation Tax Unique Taxpayer Reference choice is missing")
         )
         val result                                       = service.validateRegistration(invalidUnincorporatedAssociationRegistration)
         result.isValid shouldBe false
@@ -446,7 +446,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return errors if the registration for a unincorporated association is invalid when CT-UTR is not present" in forAll {
-      (unincorporatedAssociationRegistration: UnincorporatedAssociationRegistration) =>
+      (unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration) =>
         val otherEntityJourneyData                       = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
           isCtUtrPresent = Some(true),
           ctUtr = None
