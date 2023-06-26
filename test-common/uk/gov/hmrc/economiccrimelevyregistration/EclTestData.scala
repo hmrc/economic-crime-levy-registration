@@ -548,27 +548,28 @@ trait EclTestData {
     )
   }
 
-  implicit val arbUnincorporatedAssociationRegistration: Arbitrary[ValidUnincorporatedAssociationRegistration] = Arbitrary {
-    for {
-      businessName           <- Arbitrary.arbitrary[String]
-      ctUtr                  <- Arbitrary.arbitrary[String]
-      isCtUtrPresent         <- Arbitrary.arbitrary[Boolean]
-      commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
-    } yield ValidUnincorporatedAssociationRegistration(
-      commonRegistrationData.registration.copy(
-        entityType = Some(Other),
-        incorporatedEntityJourneyData = None,
-        partnershipEntityJourneyData = None,
-        soleTraderEntityJourneyData = None,
-        optOtherEntityJourneyData = Some(
-          commonRegistrationData.registration.otherEntityJourneyData.copy(
-            entityType = Some(UnincorporatedAssociation),
-            businessName = Some(businessName),
-            isCtUtrPresent = Some(isCtUtrPresent),
-            ctUtr = Some(ctUtr)
+  implicit val arbUnincorporatedAssociationRegistration: Arbitrary[ValidUnincorporatedAssociationRegistration] =
+    Arbitrary {
+      for {
+        businessName           <- Arbitrary.arbitrary[String]
+        ctUtr                  <- Arbitrary.arbitrary[String]
+        isCtUtrPresent         <- Arbitrary.arbitrary[Boolean]
+        commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
+      } yield ValidUnincorporatedAssociationRegistration(
+        commonRegistrationData.registration.copy(
+          entityType = Some(Other),
+          incorporatedEntityJourneyData = None,
+          partnershipEntityJourneyData = None,
+          soleTraderEntityJourneyData = None,
+          optOtherEntityJourneyData = Some(
+            commonRegistrationData.registration.otherEntityJourneyData.copy(
+              entityType = Some(UnincorporatedAssociation),
+              businessName = Some(businessName),
+              isCtUtrPresent = Some(isCtUtrPresent),
+              ctUtr = Some(ctUtr)
+            )
           )
         )
       )
-    )
-  }
+    }
 }

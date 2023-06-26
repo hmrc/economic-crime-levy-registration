@@ -428,7 +428,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
 
-    "return errors if the registration for a unincorporated association is invalid when isCtUtrPresent flag is not present" in forAll {
+    "return errors if the registration for a unincorporated association is invalid when isCtUtrPresent flag is not present" in {
       (unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration) =>
         val otherEntityJourneyData                       = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
           isCtUtrPresent = None,
@@ -445,7 +445,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
 
-    "return errors if the registration for a unincorporated association is invalid when CT-UTR is not present" in forAll {
+    "return errors if the registration for a unincorporated association is invalid when CT-UTR is not present" in {
       (unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration) =>
         val otherEntityJourneyData                       = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
           isCtUtrPresent = Some(true),
@@ -461,6 +461,20 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val result = service.validateRegistration(invalidUnincorporatedAssociationRegistration)
         result.isValid shouldBe false
         result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+    }
+
+    "return valid result without errors" in {
+      (unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration) =>
+        val otherEntityJourneyData = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
+          isCtUtrPresent = Some(true)
+        )
+        val validRegistration      = unincorporatedAssociationRegistration.registration.copy(
+          optOtherEntityJourneyData = Some(otherEntityJourneyData)
+        )
+
+        val result = service.validateRegistration(validRegistration)
+        result.isValid shouldBe true
+        result         shouldBe Valid(Left(validRegistration))
     }
   }
 }
