@@ -25,6 +25,7 @@ final case class OtherEntityJourneyData(
   companyRegistrationNumber: Option[String],
   utrType: Option[UtrType],
   ctUtr: Option[String],
+  isCtUtrPresent: Option[Boolean],
   saUtr: Option[String],
   overseasTaxIdentifier: Option[String],
   postcode: Option[String]
@@ -42,6 +43,7 @@ object OtherEntityJourneyData {
     ctUtr = None,
     saUtr = None,
     overseasTaxIdentifier = None,
-    postcode = None
+    postcode = None,
+    isCtUtrPresent = None
   )
 }
