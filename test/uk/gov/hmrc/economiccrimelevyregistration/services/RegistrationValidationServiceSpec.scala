@@ -427,5 +427,54 @@ class RegistrationValidationServiceSpec extends SpecBase {
         result.isValid shouldBe false
         result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
+
+    "return errors if the registration for a unincorporated association is invalid when isCtUtrPresent flag is not present" in {
+      (unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration) =>
+        val otherEntityJourneyData                       = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
+          isCtUtrPresent = None,
+          ctUtr = None
+        )
+        val invalidUnincorporatedAssociationRegistration = unincorporatedAssociationRegistration.registration.copy(
+          optOtherEntityJourneyData = Some(otherEntityJourneyData)
+        )
+        val expectedErrors                               = Seq(
+          DataValidationError(DataMissing, "Corporation Tax Unique Taxpayer Reference choice is missing")
+        )
+        val result                                       = service.validateRegistration(invalidUnincorporatedAssociationRegistration)
+        result.isValid shouldBe false
+        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+    }
+
+    "return errors if the registration for a unincorporated association is invalid when CT-UTR is not present" in {
+      (unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration) =>
+        val otherEntityJourneyData                       = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
+          isCtUtrPresent = Some(true),
+          ctUtr = None
+        )
+        val invalidUnincorporatedAssociationRegistration = unincorporatedAssociationRegistration.registration.copy(
+          optOtherEntityJourneyData = Some(otherEntityJourneyData)
+        )
+        val expectedErrors                               = Seq(
+          DataValidationError(DataMissing, "Corporation Tax Unique Taxpayer Reference is missing")
+        )
+
+        val result = service.validateRegistration(invalidUnincorporatedAssociationRegistration)
+        result.isValid shouldBe false
+        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+    }
+
+    "return the registration if the registration for an unincorporated association is valid" in {
+      (unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration) =>
+        val otherEntityJourneyData = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
+          isCtUtrPresent = Some(true)
+        )
+        val validRegistration      = unincorporatedAssociationRegistration.registration.copy(
+          optOtherEntityJourneyData = Some(otherEntityJourneyData)
+        )
+
+        val result = service.validateRegistration(validRegistration)
+        result.isValid shouldBe true
+        result         shouldBe Valid(Left(validRegistration))
+    }
   }
 }

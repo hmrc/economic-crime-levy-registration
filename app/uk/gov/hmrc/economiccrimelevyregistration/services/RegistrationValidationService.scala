@@ -21,7 +21,7 @@ import cats.data.ValidatedNel
 import cats.implicits._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.Charity
+import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, UnincorporatedAssociation}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
@@ -358,9 +358,10 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       validateOptExists(registration.optOtherEntityJourneyData, "Other entity data"),
       validateOptExists(registration.otherEntityJourneyData.businessName, "Business name"),
       registration.otherEntityJourneyData.entityType match {
-        case None          => DataValidationError(DataMissing, missingErrorMessage("Other entity type")).invalidNel
-        case Some(Charity) => validateCharity(registration)
-        case _             => ???
+        case None                            => DataValidationError(DataMissing, missingErrorMessage("Other entity type")).invalidNel
+        case Some(Charity)                   => validateCharity(registration)
+        case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)
+        case _                               => ???
       }
     ).mapN {
       (
@@ -394,5 +395,20 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       ) =>
         Right(registration)
     }
+  }
+
+  private def validateUnincorporatedAssociation(
+    registration: Registration
+  ): ValidationResult[Either[EclSubscription, Registration]] = {
+    val otherEntityJourneyData = registration.otherEntityJourneyData
+    (
+      validateOptExists(otherEntityJourneyData.isCtUtrPresent, "Corporation Tax Unique Taxpayer Reference choice"),
+      validateConditionalOptExists(
+        otherEntityJourneyData.ctUtr,
+        otherEntityJourneyData.isCtUtrPresent.contains(true),
+        "Corporation Tax Unique Taxpayer Reference"
+      )
+    ).mapN((_, _) => Right(registration))
+
   }
 }
