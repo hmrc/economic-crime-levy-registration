@@ -463,7 +463,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
 
-    "return valid result without errors" in {
+    "return the registration if the registration for an unincorporated association is valid" in {
       (unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration) =>
         val otherEntityJourneyData = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
           isCtUtrPresent = Some(true)
