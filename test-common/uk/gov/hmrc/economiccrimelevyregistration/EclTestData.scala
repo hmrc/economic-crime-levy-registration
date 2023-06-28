@@ -33,7 +33,7 @@ import uk.gov.hmrc.auth.core.syntax.retrieved.authSyntaxForRetrieved
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, UnincorporatedAssociation}
+import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, Trust, UnincorporatedAssociation}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.{CustomerType, StartOfFirstEclFinancialYear}
@@ -82,6 +82,10 @@ final case class ValidCharityRegistration(
 )
 
 final case class ValidUnincorporatedAssociationRegistration(
+  registration: Registration
+)
+
+final case class ValidTrustRegistration(
   registration: Registration
 )
 
@@ -566,6 +570,29 @@ trait EclTestData {
               entityType = Some(UnincorporatedAssociation),
               businessName = Some(businessName),
               isCtUtrPresent = Some(isCtUtrPresent),
+              ctUtr = Some(ctUtr)
+            )
+          )
+        )
+      )
+    }
+
+  implicit val arbTrustRegistration: Arbitrary[ValidTrustRegistration] =
+    Arbitrary {
+      for {
+        businessName           <- Arbitrary.arbitrary[String]
+        ctUtr                  <- Arbitrary.arbitrary[String]
+        commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
+      } yield ValidTrustRegistration(
+        commonRegistrationData.registration.copy(
+          entityType = Some(Other),
+          incorporatedEntityJourneyData = None,
+          partnershipEntityJourneyData = None,
+          soleTraderEntityJourneyData = None,
+          optOtherEntityJourneyData = Some(
+            commonRegistrationData.registration.otherEntityJourneyData.copy(
+              entityType = Some(Trust),
+              businessName = Some(businessName),
               ctUtr = Some(ctUtr)
             )
           )

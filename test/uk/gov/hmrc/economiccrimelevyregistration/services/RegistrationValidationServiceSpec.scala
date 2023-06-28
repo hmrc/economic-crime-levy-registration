@@ -476,5 +476,29 @@ class RegistrationValidationServiceSpec extends SpecBase {
         result.isValid shouldBe true
         result         shouldBe Valid(Left(validRegistration))
     }
+
+    "return errors if the registration for a Trust is invalid when CT-UTR is not present" in {
+      (trustRegistration: ValidTrustRegistration) =>
+        val otherEntityJourneyData   = trustRegistration.registration.otherEntityJourneyData.copy(
+          ctUtr = None
+        )
+        val invalidTrustRegistration = trustRegistration.registration.copy(
+          optOtherEntityJourneyData = Some(otherEntityJourneyData)
+        )
+        val expectedErrors           = Seq(
+          DataValidationError(DataMissing, "Corporation Tax Unique Taxpayer Reference is missing")
+        )
+
+        val result = service.validateRegistration(invalidTrustRegistration)
+        result.isValid shouldBe false
+        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+    }
+
+    "return the registration if the registration for a Trust is valid" in {
+      (trustRegistration: ValidTrustRegistration) =>
+        val result = service.validateRegistration(trustRegistration.registration)
+        result.isValid shouldBe true
+        result         shouldBe Valid(Left(trustRegistration.registration))
+    }
   }
 }

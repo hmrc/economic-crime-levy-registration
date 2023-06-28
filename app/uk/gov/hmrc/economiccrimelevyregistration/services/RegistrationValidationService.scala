@@ -21,7 +21,7 @@ import cats.data.ValidatedNel
 import cats.implicits._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, UnincorporatedAssociation}
+import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, Trust, UnincorporatedAssociation}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
@@ -361,6 +361,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         case None                            => DataValidationError(DataMissing, missingErrorMessage("Other entity type")).invalidNel
         case Some(Charity)                   => validateCharity(registration)
         case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)
+        case Some(Trust)                     => validateTrust(registration)
         case _                               => ???
       }
     ).mapN {
@@ -409,6 +410,10 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         "Corporation Tax Unique Taxpayer Reference"
       )
     ).mapN((_, _) => Right(registration))
-
   }
+
+  private def validateTrust(registration: Registration): ValidationResult[Either[EclSubscription, Registration]] =
+    validateOptExists(registration.otherEntityJourneyData.ctUtr, "Corporation Tax Unique Taxpayer Reference")
+      .map(_ => Right(registration))
+
 }
