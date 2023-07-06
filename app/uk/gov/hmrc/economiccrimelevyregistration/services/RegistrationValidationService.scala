@@ -364,7 +364,6 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)
         case Some(Trust)                     => validateTrust(registration)
         case Some(NonUKEstablishment)        => validateNonUkEstablishment(registration)
-        case _                               => ???
       }
     ).mapN {
       (
