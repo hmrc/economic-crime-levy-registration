@@ -500,5 +500,33 @@ class RegistrationValidationServiceSpec extends SpecBase {
         result.isValid shouldBe true
         result         shouldBe Valid(Left(trustRegistration.registration))
     }
+
+    "return the registration if the registration for a non-Uk establishment is valid" in forAll {
+      (validNonUkEstablishmentRegistration: ValidNonUkEstablishmentRegistration) =>
+        val result = service.validateRegistration(validNonUkEstablishmentRegistration.registration)
+        result shouldBe Valid(Right(validNonUkEstablishmentRegistration.registration))
+    }
+
+    "return errors if the registration for a non-UK establishment is invalid" in forAll {
+      (validNonUkEstablishmentRegistration: ValidNonUkEstablishmentRegistration) =>
+        val otherEntityJourneyData     = validNonUkEstablishmentRegistration.registration.otherEntityJourneyData.copy(
+          companyRegistrationNumber = None,
+          utrType = None,
+          ctUtr = None,
+          saUtr = None,
+          overseasTaxIdentifier = None
+        )
+        val invalidCharityRegistration = validNonUkEstablishmentRegistration.registration.copy(
+          optOtherEntityJourneyData = Some(otherEntityJourneyData)
+        )
+        val expectedErrors             = Seq(
+          DataValidationError(DataMissing, "Company registration number is missing"),
+          DataValidationError(DataMissing, "Utr type is missing"),
+          DataValidationError(DataMissing, "Overseas tax identifier is missing")
+        )
+        val result                     = service.validateRegistration(invalidCharityRegistration)
+        result.isValid shouldBe false
+        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+    }
   }
 }
