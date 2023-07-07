@@ -34,6 +34,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, NonUKEstablishment, Trust, UnincorporatedAssociation}
+import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.{CustomerType, StartOfFirstEclFinancialYear}
@@ -609,8 +610,7 @@ trait EclTestData {
       businessName           <- Arbitrary.arbitrary[String]
       companyNumber          <- Arbitrary.arbitrary[String]
       utrType                <- Arbitrary.arbitrary[UtrType]
-      ctUtr                  <- Arbitrary.arbitrary[String]
-      saUtr                  <- Arbitrary.arbitrary[String]
+      utrNumber              <- Arbitrary.arbitrary[String]
       taxIdentifier          <- Arbitrary.arbitrary[String]
       commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
     } yield ValidNonUkEstablishmentRegistration(
@@ -625,8 +625,8 @@ trait EclTestData {
             businessName = Some(businessName),
             companyRegistrationNumber = Some(companyNumber),
             utrType = Some(utrType),
-            ctUtr = Some(ctUtr),
-            saUtr = Some(saUtr),
+            ctUtr = if (utrType == CtUtr) Some(utrNumber) else None,
+            saUtr = if (utrType == SaUtr) Some(utrNumber) else None,
             overseasTaxIdentifier = Some(taxIdentifier)
           )
         )
