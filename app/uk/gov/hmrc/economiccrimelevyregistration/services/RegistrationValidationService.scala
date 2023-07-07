@@ -21,7 +21,8 @@ import cats.data.ValidatedNel
 import cats.implicits._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, Trust, UnincorporatedAssociation}
+import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, NonUKEstablishment, Trust, UnincorporatedAssociation}
+import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
@@ -362,7 +363,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         case Some(Charity)                   => validateCharity(registration)
         case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)
         case Some(Trust)                     => validateTrust(registration)
-        case _                               => ???
+        case Some(NonUKEstablishment)        => validateNonUkEstablishment(registration)
       }
     ).mapN {
       (
@@ -416,4 +417,33 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     validateOptExists(registration.otherEntityJourneyData.ctUtr, "Corporation Tax Unique Taxpayer Reference")
       .map(_ => Right(registration))
 
+  private def validateNonUkEstablishment(
+    registration: Registration
+  ): ValidationResult[Either[EclSubscription, Registration]] = {
+    val data = registration.otherEntityJourneyData
+    (
+      validateOptExists(data.companyRegistrationNumber, "Company registration number"),
+      validateOptExists(data.utrType, "Utr type"),
+      validateConditionalOptExists(
+        data.ctUtr,
+        data.utrType.contains(CtUtr),
+        "Corporation Tax Unique Taxpayer Reference"
+      ),
+      validateConditionalOptExists(
+        data.saUtr,
+        data.utrType.contains(SaUtr),
+        "Self Assessment Unique Taxpayer Reference"
+      ),
+      validateOptExists(data.overseasTaxIdentifier, "Overseas tax identifier")
+    ).mapN {
+      (
+        _,
+        _,
+        _,
+        _,
+        _
+      ) =>
+        Right(registration)
+    }
+  }
 }

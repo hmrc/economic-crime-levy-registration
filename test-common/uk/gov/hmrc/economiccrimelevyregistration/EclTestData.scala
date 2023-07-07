@@ -33,7 +33,8 @@ import uk.gov.hmrc.auth.core.syntax.retrieved.authSyntaxForRetrieved
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, Trust, UnincorporatedAssociation}
+import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, NonUKEstablishment, Trust, UnincorporatedAssociation}
+import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.{CustomerType, StartOfFirstEclFinancialYear}
@@ -86,6 +87,10 @@ final case class ValidUnincorporatedAssociationRegistration(
 )
 
 final case class ValidTrustRegistration(
+  registration: Registration
+)
+
+final case class ValidNonUkEstablishmentRegistration(
   registration: Registration
 )
 
@@ -599,4 +604,33 @@ trait EclTestData {
         )
       )
     }
+
+  implicit val arbValidNonUkEstablishmentRegistration: Arbitrary[ValidNonUkEstablishmentRegistration] = Arbitrary {
+    for {
+      businessName           <- Arbitrary.arbitrary[String]
+      companyNumber          <- Arbitrary.arbitrary[String]
+      utrType                <- Arbitrary.arbitrary[UtrType]
+      utrNumber              <- Arbitrary.arbitrary[String]
+      taxIdentifier          <- Arbitrary.arbitrary[String]
+      commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
+    } yield ValidNonUkEstablishmentRegistration(
+      commonRegistrationData.registration.copy(
+        entityType = Some(Other),
+        incorporatedEntityJourneyData = None,
+        partnershipEntityJourneyData = None,
+        soleTraderEntityJourneyData = None,
+        optOtherEntityJourneyData = Some(
+          commonRegistrationData.registration.otherEntityJourneyData.copy(
+            entityType = Some(NonUKEstablishment),
+            businessName = Some(businessName),
+            companyRegistrationNumber = Some(companyNumber),
+            utrType = Some(utrType),
+            ctUtr = if (utrType == CtUtr) Some(utrNumber) else None,
+            saUtr = if (utrType == SaUtr) Some(utrNumber) else None,
+            overseasTaxIdentifier = Some(taxIdentifier)
+          )
+        )
+      )
+    )
+  }
 }

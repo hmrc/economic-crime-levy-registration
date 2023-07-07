@@ -26,10 +26,11 @@ import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
+import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
-import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, AmlSupervisorType, ContactDetails, Registration}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, AmlSupervisorType, ContactDetails, Registration, UtrType}
 import uk.gov.hmrc.economiccrimelevyregistration.utils.SchemaValidator
 
 import java.time.{Clock, Instant, ZoneId}
@@ -499,6 +500,43 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val result = service.validateRegistration(trustRegistration.registration)
         result.isValid shouldBe true
         result         shouldBe Valid(Left(trustRegistration.registration))
+    }
+
+    "return the registration if the registration for a non-Uk establishment is valid" in forAll {
+      (validNonUkEstablishmentRegistration: ValidNonUkEstablishmentRegistration) =>
+        val result = service.validateRegistration(validNonUkEstablishmentRegistration.registration)
+        result shouldBe Valid(Right(validNonUkEstablishmentRegistration.registration))
+    }
+
+    "return errors if the registration for a non-UK establishment is invalid" in forAll {
+      (validNonUkEstablishmentRegistration: ValidNonUkEstablishmentRegistration, none: Boolean, utrType: UtrType) =>
+        val otherEntityJourneyData     = validNonUkEstablishmentRegistration.registration.otherEntityJourneyData.copy(
+          companyRegistrationNumber = None,
+          utrType = if (none) None else Some(utrType),
+          ctUtr = None,
+          saUtr = None,
+          overseasTaxIdentifier = None
+        )
+        val invalidCharityRegistration = validNonUkEstablishmentRegistration.registration.copy(
+          optOtherEntityJourneyData = Some(otherEntityJourneyData)
+        )
+        val message                    =
+          if (none) {
+            "Utr type"
+          } else {
+            utrType match {
+              case SaUtr => "Self Assessment Unique Taxpayer Reference"
+              case CtUtr => "Corporation Tax Unique Taxpayer Reference"
+            }
+          }
+        val expectedErrors             = Seq(
+          DataValidationError(DataMissing, "Company registration number is missing"),
+          DataValidationError(DataMissing, message + " is missing"),
+          DataValidationError(DataMissing, "Overseas tax identifier is missing")
+        )
+        val result                     = service.validateRegistration(invalidCharityRegistration)
+        result.isValid shouldBe false
+        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
   }
 }
