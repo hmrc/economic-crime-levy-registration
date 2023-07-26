@@ -41,6 +41,7 @@ final case class Registration(
   partnershipName: Option[String],
   privateBetaAccessCode: Option[String],
   base64EncodedNrsSubmissionHtml: Option[String],
+  base64EncodedDmsSubmissionHtml: Option[String],
   optOtherEntityJourneyData: Option[OtherEntityJourneyData],
   lastUpdated: Option[Instant] = None
 ) {
@@ -71,6 +72,7 @@ object Registration {
     partnershipName = None,
     privateBetaAccessCode = None,
     base64EncodedNrsSubmissionHtml = None,
+    base64EncodedDmsSubmissionHtml = None,
     optOtherEntityJourneyData = None
   )
 }
