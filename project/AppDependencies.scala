@@ -12,7 +12,9 @@ object AppDependencies {
     "com.openhtmltopdf"  % "openhtmltopdf-pdfbox"              % openHtmlToPdfVersion,
     "org.typelevel"     %% "cats-core"                         % "2.9.0",
     "io.circe"          %% "circe-json-schema"                 % "0.2.0",
-    "io.circe"          %% "circe-parser"                      % "0.14.5"
+    "io.circe"          %% "circe-parser"                      % "0.14.5",
+    "uk.gov.hmrc"       %% "internal-auth-client-play-28"      % "1.2.0",
+    "com.beachape"      %% "enumeratum-play-json"              % "1.7.2"
   )
 
   val test: Seq[ModuleID]    = Seq(

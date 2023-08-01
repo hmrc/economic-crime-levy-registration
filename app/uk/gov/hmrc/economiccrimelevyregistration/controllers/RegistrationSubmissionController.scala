@@ -17,9 +17,11 @@
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.Validated.{Invalid, Valid}
+import play.api.Logging
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Request}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
+import uk.gov.hmrc.economiccrimelevyregistration.models.dms.{DmsNotification, SubmissionItemStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
@@ -27,6 +29,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, IAAction, Predicate, Resource, ResourceLocation, ResourceType}
 
 @Singleton
 class RegistrationSubmissionController @Inject() (
@@ -35,10 +38,21 @@ class RegistrationSubmissionController @Inject() (
   authorise: AuthorisedAction,
   registrationValidationService: RegistrationValidationService,
   subscriptionService: SubscriptionService,
+  auth: BackendAuthComponents,
   nrsService: NrsService,
   dmsService: DmsService
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc) with Logging {
+
+  private val predicate = Predicate.Permission(
+    resource = Resource(
+      resourceType = ResourceType("advance-valuation-rulings"),
+      resourceLocation = ResourceLocation("dms/callback")
+    ),
+    action = IAAction("WRITE")
+  )
+
+  private val authorised = auth.authorizedAction(predicate)
 
   def submitRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
     registrationRepository.get(id).flatMap {
@@ -64,4 +78,21 @@ class RegistrationSubmissionController @Inject() (
     }
   }
 
+  def dmsCallback = authorised(parse.json[DmsNotification]) {
+    implicit request =>
+      val notification = request.body
+
+      if (notification.status == SubmissionItemStatus.Failed) {
+        logger.error(
+          s"DMS notification received for ${notification.id} failed with error: ${notification.failureReason
+            .getOrElse("")}"
+        )
+      } else {
+        logger.info(
+          s"DMS notification received for ${notification.id} with status ${notification.status}"
+        )
+      }
+
+      Ok
+  }
 }
