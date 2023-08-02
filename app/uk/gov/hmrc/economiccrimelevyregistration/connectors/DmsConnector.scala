@@ -20,20 +20,18 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.Config
-import play.api.Configuration
 import play.api.http.Status.ACCEPTED
 import play.api.mvc.MultipartFormData.{DataPart, FilePart}
-import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.NrsSubmissionResponse
-import uk.gov.hmrc.http
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Retries, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, Retries, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 
 import java.io.ByteArrayOutputStream
 import java.net.URL
-import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -56,25 +54,27 @@ class DmsConnector @Inject()(
       LocalDateTime.ofInstant(instant.truncatedTo(ChronoUnit.SECONDS), ZoneOffset.UTC)
     )
 
+    val body = Source(Seq(
+      DataPart("callbackUrl", configuration.getString("microservice.services.dms.callback")),
+      DataPart("metadata.source", appName),
+      DataPart("metadata.timeOfReceipt", dateOfReceipt),
+      DataPart("metadata.formId", "ECL Registration"),
+      DataPart("metadata.customerId", appName),
+      DataPart("metadata.submissionMark", appName),
+      DataPart("metadata.classificationType", configuration.getString("microservice.services.dms.class")),
+      DataPart("metadata.businessArea", appName),
+      FilePart(
+        key = "form",
+        filename = "form.pdf",
+        contentType = Some("application/pdf"),
+        ref = Source.single(ByteString(pdf.toByteArray)
+        ))))
+
     retryFor[Boolean]("DMS submission")(retryCondition)(
       httpClient.post(new URL(dmsBaseUrl + "/dms-submission/submit"))
         .setHeader("auth" -> clientAuthToken)
-        .withBody(Source(Seq(
-          DataPart("callbackUrl", configuration.getString("microservice.services.dms.callback")),
-          DataPart("metadata.source", appName),
-          DataPart("metadata.timeOfReceipt", dateOfReceipt),
-          DataPart("metadata.formId", "ECL Registration"),
-          DataPart("metadata.customerId", appName),
-          DataPart("metadata.submissionMark", appName),
-          DataPart("metadata.classificationType", configuration.getString("microservice.services.dms.class")),
-          DataPart("metadata.businessArea", appName),
-          FilePart(
-            key = "form",
-            filename = "form.pdf",
-            contentType = Some("application/pdf"),
-            ref = Source.single(ByteString(pdf.toByteArray)
-          )))))
-        .execute[http.HttpResponse].map(r => r.status == ACCEPTED)
+        .withBody(body)
+        .execute.map(r => r.status == ACCEPTED)
     )
   }
 

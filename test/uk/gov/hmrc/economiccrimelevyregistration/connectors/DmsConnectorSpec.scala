@@ -46,7 +46,10 @@ class DmsConnectorSpec extends SpecBase {
   private def test(status: Int, expected: Boolean) = {
     val html = "<html><head></head><body></body></html>"
     when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
-    when(mockRequestBuilder.execute[HttpResponse]()(any())).thenReturn(Future.successful(TestResponse(status)))
+
+    when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
+    when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
+    when(mockRequestBuilder.execute[HttpResponse](any(), any())).thenReturn(Future.successful(TestResponse(status)))
 
     val result = await(connector.sendPdf(buildPdf(html), Instant.now))
 
