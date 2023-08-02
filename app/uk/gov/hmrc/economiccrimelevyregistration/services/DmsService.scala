@@ -18,11 +18,9 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.DmsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
-import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
 import uk.gov.hmrc.economiccrimelevyregistration.utils.PdfGenerator.buildPdf
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 
-import java.io.ByteArrayOutputStream
 import java.time.Instant
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
@@ -35,11 +33,9 @@ class DmsService @Inject()(
   ec: ExecutionContext
 ) {
 
-  def submitToDms(optBase64EncodedDmsSubmissionHtml: Option[String])(implicit
-    hc: HeaderCarrier,
-    request: AuthorisedRequest[_]
+  def submitToDms(optBase64EncodedDmsSubmissionHtml: Option[String], now: Instant)(implicit
+    hc: HeaderCarrier
   ): Future[CreateEclSubscriptionResponsePayload] = {
-    val now = Instant.now()
     val base64EncodedDmsSubmissionHtml: String = optBase64EncodedDmsSubmissionHtml.getOrElse(
       throw new IllegalStateException("Base64 encoded DMS submission HTML not found in registration data")
     )

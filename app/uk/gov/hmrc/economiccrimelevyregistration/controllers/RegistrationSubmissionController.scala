@@ -19,6 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 import cats.data.Validated.{Invalid, Valid}
 import play.api.Logging
 import play.api.libs.json.Json
+import java.time.Instant
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Request}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.dms.{DmsNotification, SubmissionItemStatus}
@@ -67,10 +68,12 @@ class RegistrationSubmissionController @Inject() (
 
               Ok(Json.toJson(response.success))
             }
-          case Valid(Right(registration))   =>
-            dmsService.submitToDms(registration.base64EncodedDmsSubmissionHtml).map { response =>
+          case Valid(Right(registration))   => {
+            val now = Instant.now
+            dmsService.submitToDms(registration.base64EncodedDmsSubmissionHtml, now).map { response =>
               Ok(Json.toJson(response))
             }
+          }
           case Invalid(e)                   =>
             Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
         }
