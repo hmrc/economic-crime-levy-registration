@@ -46,7 +46,8 @@ class DmsService @Inject()(
     val html = new String(Base64.getDecoder.decode(base64EncodedDmsSubmissionHtml))
     val pdf = buildPdf(html)
     dmsConnector.sendPdf(pdf, now).map {
-      case true => CreateEclSubscriptionResponsePayload(now, "")
+      case true  => CreateEclSubscriptionResponsePayload(now, "")
+      case false => throw new IllegalStateException("Could not send PDF to DMS queue")
     }
   }
 }

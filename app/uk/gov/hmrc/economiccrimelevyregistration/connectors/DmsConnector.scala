@@ -24,14 +24,16 @@ import play.api.Configuration
 import play.api.http.Status.ACCEPTED
 import play.api.mvc.MultipartFormData.{DataPart, FilePart}
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.NrsSubmissionResponse
+import uk.gov.hmrc.http
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Retries, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import java.io.ByteArrayOutputStream
 import java.net.URL
-import java.time.Instant
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -48,8 +50,11 @@ class DmsConnector @Inject()(
   def sendPdf(pdf: ByteArrayOutputStream, instant: Instant)(implicit
     hc: HeaderCarrier
   ): Future[Boolean] = {
-    val clientAuthToken = configuration.getString("microservice.services.dms.auth")
+    val clientAuthToken = configuration.getString("microservice.services.dms.internal-auth.token")
     val appName = configuration.getString("appName")
+    val dateOfReceipt = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+      LocalDateTime.ofInstant(instant.truncatedTo(ChronoUnit.SECONDS), ZoneOffset.UTC)
+    )
 
     retryFor[Boolean]("DMS submission")(retryCondition)(
       httpClient.post(new URL(dmsBaseUrl + "/dms-submission/submit"))
@@ -57,7 +62,7 @@ class DmsConnector @Inject()(
         .withBody(Source(Seq(
           DataPart("callbackUrl", configuration.getString("microservice.services.dms.callback")),
           DataPart("metadata.source", appName),
-          DataPart("metadata.timeOfReceipt", DateTimeFormatter.ISO_DATE_TIME.format(instant)),
+          DataPart("metadata.timeOfReceipt", dateOfReceipt),
           DataPart("metadata.formId", "ECL Registration"),
           DataPart("metadata.customerId", appName),
           DataPart("metadata.submissionMark", appName),
@@ -69,7 +74,7 @@ class DmsConnector @Inject()(
             contentType = Some("application/pdf"),
             ref = Source.single(ByteString(pdf.toByteArray)
           )))))
-        .execute.map(r => r.status == ACCEPTED)
+        .execute[http.HttpResponse].map(r => r.status == ACCEPTED)
     )
   }
 
