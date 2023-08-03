@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.implicits.catsSyntaxValidatedId
+import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.scalacheck.Arbitrary
@@ -43,6 +44,7 @@ import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, Retrieval}
 
 import java.util.Base64
 import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
 class RegistrationSubmissionControllerSpec extends SpecBase {
 
@@ -177,20 +179,54 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
   }
 
   "dmsCallback" should {
-    "process notifications from DMS" in forAll { dmsNotification: DmsNotification =>
-      when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
+    "return OK when receiving a correct notifications from DMS" in forAll { dmsNotification: DmsNotification =>
+      when(mockStubBehaviour.stubAuth[Unit](any(), any()))
+        .thenReturn(Future.unit)
 
       val request = FakeRequest(POST, routes.RegistrationSubmissionController.dmsCallback.url)
         .withHeaders(AUTHORIZATION -> "Some auth token")
-        .withBody(Json.toJson(dmsNotification.copy(
-          id = "id",
-          status = SubmissionItemStatus.Processed,
-          failureReason = None
-        )))
+        .withBody(Json.toJson(dmsNotification))
 
       val result = controller.dmsCallback()(request)
       status(result) shouldBe OK
     }
-  }
 
+    "return BAD_REQUEST when an invalid request is received" in {
+      when(mockStubBehaviour.stubAuth[Unit](any(), any())).
+        thenReturn(Future.unit)
+
+      val request = FakeRequest(POST, routes.RegistrationSubmissionController.dmsCallback().url)
+        .withHeaders(AUTHORIZATION -> "Some auth token")
+        .withBody(Json.obj())
+
+      val result = controller.dmsCallback()(request)
+      status(result) shouldBe BAD_REQUEST
+    }
+
+    "fail for an unauthenticated user" in {
+      val request = FakeRequest(POST, routes.RegistrationSubmissionController.dmsCallback().url)
+        .withBody(Json.toJson(random[DmsNotification])) // No Authorization header
+
+      val result = controller.dmsCallback()(request)
+      Try(status(result)) match {
+        case Success(_) => fail
+        case Failure(_) => {}
+      }
+    }
+
+    "fail when the user is not authorised" in {
+      when(mockStubBehaviour.stubAuth[Unit](any(), any()))
+        .thenReturn(Future.failed(new RuntimeException()))
+
+      val request = FakeRequest(POST, routes.RegistrationSubmissionController.dmsCallback().url)
+        .withHeaders(AUTHORIZATION -> "Some auth token")
+        .withBody(Json.toJson(random[DmsNotification]))
+
+      val result = controller.dmsCallback()(request)
+      Try(status(result)) match {
+        case Success(_) => fail
+        case Failure(_) => {}
+      }
+    }
+  }
 }
