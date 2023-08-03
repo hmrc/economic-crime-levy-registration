@@ -34,6 +34,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.http.HeaderNames.AUTHORIZATION
 
 @Singleton
 class DmsConnector @Inject()(
@@ -72,7 +73,7 @@ class DmsConnector @Inject()(
 
     retryFor[Boolean]("DMS submission")(retryCondition)(
       httpClient.post(new URL(dmsBaseUrl + "/dms-submission/submit"))
-        .setHeader("auth" -> clientAuthToken)
+        .setHeader(AUTHORIZATION -> clientAuthToken)
         .withBody(body)
         .execute.map(r => r.status == ACCEPTED)
     )

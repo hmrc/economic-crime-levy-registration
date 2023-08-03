@@ -81,7 +81,7 @@ class RegistrationSubmissionController @Inject() (
     }
   }
 
-  def dmsCallback = authorised(parse.json[DmsNotification]) {
+  def dmsCallback: Action[DmsNotification] = authorised(parse.json[DmsNotification]) {
     implicit request =>
       val notification = request.body
 
