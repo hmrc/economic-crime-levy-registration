@@ -10,4 +10,4 @@ POST          /submit-registration/:id                       uk.gov.hmrc.economi
 
 GET           /subscription-status/:businessPartnerId        uk.gov.hmrc.economiccrimelevyregistration.controllers.SubscriptionStatusController.getSubscriptionStatus(businessPartnerId)
 
-POST          /dms-registration-callback                     uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationSubmissionController.dmsCallback()
+POST          /dms-registration-callback                     uk.gov.hmrc.economiccrimelevyregistration.controllers.DmsNotificationController.dmsCallback()

@@ -19,56 +19,54 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 import cats.data.Validated.{Invalid, Valid}
 import play.api.Logging
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-
-import java.time.Instant
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Request}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.dms.{DmsNotification, SubmissionItemStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
+import uk.gov.hmrc.internalauth.client._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, IAAction, Predicate, Resource, ResourceLocation, ResourceType}
 
 @Singleton
-class RegistrationSubmissionController @Inject() (
+class DmsNotificationController @Inject()(
   cc: ControllerComponents,
-  registrationRepository: RegistrationRepository,
-  authorise: AuthorisedAction,
-  registrationValidationService: RegistrationValidationService,
-  subscriptionService: SubscriptionService,
-  nrsService: NrsService,
-  dmsService: DmsService,
+  auth: BackendAuthComponents,
+  appConfig: AppConfig
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) with Logging {
 
-  def submitRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
-    registrationRepository.get(id).flatMap {
-      case Some(registration) =>
-        registrationValidationService.validateRegistration(registration) match {
-          case Valid(Left(eclSubscription)) =>
-            subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
-              nrsService.submitToNrs(
-                registration.base64EncodedNrsSubmissionHtml,
-                response.success.eclReference
-              )
+  private val predicate = Predicate.Permission(
+    resource = Resource(
+      resourceType = ResourceType(appConfig.appName),
+      resourceLocation = ResourceLocation(routes.DmsNotificationController.dmsCallback().url)
+    ),
+    action = IAAction("WRITE")
+  )
 
-              Ok(Json.toJson(response.success))
-            }
-          case Valid(Right(registration))   => {
-            val now = Instant.now
-            dmsService.submitToDms(registration.base64EncodedDmsSubmissionHtml, now).map { response =>
-              Ok(Json.toJson(response))
-            }
-          }
-          case Invalid(e)                   =>
-            Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
+  private val authorised = auth.authorizedAction(predicate)
+
+  def dmsCallback: Action[JsValue] = authorised(parse.json) { implicit request =>
+    request.body.validate[DmsNotification] match {
+      case JsSuccess(notification, _) =>
+        if (notification.status == SubmissionItemStatus.Failed) {
+          logger.error(
+            s"DMS notification received for ${notification.id} failed with error: ${notification.failureReason
+              .getOrElse("")}"
+          )
+        } else {
+          logger.info(
+            s"DMS notification received for ${notification.id} with status ${notification.status}"
+          )
         }
-      case None               => Future.successful(NotFound)
+        Ok
+      case JsError(_) =>
+        BadRequest
     }
   }
 }

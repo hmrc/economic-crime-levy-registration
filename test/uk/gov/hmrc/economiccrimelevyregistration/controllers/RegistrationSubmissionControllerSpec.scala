@@ -17,34 +17,24 @@
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.implicits.catsSyntaxValidatedId
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.scalacheck.Arbitrary
 import play.api.Play.materializer
-import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import play.api.test.FakeRequest
-import play.api.test.Helpers.{AUTHORIZATION, POST, route, status, stubControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
-import uk.gov.hmrc.economiccrimelevyregistration.models.dms.{DmsNotification, SubmissionItemStatus}
-import uk.gov.hmrc.economiccrimelevyregistration.models.dms.SubmissionItemStatus.Processed
-import uk.gov.hmrc.economiccrimelevyregistration.models.{EntityType, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError.DataInvalid
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, CreateEclSubscriptionResponsePayload, EclSubscription}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EntityType, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
-import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
-import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, Retrieval}
 
 import java.util.Base64
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
 
 class RegistrationSubmissionControllerSpec extends SpecBase {
 
@@ -53,11 +43,6 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
   val mockRegistrationRepository: RegistrationRepository               = mock[RegistrationRepository]
   val mockNrsService: NrsService                                       = mock[NrsService]
   val mockDmsService: DmsService                                       = mock[DmsService]
-  val mockStubBehaviour: StubBehaviour = mock[StubBehaviour]
-  val stubBackendAuthComponents: BackendAuthComponents =
-    BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), implicitly)
-
-  when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
 
   val controller = new RegistrationSubmissionController(
     cc,
@@ -65,10 +50,8 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
     fakeAuthorisedAction,
     mockRegistrationValidationService,
     mockSubscriptionServiceService,
-    stubBackendAuthComponents,
     mockNrsService,
-    mockDmsService,
-    appConfig
+    mockDmsService
   )
 
   "submitRegistration" should {
@@ -175,58 +158,6 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         controller.submitRegistration(registration.internalId)(fakeRequest)
 
       status(result) shouldBe NOT_FOUND
-    }
-  }
-
-  "dmsCallback" should {
-    "return OK when receiving a correct notifications from DMS" in forAll { dmsNotification: DmsNotification =>
-      when(mockStubBehaviour.stubAuth[Unit](any(), any()))
-        .thenReturn(Future.unit)
-
-      val request = FakeRequest(POST, routes.RegistrationSubmissionController.dmsCallback.url)
-        .withHeaders(AUTHORIZATION -> "Some auth token")
-        .withBody(Json.toJson(dmsNotification))
-
-      val result = controller.dmsCallback()(request)
-      status(result) shouldBe OK
-    }
-
-    "return BAD_REQUEST when an invalid request is received" in {
-      when(mockStubBehaviour.stubAuth[Unit](any(), any())).
-        thenReturn(Future.unit)
-
-      val request = FakeRequest(POST, routes.RegistrationSubmissionController.dmsCallback().url)
-        .withHeaders(AUTHORIZATION -> "Some auth token")
-        .withBody(Json.obj())
-
-      val result = controller.dmsCallback()(request)
-      status(result) shouldBe BAD_REQUEST
-    }
-
-    "fail for an unauthenticated user" in {
-      val request = FakeRequest(POST, routes.RegistrationSubmissionController.dmsCallback().url)
-        .withBody(Json.toJson(random[DmsNotification])) // No Authorization header
-
-      val result = controller.dmsCallback()(request)
-      Try(status(result)) match {
-        case Success(_) => fail
-        case Failure(_) => {}
-      }
-    }
-
-    "fail when the user is not authorised" in {
-      when(mockStubBehaviour.stubAuth[Unit](any(), any()))
-        .thenReturn(Future.failed(new RuntimeException()))
-
-      val request = FakeRequest(POST, routes.RegistrationSubmissionController.dmsCallback().url)
-        .withHeaders(AUTHORIZATION -> "Some auth token")
-        .withBody(Json.toJson(random[DmsNotification]))
-
-      val result = controller.dmsCallback()(request)
-      Try(status(result)) match {
-        case Success(_) => fail
-        case Failure(_) => {}
-      }
     }
   }
 }
