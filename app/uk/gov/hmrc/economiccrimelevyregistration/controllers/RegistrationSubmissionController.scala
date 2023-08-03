@@ -17,14 +17,9 @@
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.Validated.{Invalid, Valid}
-import play.api.Logging
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-
-import java.time.Instant
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Request}
-import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
+import play.api.libs.json.Json
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
-import uk.gov.hmrc.economiccrimelevyregistration.models.dms.{DmsNotification, SubmissionItemStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
@@ -32,7 +27,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, IAAction, Predicate, Resource, ResourceLocation, ResourceType}
+import java.time.Instant
 
 @Singleton
 class RegistrationSubmissionController @Inject() (
@@ -42,9 +37,9 @@ class RegistrationSubmissionController @Inject() (
   registrationValidationService: RegistrationValidationService,
   subscriptionService: SubscriptionService,
   nrsService: NrsService,
-  dmsService: DmsService,
+  dmsService: DmsService
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) with Logging {
+  extends BackendController(cc) {
 
   def submitRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
     registrationRepository.get(id).flatMap {
@@ -71,4 +66,5 @@ class RegistrationSubmissionController @Inject() (
       case None               => Future.successful(NotFound)
     }
   }
+
 }
