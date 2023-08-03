@@ -21,6 +21,8 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.scalacheck.Arbitrary
 import play.api.Play.materializer
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.FakeRequest
@@ -28,7 +30,7 @@ import play.api.test.Helpers.{AUTHORIZATION, POST, route, status, stubController
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
-import uk.gov.hmrc.economiccrimelevyregistration.models.dms.DmsNotification
+import uk.gov.hmrc.economiccrimelevyregistration.models.dms.{DmsNotification, SubmissionItemStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.models.dms.SubmissionItemStatus.Processed
 import uk.gov.hmrc.economiccrimelevyregistration.models.{EntityType, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError.DataInvalid
@@ -53,6 +55,8 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
   val stubBackendAuthComponents: BackendAuthComponents =
     BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), implicitly)
 
+  when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
+
   val controller = new RegistrationSubmissionController(
     cc,
     mockRegistrationRepository,
@@ -61,7 +65,8 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
     mockSubscriptionServiceService,
     stubBackendAuthComponents,
     mockNrsService,
-    mockDmsService
+    mockDmsService,
+    appConfig
   )
 
   "submitRegistration" should {
@@ -177,7 +182,11 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
       val request = FakeRequest(POST, routes.RegistrationSubmissionController.dmsCallback.url)
         .withHeaders(AUTHORIZATION -> "Some auth token")
-        .withBody(Json.toJson(dmsNotification))
+        .withBody(Json.toJson(dmsNotification.copy(
+          id = "id",
+          status = SubmissionItemStatus.Processed,
+          failureReason = None
+        )))
 
       val result = controller.dmsCallback()(request)
       status(result) shouldBe OK

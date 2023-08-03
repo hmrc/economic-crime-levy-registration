@@ -18,9 +18,11 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.Validated.{Invalid, Valid}
 import play.api.Logging
-import play.api.libs.json.Json
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+
 import java.time.Instant
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Request}
+import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.dms.{DmsNotification, SubmissionItemStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
@@ -41,14 +43,15 @@ class RegistrationSubmissionController @Inject() (
   subscriptionService: SubscriptionService,
   auth: BackendAuthComponents,
   nrsService: NrsService,
-  dmsService: DmsService
+  dmsService: DmsService,
+  appConfig: AppConfig
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) with Logging {
 
   private val predicate = Predicate.Permission(
     resource = Resource(
-      resourceType = ResourceType("advance-valuation-rulings"),
-      resourceLocation = ResourceLocation("dms/callback")
+      resourceType = ResourceType(appConfig.appName),
+      resourceLocation = ResourceLocation(routes.RegistrationSubmissionController.dmsCallback().url)
     ),
     action = IAAction("WRITE")
   )
@@ -81,21 +84,22 @@ class RegistrationSubmissionController @Inject() (
     }
   }
 
-  def dmsCallback: Action[DmsNotification] = authorised(parse.json[DmsNotification]) {
-    implicit request =>
-      val notification = request.body
-
-      if (notification.status == SubmissionItemStatus.Failed) {
-        logger.error(
-          s"DMS notification received for ${notification.id} failed with error: ${notification.failureReason
-            .getOrElse("")}"
-        )
-      } else {
-        logger.info(
-          s"DMS notification received for ${notification.id} with status ${notification.status}"
-        )
-      }
-
-      Ok
+  def dmsCallback: Action[JsValue] = authorised(parse.json) { implicit request =>
+    request.body.validate[DmsNotification] match {
+      case JsSuccess(notification, _) =>
+        if (notification.status == SubmissionItemStatus.Failed) {
+          logger.error(
+            s"DMS notification received for ${notification.id} failed with error: ${notification.failureReason
+              .getOrElse("")}"
+          )
+        } else {
+          logger.info(
+            s"DMS notification received for ${notification.id} with status ${notification.status}"
+          )
+        }
+        Ok
+      case JsError(_) =>
+        BadRequest
+    }
   }
 }
