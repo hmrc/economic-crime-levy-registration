@@ -16,6 +16,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate}
+import java.util.Base64
 
 class RegistrationSubmissionISpec extends ISpecBase {
   s"POST ${routes.RegistrationSubmissionController.submitRegistration(":id").url}" should {
@@ -123,6 +124,68 @@ class RegistrationSubmissionISpec extends ISpecBase {
       eventually {
         verify(4, postRequestedFor(urlEqualTo("/submission")))
       }
+    }
+
+    "return 200 OK when the registration data for 'other' entity is valid" in {
+      stubAuthorised()
+
+      val html = "<html><head></head><body></body></html>"
+      val charityRegistration  = random[ValidCharityRegistration]
+      val validRegistration    = charityRegistration.copy(
+        registration = charityRegistration.registration.copy(
+          base64EncodedDmsSubmissionHtml = Some(Base64.getEncoder.encodeToString(html.getBytes))
+        )
+      )
+
+      callRoute(
+        FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(
+          Json.toJson(validRegistration.registration)
+        )
+      ).futureValue
+
+      stubDmsSuccess()
+
+      val result = callRoute(
+        FakeRequest(
+          routes.RegistrationSubmissionController.submitRegistration(validRegistration.registration.internalId)
+        ).withJsonBody(
+          Json.toJson(validRegistration.registration)
+        )
+      )
+
+      status(result)        shouldBe OK
+      verify(1, postRequestedFor(urlEqualTo("/dms-submission/submit")))
+    }
+
+    "return INTERNAL_SERVER_ERROR if call to DMS fails 3 times" in {
+      stubAuthorised()
+
+      val html = "<html><head></head><body></body></html>"
+      val charityRegistration  = random[ValidCharityRegistration]
+      val validRegistration    = charityRegistration.copy(
+        registration = charityRegistration.registration.copy(
+          base64EncodedDmsSubmissionHtml = Some(Base64.getEncoder.encodeToString(html.getBytes))
+        )
+      )
+
+      callRoute(
+        FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(
+          Json.toJson(validRegistration.registration)
+        )
+      ).futureValue
+
+      stubDms5xx()
+
+      val result = callRoute(
+        FakeRequest(
+          routes.RegistrationSubmissionController.submitRegistration(validRegistration.registration.internalId)
+        ).withJsonBody(
+          Json.toJson(validRegistration.registration)
+        )
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      verify(3, postRequestedFor(urlEqualTo("/dms-submission/submit")))
     }
   }
 

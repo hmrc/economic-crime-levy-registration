@@ -33,23 +33,28 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import play.api.http.HeaderNames.AUTHORIZATION
+import play.api.http.HttpEntity
+import play.api.mvc.{ResponseHeader, Result}
+import play.mvc.Results.status
+
+import scala.concurrent.duration.Duration
 
 @Singleton
 class DmsConnector @Inject()(
   httpClient: HttpClientV2,
   servicesConfig: ServicesConfig,
-  override val configuration: Config,
-  override val actorSystem: ActorSystem
-)(implicit ec: ExecutionContext) extends Retries {
+  configuration: Config
+)(implicit ec: ExecutionContext) {
 
   val dmsBaseUrl: String = servicesConfig.baseUrl("dms")
 
   def sendPdf(pdf: ByteArrayOutputStream, instant: Instant)(implicit
     hc: HeaderCarrier
   ): Future[Boolean] = {
-    val clientAuthToken = configuration.getString("microservice.services.dms.internal-auth.token")
+    val timeouts = configuration.getString("microservice.services.dms.timeouts").split(" ")
+    val clientAuthToken = configuration.getString("microservice.services.internal-auth.token")
     val appName = configuration.getString("appName")
     val dateOfReceipt = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
       LocalDateTime.ofInstant(instant.truncatedTo(ChronoUnit.SECONDS), ZoneOffset.UTC)
@@ -68,18 +73,18 @@ class DmsConnector @Inject()(
         key = "form",
         filename = "form.pdf",
         contentType = Some("application/pdf"),
-        ref = Source.single(ByteString(pdf.toByteArray)
-        ))))
-
-    retryFor[Boolean]("DMS submission")(retryCondition)(
-      httpClient.post(new URL(dmsBaseUrl + "/dms-submission/submit"))
+        ref = Source.single(ByteString(pdf.toByteArray))
+      )
+    ))
+    for (timeout <- timeouts) {
+      val result: Future[Result] = httpClient.post(new URL(dmsBaseUrl + "/dms-submission/submit"))
         .setHeader(AUTHORIZATION -> clientAuthToken)
         .withBody(body)
-        .execute.map(r => r.status == ACCEPTED)
-    )
-  }
-
-  private def retryCondition: PartialFunction[Exception, Boolean] = {
-    case e: UpstreamErrorResponse if UpstreamErrorResponse.Upstream5xxResponse.unapply(e).isDefined => true
+        .execute.map(r => Result(ResponseHeader(r.status, Map()), HttpEntity.NoEntity))
+      if (Await.result(result, Duration(timeout)).header.status == ACCEPTED) {
+        return Future.successful(true)
+      }
+    }
+    Future.successful(false)
   }
 }

@@ -67,7 +67,9 @@ abstract class ISpecBase
     "auth",
     "tax-enrolments",
     "integration-framework",
-    "nrs"
+    "nrs",
+    "dms",
+    "internal-auth"
   )
 
   override def fakeApplication(): Application =
