@@ -20,9 +20,9 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.Config
-import play.api.http.Status.ACCEPTED
+import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR}
 import play.api.mvc.MultipartFormData.{DataPart, FilePart}
-import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 import uk.gov.hmrc.http.{HeaderCarrier, Retries, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
@@ -39,7 +39,9 @@ import play.api.http.HttpEntity
 import play.api.mvc.{ResponseHeader, Result}
 import play.mvc.Results.status
 
-import scala.concurrent.duration.Duration
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
 class DmsConnector @Inject()(
@@ -53,7 +55,7 @@ class DmsConnector @Inject()(
   def sendPdf(pdf: ByteArrayOutputStream, instant: Instant)(implicit
     hc: HeaderCarrier
   ): Future[Boolean] = {
-    val timeouts = configuration.getString("microservice.services.dms.timeouts").split(" ")
+    val retries = configuration.getStringList("http-verbs.retries.intervals").asScala.map(Duration(_))
     val clientAuthToken = configuration.getString("microservice.services.internal-auth.token")
     val appName = configuration.getString("appName")
     val dateOfReceipt = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
@@ -76,15 +78,36 @@ class DmsConnector @Inject()(
         ref = Source.single(ByteString(pdf.toByteArray))
       )
     ))
-    for (timeout <- timeouts) {
-      val result: Future[Result] = httpClient.post(new URL(dmsBaseUrl + "/dms-submission/submit"))
-        .setHeader(AUTHORIZATION -> clientAuthToken)
-        .withBody(body)
-        .execute.map(r => Result(ResponseHeader(r.status, Map()), HttpEntity.NoEntity))
-      if (Await.result(result, Duration(timeout)).header.status == ACCEPTED) {
-        return Future.successful(true)
-      }
-    }
-    Future.successful(false)
+
+    isOk(post(retries.toList, httpClient.post(new URL(dmsBaseUrl + "/dms-submission/submit"))
+      .setHeader(AUTHORIZATION -> clientAuthToken)
+      .withBody(body))
+    )
   }
+
+  private def post(retries: List[Duration], request: RequestBuilder)(implicit
+    hc: HeaderCarrier
+  ): Future[Result] = {
+    if (retries.isEmpty) {
+      Future.successful(result(INTERNAL_SERVER_ERROR))
+    } else {
+      request.execute.map(r => r.status match {
+        case INTERNAL_SERVER_ERROR =>
+          val timeout = retries.head
+          Thread.sleep(timeout.toMillis)
+          Await.result(post(retries.tail, request), timeout)
+        case _                     =>
+          result(r.status)
+      })
+    }
+  }
+
+  private def result(status: Int): Result =
+    Result(
+      ResponseHeader(status, Map.empty),
+      HttpEntity.NoEntity
+    )
+
+  private def isOk(result: Future[Result]): Future[Boolean] =
+    result.map(r => r.header.status == ACCEPTED)
 }
