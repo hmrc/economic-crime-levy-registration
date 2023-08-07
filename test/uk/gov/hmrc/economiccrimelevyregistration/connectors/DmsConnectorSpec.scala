@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
@@ -27,26 +26,36 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import java.time.Instant
 import scala.concurrent.Future
+import scala.collection.JavaConverters._
 
 class DmsConnectorSpec extends SpecBase {
 
-  val actorSystem: ActorSystem           = ActorSystem("test")
-  val config: Config                     = app.injector.instanceOf[Config]
+  val config: Config                     = mock[Config]
   val mockRequestBuilder: RequestBuilder = mock[RequestBuilder]
   val mockHttpClient: HttpClientV2       = mock[HttpClientV2]
   val servicesConfig: ServicesConfig     = app.injector.instanceOf[ServicesConfig]
-  val connector                          = new DmsConnector(mockHttpClient, servicesConfig, config, actorSystem)
+  val connector                          = new DmsConnector(
+    mockHttpClient,
+    servicesConfig,
+    config
+  )
 
   "sendPdf" should {
     "return true if post to DMS queue succeeds" in {
       test(ACCEPTED, true)
     }
+
+    "return false if post to DMS queue fails" in {
+      test(INTERNAL_SERVER_ERROR, false)
+    }
   }
 
   private def test(status: Int, expected: Boolean) = {
     val html = "<html><head></head><body></body></html>"
-    when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
+    val list = List("1ms")
 
+    when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
+    when(config.getStringList(any())).thenReturn(list.asJava);
     when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
     when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
     when(mockRequestBuilder.execute[HttpResponse](any(), any())).thenReturn(Future.successful(TestResponse(status)))
