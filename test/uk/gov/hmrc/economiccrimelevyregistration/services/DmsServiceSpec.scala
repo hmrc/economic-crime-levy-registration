@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import org.mockito.ArgumentMatchers.any
+import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.DmsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
@@ -57,7 +58,8 @@ class DmsServiceSpec extends SpecBase {
     instant: Instant,
     message: String = ""
   ) = {
-    when(mockDmsConnector.sendPdf(any(), any())(any())).thenReturn(Future.successful(successful))
+    implicit val request = FakeRequest("", "")
+    when(mockDmsConnector.sendPdf(any(), any())(any(), any())).thenReturn(Future.successful(successful))
     Try(await(service.submitToDms(encoded, now))) match {
       case Success(result) if !expectException => result       shouldBe CreateEclSubscriptionResponsePayload(now, "")
       case Failure(e) if expectException       => e.getMessage shouldBe message

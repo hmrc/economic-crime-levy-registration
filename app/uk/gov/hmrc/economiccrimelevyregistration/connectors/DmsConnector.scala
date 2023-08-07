@@ -36,8 +36,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.HttpEntity
-import play.api.mvc.{ResponseHeader, Result}
+import play.api.mvc.{RequestHeader, ResponseHeader, Result}
 import play.mvc.Results.status
+import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -53,6 +54,7 @@ class DmsConnector @Inject() (
   val dmsBaseUrl: String = servicesConfig.baseUrl("dms")
 
   def sendPdf(pdf: ByteArrayOutputStream, instant: Instant)(implicit
+    header: RequestHeader,
     hc: HeaderCarrier
   ): Future[Boolean] = {
     val retries         = configuration.getStringList("http-verbs.retries.intervals").asScala.map(Duration(_))
@@ -64,13 +66,13 @@ class DmsConnector @Inject() (
 
     val body = Source(
       Seq(
-        DataPart("callbackUrl", configuration.getString("microservice.services.dms.callback")),
+        DataPart("callbackUrl", routes.DmsNotificationController.dmsCallback().absoluteURL()),
         DataPart("metadata.source", appName),
         DataPart("metadata.timeOfReceipt", dateOfReceipt),
         DataPart("metadata.formId", "ECL Registration"),
         DataPart("metadata.customerId", appName),
         DataPart("metadata.submissionMark", appName),
-        DataPart("metadata.classificationType", configuration.getString("microservice.services.dms.class")),
+        DataPart("metadata.classificationType", configuration.getString("microservice.services.dms.classification")),
         DataPart("metadata.businessArea", appName),
         FilePart(
           key = "form",

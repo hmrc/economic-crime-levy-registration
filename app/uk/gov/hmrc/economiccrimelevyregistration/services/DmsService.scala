@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.DmsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
 import uk.gov.hmrc.economiccrimelevyregistration.utils.PdfGenerator.buildPdf
@@ -34,6 +35,7 @@ class DmsService @Inject() (
 ) {
 
   def submitToDms(optBase64EncodedDmsSubmissionHtml: Option[String], now: Instant)(implicit
+    header: RequestHeader,
     hc: HeaderCarrier
   ): Future[CreateEclSubscriptionResponsePayload] = {
     val base64EncodedDmsSubmissionHtml: String = optBase64EncodedDmsSubmissionHtml.getOrElse(

@@ -18,6 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
 import com.typesafe.config.Config
 import org.mockito.ArgumentMatchers.any
+import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.utils.PdfGenerator.buildPdf
 import uk.gov.hmrc.http.HttpResponse
@@ -51,8 +52,9 @@ class DmsConnectorSpec extends SpecBase {
   }
 
   private def test(status: Int, expected: Boolean) = {
-    val html = "<html><head></head><body></body></html>"
-    val list = List("1ms")
+    val html             = "<html><head></head><body></body></html>"
+    val list             = List("1ms")
+    implicit val request = FakeRequest("", "")
 
     when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
     when(config.getStringList(any())).thenReturn(list.asJava);
