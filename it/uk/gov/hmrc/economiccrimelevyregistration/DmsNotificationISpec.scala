@@ -22,7 +22,7 @@ import java.util.Base64
 class DmsNotificationISpec extends ISpecBase {
   s"POST ${routes.DmsNotificationController.dmsCallback().url}" should {
     "process a notification message from DMS" in {
-      stubInternalAuthorised("economic-crime-levy-registration")
+      stubInternalAuthorised()
 
       val result = callRoute(
         FakeRequest(routes.DmsNotificationController.dmsCallback())

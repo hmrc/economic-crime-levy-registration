@@ -4,8 +4,6 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.http.Status.OK
 import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper._
-import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
-import uk.gov.hmrc.internalauth.client.{Resource, ResourceLocation, ResourceType}
 
 trait AuthStubs { self: WireMockStubs =>
   def stubAuthorised(): StubMapping =
@@ -26,32 +24,11 @@ trait AuthStubs { self: WireMockStubs =>
          """.stripMargin)
     )
 
-  private def responseJsonStr(
-                               resourceType     : Option[ResourceType],
-                               responseResources: Set[Resource],
-                             ) = {
-    responseResources
-      .map { resource =>
-        s"""{
-          "resourceType":"${resource.resourceType.value}",
-          "resourceLocation": "${resource.resourceLocation.value}"
-        }"""
-      }
-      .mkString("[", ",", "]")
-  }
-
-  def stubInternalAuthorised(resourceType: String): StubMapping =
+  def stubInternalAuthorised(): StubMapping =
     stub(
       post(urlEqualTo("/internal-auth/auth")),
       aResponse()
         .withStatus(OK)
-        .withBody(responseJsonStr(
-          Some(ResourceType(resourceType)),
-          Set(Resource(
-            ResourceType("dms-submission"),
-            ResourceLocation("dms-registration-callback")
-          ))
-        ))
-        .withHeader("Content-Type", "application/json")
+        .withBody("""{"retrievals": {}}""".stripMargin)
     )
 }
