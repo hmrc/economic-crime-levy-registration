@@ -39,7 +39,7 @@ class RegistrationSubmissionController @Inject() (
   nrsService: NrsService,
   dmsService: DmsService
 )(implicit ec: ExecutionContext)
-  extends BackendController(cc) {
+    extends BackendController(cc) {
 
   def submitRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
     registrationRepository.get(id).flatMap {
@@ -54,12 +54,11 @@ class RegistrationSubmissionController @Inject() (
 
               Ok(Json.toJson(response.success))
             }
-          case Valid(Right(registration))   => {
+          case Valid(Right(registration))   =>
             val now = Instant.now
             dmsService.submitToDms(registration.base64EncodedDmsSubmissionHtml, now).map { response =>
               Ok(Json.toJson(response))
             }
-          }
           case Invalid(e)                   =>
             Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
         }

@@ -28,9 +28,9 @@ import scala.util.{Failure, Success, Try}
 
 class DmsServiceSpec extends SpecBase {
 
-  val mockDmsConnector: DmsConnector       = mock[DmsConnector]
-  val html = "<html><head></head><body></body></html>"
-  val now = Instant.now
+  val mockDmsConnector: DmsConnector = mock[DmsConnector]
+  val html                           = "<html><head></head><body></body></html>"
+  val now                            = Instant.now
 
   val service = new DmsService(mockDmsConnector)
 
@@ -50,10 +50,16 @@ class DmsServiceSpec extends SpecBase {
     }
   }
 
-  private def test(encoded: Option[String], successful: Boolean, expectException: Boolean, instant: Instant, message: String = "") = {
+  private def test(
+    encoded: Option[String],
+    successful: Boolean,
+    expectException: Boolean,
+    instant: Instant,
+    message: String = ""
+  ) = {
     when(mockDmsConnector.sendPdf(any(), any())(any())).thenReturn(Future.successful(successful))
     Try(await(service.submitToDms(encoded, now))) match {
-      case Success(result) if !expectException => result shouldBe CreateEclSubscriptionResponsePayload(now, "")
+      case Success(result) if !expectException => result       shouldBe CreateEclSubscriptionResponsePayload(now, "")
       case Failure(e) if expectException       => e.getMessage shouldBe message
       case _                                   => fail
     }

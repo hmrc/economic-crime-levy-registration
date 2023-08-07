@@ -18,7 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.dms
 
 import play.api.libs.json.{Json, OFormat}
 
-case class ObjectSummary (
+case class ObjectSummary(
   location: String,
   contentLength: Int,
   contentMd5: String,

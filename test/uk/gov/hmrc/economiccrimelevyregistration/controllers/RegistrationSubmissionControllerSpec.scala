@@ -55,13 +55,12 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
   )
 
   "submitRegistration" should {
-    "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid for 'Normal' entities" in forAll (
+    "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid for 'Normal' entities" in forAll(
       Arbitrary.arbitrary[Registration],
       Arbitrary.arbitrary[EntityType].retryUntil(_ != Other),
       Arbitrary.arbitrary[EclSubscription],
       Arbitrary.arbitrary[CreateEclSubscriptionResponse]
-    )
-    {
+    ) {
       (
         aRegistration: Registration,
         entityType: EntityType,
@@ -93,16 +92,15 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         reset(mockNrsService)
     }
 
-    "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid for 'Other' entities" in forAll (
+    "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid for 'Other' entities" in forAll(
       Arbitrary.arbitrary[Registration],
       Arbitrary.arbitrary[CreateEclSubscriptionResponse]
-    )
-    {
+    ) {
       (
         aRegistration: Registration,
         subscriptionResponse: CreateEclSubscriptionResponse
       ) =>
-        val html = "<html><head></head><body></body></html>"
+        val html         = "<html><head></head><body></body></html>"
         val registration = aRegistration.copy(
           entityType = Some(Other),
           base64EncodedDmsSubmissionHtml = Some(Base64.getEncoder.encodeToString(html.getBytes))
@@ -124,11 +122,10 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
     }
 
-    "return 500 INTERNAL_SERVER_ERROR with validation errors in the JSON response body when the registration data is invalid" in forAll (
+    "return 500 INTERNAL_SERVER_ERROR with validation errors in the JSON response body when the registration data is invalid" in forAll(
       Arbitrary.arbitrary[Registration],
       Arbitrary.arbitrary[EntityType].retryUntil(_ != Other)
-    )
-    {
+    ) {
       (
         aRegistration: Registration,
         entityType: EntityType

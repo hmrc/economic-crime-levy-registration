@@ -74,6 +74,6 @@ class DmsConnectorSpec extends SpecBase {
 case class TestResponse(
   status: Int
 ) extends HttpResponse {
-  override def body: String = ""
+  override def body: String                         = ""
   override def allHeaders: Map[String, Seq[String]] = Map.empty
 }

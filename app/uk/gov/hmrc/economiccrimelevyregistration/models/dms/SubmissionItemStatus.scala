@@ -20,9 +20,7 @@ import enumeratum.{Enum, EnumEntry, PlayJsonEnum}
 
 sealed abstract class SubmissionItemStatus extends EnumEntry
 
-object SubmissionItemStatus
-  extends Enum[SubmissionItemStatus]
-    with PlayJsonEnum[SubmissionItemStatus] {
+object SubmissionItemStatus extends Enum[SubmissionItemStatus] with PlayJsonEnum[SubmissionItemStatus] {
 
   case object Submitted extends SubmissionItemStatus
   case object Forwarded extends SubmissionItemStatus

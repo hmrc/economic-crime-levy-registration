@@ -34,12 +34,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class DmsNotificationController @Inject()(
+class DmsNotificationController @Inject() (
   cc: ControllerComponents,
   auth: BackendAuthComponents,
   appConfig: AppConfig
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) with Logging {
+    extends BackendController(cc)
+    with Logging {
 
   private val predicate = Predicate.Permission(
     resource = Resource(
@@ -65,7 +66,7 @@ class DmsNotificationController @Inject()(
           )
         }
         Ok
-      case JsError(_) =>
+      case JsError(_)                 =>
         BadRequest
     }
   }

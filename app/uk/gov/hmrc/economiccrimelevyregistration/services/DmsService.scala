@@ -27,8 +27,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class DmsService @Inject()(
-  dmsConnector: DmsConnector,
+class DmsService @Inject() (
+  dmsConnector: DmsConnector
 )(implicit
   ec: ExecutionContext
 ) {
@@ -39,8 +39,8 @@ class DmsService @Inject()(
     val base64EncodedDmsSubmissionHtml: String = optBase64EncodedDmsSubmissionHtml.getOrElse(
       throw new IllegalStateException("Base64 encoded DMS submission HTML not found in registration data")
     )
-    val html = new String(Base64.getDecoder.decode(base64EncodedDmsSubmissionHtml))
-    val pdf = buildPdf(html)
+    val html                                   = new String(Base64.getDecoder.decode(base64EncodedDmsSubmissionHtml))
+    val pdf                                    = buildPdf(html)
     dmsConnector.sendPdf(pdf, now).map {
       case true  => CreateEclSubscriptionResponsePayload(now, "")
       case false => throw new IllegalStateException("Could not send PDF to DMS queue")

@@ -39,8 +39,8 @@ class DmsNotificationControllerSpec extends SpecBase {
   val mockRegistrationRepository: RegistrationRepository               = mock[RegistrationRepository]
   val mockNrsService: NrsService                                       = mock[NrsService]
   val mockDmsService: DmsService                                       = mock[DmsService]
-  val mockStubBehaviour: StubBehaviour = mock[StubBehaviour]
-  val stubBackendAuthComponents: BackendAuthComponents =
+  val mockStubBehaviour: StubBehaviour                                 = mock[StubBehaviour]
+  val stubBackendAuthComponents: BackendAuthComponents                 =
     BackendAuthComponentsStub(mockStubBehaviour)(stubControllerComponents(), implicitly)
 
   val controller = new DmsNotificationController(
@@ -63,8 +63,7 @@ class DmsNotificationControllerSpec extends SpecBase {
     }
 
     "return BAD_REQUEST when an invalid request is received" in {
-      when(mockStubBehaviour.stubAuth[Unit](any(), any())).
-        thenReturn(Future.unit)
+      when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
 
       val request = FakeRequest(POST, routes.DmsNotificationController.dmsCallback().url)
         .withHeaders(AUTHORIZATION -> "Some auth token")
@@ -81,7 +80,7 @@ class DmsNotificationControllerSpec extends SpecBase {
       val result = controller.dmsCallback()(request)
       Try(status(result)) match {
         case Success(_) => fail
-        case Failure(_) => {}
+        case Failure(_) =>
       }
     }
 
@@ -96,7 +95,7 @@ class DmsNotificationControllerSpec extends SpecBase {
       val result = controller.dmsCallback()(request)
       Try(status(result)) match {
         case Success(_) => fail
-        case Failure(_) => {}
+        case Failure(_) =>
       }
     }
   }

@@ -44,7 +44,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
-class DmsConnector @Inject()(
+class DmsConnector @Inject() (
   httpClient: HttpClientV2,
   servicesConfig: ServicesConfig,
   configuration: Config
@@ -55,52 +55,60 @@ class DmsConnector @Inject()(
   def sendPdf(pdf: ByteArrayOutputStream, instant: Instant)(implicit
     hc: HeaderCarrier
   ): Future[Boolean] = {
-    val retries = configuration.getStringList("http-verbs.retries.intervals").asScala.map(Duration(_))
+    val retries         = configuration.getStringList("http-verbs.retries.intervals").asScala.map(Duration(_))
     val clientAuthToken = configuration.getString("microservice.services.internal-auth.token")
-    val appName = configuration.getString("appName")
-    val dateOfReceipt = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+    val appName         = configuration.getString("appName")
+    val dateOfReceipt   = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
       LocalDateTime.ofInstant(instant.truncatedTo(ChronoUnit.SECONDS), ZoneOffset.UTC)
     )
 
-    val body = Source(Seq(
-      DataPart("callbackUrl", configuration.getString("microservice.services.dms.callback")),
-      DataPart("metadata.source", appName),
-      DataPart("metadata.timeOfReceipt", dateOfReceipt),
-      DataPart("metadata.formId", "ECL Registration"),
-      DataPart("metadata.customerId", appName),
-      DataPart("metadata.submissionMark", appName),
-      DataPart("metadata.classificationType", configuration.getString("microservice.services.dms.class")),
-      DataPart("metadata.businessArea", appName),
-      FilePart(
-        key = "form",
-        filename = "form.pdf",
-        contentType = Some("application/pdf"),
-        ref = Source.single(ByteString(pdf.toByteArray))
+    val body = Source(
+      Seq(
+        DataPart("callbackUrl", configuration.getString("microservice.services.dms.callback")),
+        DataPart("metadata.source", appName),
+        DataPart("metadata.timeOfReceipt", dateOfReceipt),
+        DataPart("metadata.formId", "ECL Registration"),
+        DataPart("metadata.customerId", appName),
+        DataPart("metadata.submissionMark", appName),
+        DataPart("metadata.classificationType", configuration.getString("microservice.services.dms.class")),
+        DataPart("metadata.businessArea", appName),
+        FilePart(
+          key = "form",
+          filename = "form.pdf",
+          contentType = Some("application/pdf"),
+          ref = Source.single(ByteString(pdf.toByteArray))
+        )
       )
-    ))
+    )
 
-    isOk(post(retries.toList, httpClient.post(new URL(dmsBaseUrl + "/dms-submission/submit"))
-      .setHeader(AUTHORIZATION -> clientAuthToken)
-      .withBody(body))
+    isOk(
+      post(
+        retries.toList,
+        httpClient
+          .post(new URL(dmsBaseUrl + "/dms-submission/submit"))
+          .setHeader(AUTHORIZATION -> clientAuthToken)
+          .withBody(body)
+      )
     )
   }
 
   private def post(retries: List[Duration], request: RequestBuilder)(implicit
     hc: HeaderCarrier
-  ): Future[Result] = {
+  ): Future[Result] =
     if (retries.isEmpty) {
       Future.successful(result(INTERNAL_SERVER_ERROR))
     } else {
-      request.execute.map(r => r.status match {
-        case INTERNAL_SERVER_ERROR =>
-          val timeout = retries.head
-          Thread.sleep(timeout.toMillis)
-          Await.result(post(retries.tail, request), timeout)
-        case _                     =>
-          result(r.status)
-      })
+      request.execute.map(r =>
+        r.status match {
+          case INTERNAL_SERVER_ERROR =>
+            val timeout = retries.head
+            Thread.sleep(timeout.toMillis)
+            Await.result(post(retries.tail, request), timeout)
+          case _                     =>
+            result(r.status)
+        }
+      )
     }
-  }
 
   private def result(status: Int): Result =
     Result(
