@@ -16,16 +16,19 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.Config
+import play.api.http.HeaderNames.AUTHORIZATION
+import play.api.http.HttpEntity
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR}
 import play.api.mvc.MultipartFormData.{DataPart, FilePart}
-import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
-import uk.gov.hmrc.http.{HeaderCarrier, Retries, UpstreamErrorResponse}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import play.api.mvc.{RequestHeader, ResponseHeader, Result}
+import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import java.io.ByteArrayOutputStream
 import java.net.URL
@@ -33,15 +36,8 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
-import play.api.http.HeaderNames.AUTHORIZATION
-import play.api.http.HttpEntity
-import play.api.mvc.{RequestHeader, ResponseHeader, Result}
-import play.mvc.Results.status
-import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
@@ -58,7 +54,7 @@ class DmsConnector @Inject() (
     hc: HeaderCarrier
   ): Future[Boolean] = {
     val retries         = configuration.getStringList("http-verbs.retries.intervals").asScala.map(Duration(_))
-    val clientAuthToken = configuration.getString("microservice.services.internal-auth.token")
+    val clientAuthToken = configuration.getString("internal-auth.token")
     val appName         = configuration.getString("appName")
     val dateOfReceipt   = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
       LocalDateTime.ofInstant(instant.truncatedTo(ChronoUnit.SECONDS), ZoneOffset.UTC)
@@ -67,9 +63,9 @@ class DmsConnector @Inject() (
     val body = Source(
       Seq(
         DataPart("callbackUrl", routes.DmsNotificationController.dmsCallback().absoluteURL()),
-        DataPart("metadata.source", appName),
+        DataPart("metadata.source", "ECL"),
         DataPart("metadata.timeOfReceipt", dateOfReceipt),
-        DataPart("metadata.formId", "ECL Registration"),
+        DataPart("metadata.formId", "ECLReg"),
         DataPart("metadata.customerId", appName),
         DataPart("metadata.submissionMark", appName),
         DataPart("metadata.classificationType", configuration.getString("microservice.services.dms.classification")),

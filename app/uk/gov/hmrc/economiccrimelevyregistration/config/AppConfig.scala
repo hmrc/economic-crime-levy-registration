@@ -52,4 +52,8 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
   val nrsBaseUrl: String = servicesConfig.baseUrl("nrs")
 
   val nrsApiKey: String = configuration.get[String]("microservice.services.nrs.apiKey")
+
+  val internalAuthToken: String = configuration.get[String]("internal-auth.token")
+
+  val internalAuthBaseUrl: String = servicesConfig.baseUrl("internal-auth")
 }
