@@ -54,7 +54,7 @@ class DmsNotificationControllerSpec extends SpecBase {
       when(mockStubBehaviour.stubAuth[Unit](any(), any()))
         .thenReturn(Future.unit)
 
-      val request = FakeRequest(POST, routes.DmsNotificationController.dmsCallback.url)
+      val request = FakeRequest(POST, routes.DmsNotificationController.dmsCallback().url)
         .withHeaders(AUTHORIZATION -> "Some auth token")
         .withBody(Json.toJson(dmsNotification))
 
@@ -79,7 +79,7 @@ class DmsNotificationControllerSpec extends SpecBase {
 
       val result = controller.dmsCallback()(request)
       Try(status(result)) match {
-        case Success(_) => fail
+        case Success(_) => fail()
         case Failure(_) =>
       }
     }
@@ -94,7 +94,7 @@ class DmsNotificationControllerSpec extends SpecBase {
 
       val result = controller.dmsCallback()(request)
       Try(status(result)) match {
-        case Success(_) => fail
+        case Success(_) => fail()
         case Failure(_) =>
       }
     }

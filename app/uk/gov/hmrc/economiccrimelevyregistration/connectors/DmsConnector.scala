@@ -18,17 +18,15 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.typesafe.config.Config
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.HttpEntity
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR}
 import play.api.mvc.MultipartFormData.{DataPart, FilePart}
-import play.api.mvc.{RequestHeader, ResponseHeader, Result}
-import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
+import play.api.mvc.{ResponseHeader, Result}
+import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import java.io.ByteArrayOutputStream
 import java.net.URL
@@ -38,38 +36,28 @@ import java.time.{Instant, LocalDateTime, ZoneOffset}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
 class DmsConnector @Inject() (
   httpClient: HttpClientV2,
-  servicesConfig: ServicesConfig,
-  configuration: Config
+  appConfig: AppConfig
 )(implicit ec: ExecutionContext) {
 
-  val dmsBaseUrl: String = servicesConfig.baseUrl("dms")
-
-  def sendPdf(pdf: ByteArrayOutputStream, instant: Instant)(implicit
-    header: RequestHeader,
-    hc: HeaderCarrier
-  ): Future[Boolean] = {
-    val retries         = configuration.getStringList("http-verbs.retries.intervals").asScala.map(Duration(_))
-    val clientAuthToken = configuration.getString("internal-auth.token")
-    val appName         = configuration.getString("appName")
-    val dateOfReceipt   = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+  def sendPdf(pdf: ByteArrayOutputStream, instant: Instant)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    val dateOfReceipt = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
       LocalDateTime.ofInstant(instant.truncatedTo(ChronoUnit.SECONDS), ZoneOffset.UTC)
     )
 
     val body = Source(
       Seq(
-        DataPart("callbackUrl", routes.DmsNotificationController.dmsCallback().absoluteURL()),
-        DataPart("metadata.source", "ECL"),
+        DataPart("callbackUrl", appConfig.dmsSubmissionCallbackUrl),
+        DataPart("metadata.source", appConfig.dmsSubmissionSource),
         DataPart("metadata.timeOfReceipt", dateOfReceipt),
-        DataPart("metadata.formId", "ECLReg"),
-        DataPart("metadata.customerId", appName),
-        DataPart("metadata.submissionMark", appName),
-        DataPart("metadata.classificationType", configuration.getString("microservice.services.dms.classification")),
-        DataPart("metadata.businessArea", appName),
+        DataPart("metadata.formId", appConfig.dmsSubmissionFormId),
+        DataPart("metadata.customerId", appConfig.dmsSubmissionCustomerId),
+        DataPart("metadata.submissionMark", appConfig.dmsSubmissionSubmissionMark),
+        DataPart("metadata.classificationType", appConfig.dmsSubmissionClassificationType),
+        DataPart("metadata.businessArea", appConfig.dmsSubmissionBusinessArea),
         FilePart(
           key = "form",
           filename = "form.pdf",
@@ -81,10 +69,10 @@ class DmsConnector @Inject() (
 
     isOk(
       post(
-        retries.toList,
+        appConfig.retryDuration.toList,
         httpClient
-          .post(new URL(dmsBaseUrl + "/dms-submission/submit"))
-          .setHeader(AUTHORIZATION -> clientAuthToken)
+          .post(new URL(appConfig.dmsSubmissionUrl))
+          .setHeader(AUTHORIZATION -> appConfig.internalAuthToken)
           .withBody(body)
       )
     )

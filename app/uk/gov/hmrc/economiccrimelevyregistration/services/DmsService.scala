@@ -35,7 +35,6 @@ class DmsService @Inject() (
 ) {
 
   def submitToDms(optBase64EncodedDmsSubmissionHtml: Option[String], now: Instant)(implicit
-    header: RequestHeader,
     hc: HeaderCarrier
   ): Future[CreateEclSubscriptionResponsePayload] = {
     val base64EncodedDmsSubmissionHtml: String = optBase64EncodedDmsSubmissionHtml.getOrElse(

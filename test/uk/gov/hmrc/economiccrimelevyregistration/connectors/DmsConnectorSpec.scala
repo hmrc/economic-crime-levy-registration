@@ -16,29 +16,27 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import com.typesafe.config.Config
 import org.mockito.ArgumentMatchers.any
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.utils.PdfGenerator.buildPdf
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import java.time.Instant
 import scala.concurrent.Future
-import scala.collection.JavaConverters._
 
 class DmsConnectorSpec extends SpecBase {
 
-  val config: Config                     = mock[Config]
+  override def configOverrides(): Map[String, Any] = Map(
+    "http-verbs.retries.intervals" -> List("1ms")
+  )
+
   val mockRequestBuilder: RequestBuilder = mock[RequestBuilder]
   val mockHttpClient: HttpClientV2       = mock[HttpClientV2]
-  val servicesConfig: ServicesConfig     = app.injector.instanceOf[ServicesConfig]
   val connector                          = new DmsConnector(
     mockHttpClient,
-    servicesConfig,
-    config
+    appConfig
   )
 
   "sendPdf" should {
@@ -53,16 +51,14 @@ class DmsConnectorSpec extends SpecBase {
 
   private def test(status: Int, expected: Boolean) = {
     val html             = "<html><head></head><body></body></html>"
-    val list             = List("1ms")
     implicit val request = FakeRequest("", "")
 
     when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
-    when(config.getStringList(any())).thenReturn(list.asJava);
     when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
     when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
     when(mockRequestBuilder.execute[HttpResponse](any(), any())).thenReturn(Future.successful(TestResponse(status)))
 
-    val result = await(connector.sendPdf(buildPdf(html), Instant.now))
+    val result = await(connector.sendPdf(buildPdf(html), Instant.now()))
 
     result shouldBe expected
 

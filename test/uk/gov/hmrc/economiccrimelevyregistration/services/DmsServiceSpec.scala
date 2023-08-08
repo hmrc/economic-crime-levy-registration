@@ -17,7 +17,6 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import org.mockito.ArgumentMatchers.any
-import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.DmsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
@@ -38,16 +37,16 @@ class DmsServiceSpec extends SpecBase {
   "submitToDms" should {
     "return correct value when the submission is successful" in {
       val encoded = Base64.getEncoder.encodeToString(html.getBytes)
-      test(Some(encoded), true, false, now)
+      test(Some(encoded), true, false)
     }
 
     "throw an exception if submission fails" in {
       val encoded = Base64.getEncoder.encodeToString(html.getBytes)
-      test(Some(encoded), false, true, now, "Could not send PDF to DMS queue")
+      test(Some(encoded), false, true, "Could not send PDF to DMS queue")
     }
 
     "throw an exception if no data to submit" in {
-      test(None, false, true, now, "Base64 encoded DMS submission HTML not found in registration data")
+      test(None, false, true, "Base64 encoded DMS submission HTML not found in registration data")
     }
   }
 
@@ -55,11 +54,9 @@ class DmsServiceSpec extends SpecBase {
     encoded: Option[String],
     successful: Boolean,
     expectException: Boolean,
-    instant: Instant,
     message: String = ""
   ) = {
-    implicit val request = FakeRequest("", "")
-    when(mockDmsConnector.sendPdf(any(), any())(any(), any())).thenReturn(Future.successful(successful))
+    when(mockDmsConnector.sendPdf(any(), any())(any())).thenReturn(Future.successful(successful))
     Try(await(service.submitToDms(encoded, now))) match {
       case Success(result) if !expectException => result       shouldBe CreateEclSubscriptionResponsePayload(now, "")
       case Failure(e) if expectException       => e.getMessage shouldBe message
