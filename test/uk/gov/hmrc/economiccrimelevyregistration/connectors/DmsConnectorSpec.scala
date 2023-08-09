@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
+import akka.stream.scaladsl.Source
 import org.mockito.ArgumentMatchers.any
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.utils.PdfGenerator.buildPdf
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
-import java.time.Instant
 import scala.concurrent.Future
 
 class DmsConnectorSpec extends SpecBase {
@@ -50,7 +49,6 @@ class DmsConnectorSpec extends SpecBase {
   }
 
   private def test(status: Int, expected: Boolean) = {
-    val html             = "<html><head></head><body></body></html>"
     implicit val request = FakeRequest("", "")
 
     when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
@@ -58,7 +56,7 @@ class DmsConnectorSpec extends SpecBase {
     when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
     when(mockRequestBuilder.execute[HttpResponse](any(), any())).thenReturn(Future.successful(TestResponse(status)))
 
-    val result = await(connector.sendPdf(buildPdf(html), Instant.now()))
+    val result = await(connector.sendPdf(Source(Seq.empty)))
 
     result shouldBe expected
 

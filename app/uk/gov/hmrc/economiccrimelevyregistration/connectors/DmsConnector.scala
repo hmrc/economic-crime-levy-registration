@@ -16,15 +16,18 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
+import akka.NotUsed
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import play.api.Logging
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.HttpEntity
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR}
+import play.api.libs.ws.BodyWritable
 import play.api.mvc.MultipartFormData.{DataPart, FilePart}
-import play.api.mvc.{ResponseHeader, Result}
+import play.api.mvc.{MultipartFormData, ResponseHeader, Result}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
@@ -41,32 +44,12 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 class DmsConnector @Inject() (
   httpClient: HttpClientV2,
   appConfig: AppConfig
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext)
+    extends Logging {
 
-  def sendPdf(pdf: ByteArrayOutputStream, instant: Instant)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val dateOfReceipt = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
-      LocalDateTime.ofInstant(instant.truncatedTo(ChronoUnit.SECONDS), ZoneOffset.UTC)
-    )
-
-    val body = Source(
-      Seq(
-        DataPart("callbackUrl", appConfig.dmsSubmissionCallbackUrl),
-        DataPart("metadata.source", appConfig.dmsSubmissionSource),
-        DataPart("metadata.timeOfReceipt", dateOfReceipt),
-        DataPart("metadata.formId", appConfig.dmsSubmissionFormId),
-        DataPart("metadata.customerId", appConfig.dmsSubmissionCustomerId),
-        DataPart("metadata.submissionMark", appConfig.dmsSubmissionSubmissionMark),
-        DataPart("metadata.classificationType", appConfig.dmsSubmissionClassificationType),
-        DataPart("metadata.businessArea", appConfig.dmsSubmissionBusinessArea),
-        FilePart(
-          key = "form",
-          filename = "form.pdf",
-          contentType = Some("application/pdf"),
-          ref = Source.single(ByteString(pdf.toByteArray))
-        )
-      )
-    )
-
+  def sendPdf(
+    body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]] with Product with Serializable, NotUsed]
+  )(implicit hc: HeaderCarrier): Future[Boolean] =
     isOk(
       post(
         appConfig.retryDuration.toList,
@@ -76,7 +59,6 @@ class DmsConnector @Inject() (
           .withBody(body)
       )
     )
-  }
 
   private def post(retries: List[Duration], request: RequestBuilder)(implicit
     hc: HeaderCarrier
@@ -84,7 +66,8 @@ class DmsConnector @Inject() (
     if (retries.isEmpty) {
       Future.successful(result(INTERNAL_SERVER_ERROR))
     } else {
-      request.execute.map(r =>
+      request.execute.map { r =>
+        log(r)
         r.status match {
           case INTERNAL_SERVER_ERROR =>
             val timeout = retries.head
@@ -93,8 +76,16 @@ class DmsConnector @Inject() (
           case _                     =>
             result(r.status)
         }
-      )
+      }
     }
+
+  private def log(response: HttpResponse) = {
+    val message = s"status = ${response.status}, body = ${response.body}"
+    isOk(response.status) match {
+      case true  => logger.info(message)
+      case false => logger.error(message)
+    }
+  }
 
   private def result(status: Int): Result =
     Result(
@@ -103,5 +94,8 @@ class DmsConnector @Inject() (
     )
 
   private def isOk(result: Future[Result]): Future[Boolean] =
-    result.map(r => r.header.status == ACCEPTED)
+    result.map(r => isOk(r.header.status))
+
+  private def isOk(status: Int): Boolean =
+    status == ACCEPTED
 }

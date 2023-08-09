@@ -32,7 +32,7 @@ class DmsServiceSpec extends SpecBase {
   val html                           = "<html><head></head><body></body></html>"
   val now                            = Instant.now
 
-  val service = new DmsService(mockDmsConnector)
+  val service = new DmsService(mockDmsConnector, appConfig)
 
   "submitToDms" should {
     "return correct value when the submission is successful" in {
@@ -56,7 +56,7 @@ class DmsServiceSpec extends SpecBase {
     expectException: Boolean,
     message: String = ""
   ) = {
-    when(mockDmsConnector.sendPdf(any(), any())(any())).thenReturn(Future.successful(successful))
+    when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.successful(successful))
     Try(await(service.submitToDms(encoded, now))) match {
       case Success(result) if !expectException => result       shouldBe CreateEclSubscriptionResponsePayload(now, "")
       case Failure(e) if expectException       => e.getMessage shouldBe message
