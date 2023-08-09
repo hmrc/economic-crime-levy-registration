@@ -63,21 +63,21 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
   val retryDuration: Iterable[Duration] =
     configuration.underlying.getStringList("http-verbs.retries.intervals").asScala.map(Duration(_))
 
-  val dmsBaseUrl: String                      = servicesConfig.baseUrl("dms")
+  val dmsBaseUrl: String                      = servicesConfig.baseUrl("dms-submission")
   val dmsSubmissionBusinessArea: String       =
-    configuration.get[String]("microservice.services.dms.registration-submission.businessArea")
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.businessArea")
   val dmsSubmissionCallbackEndpoint: String   =
-    appBaseUrl + configuration.get[String]("microservice.services.dms.registration-submission.callbackEndpoint")
+    appBaseUrl + configuration.get[String]("microservice.services.dms-submission.registration-submission.callbackEndpoint")
   val dmsSubmissionCallbackUrl: String        = s"$appBaseUrl/$appName/$dmsSubmissionCallbackEndpoint"
   val dmsSubmissionClassificationType: String =
-    configuration.get[String]("microservice.services.dms.registration-submission.classificationType")
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.classificationType")
   val dmsSubmissionCustomerId: String         =
-    configuration.get[String]("microservice.services.dms.registration-submission.customerId")
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.customerId")
   val dmsSubmissionFormId: String             =
-    configuration.get[String]("microservice.services.dms.registration-submission.formId")
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.formId")
   val dmsSubmissionSource: String             =
-    configuration.get[String]("microservice.services.dms.registration-submission.source")
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.source")
   val dmsSubmissionSubmissionMark: String     =
-    configuration.get[String]("microservice.services.dms.registration-submission.submissionMark")
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.submissionMark")
   val dmsSubmissionUrl: String                = dmsBaseUrl + "/dms-submission/submit"
 }
