@@ -69,7 +69,7 @@ abstract class ISpecBase
     "tax-enrolments",
     "integration-framework",
     "nrs",
-    "dms",
+    "dms-submission",
     "internal-auth"
   )
 
