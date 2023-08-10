@@ -13,3 +13,4 @@ trait WireMockStubs
     with IntegrationFrameworkStubs
     with TaxEnrolmentsStubs
     with NrsStubs
+    with DmsStubs

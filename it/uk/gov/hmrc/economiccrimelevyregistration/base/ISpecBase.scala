@@ -59,6 +59,7 @@ abstract class ISpecBase
   private val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
 
   val additionalAppConfig: Map[String, Any] = Map(
+    "create-internal-auth-token-on-start" -> false,
     "metrics.enabled"              -> false,
     "auditing.enabled"             -> false,
     "http-verbs.retries.intervals" -> List("1ms", "1ms", "1ms"),
@@ -67,7 +68,9 @@ abstract class ISpecBase
     "auth",
     "tax-enrolments",
     "integration-framework",
-    "nrs"
+    "nrs",
+    "dms-submission",
+    "internal-auth"
   )
 
   override def fakeApplication(): Application =

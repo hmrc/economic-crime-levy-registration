@@ -18,7 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.config
 
 import com.google.inject.AbstractModule
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.economiccrimelevyregistration.connectors.{EnrolmentStoreProxyConnector, EnrolmentStoreProxyConnectorImpl, TaxEnrolmentsConnector, TaxEnrolmentsConnectorImpl}
+import uk.gov.hmrc.economiccrimelevyregistration.connectors._
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.{AuthorisedAction, BaseAuthorisedAction}
 import uk.gov.hmrc.economiccrimelevyregistration.services.KnownFactsQueuePullScheduler
 import uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors.{StubEnrolmentStoreProxyConnector, StubTaxEnrolmentsConnector}
@@ -52,6 +52,18 @@ class Module(environment: Environment, configuration: Configuration) extends Abs
     } else {
       bind(classOf[TaxEnrolmentsConnector])
         .to(classOf[TaxEnrolmentsConnectorImpl])
+        .asEagerSingleton()
+    }
+
+    val createAuthTokenOnStart = configuration.get[Boolean]("create-internal-auth-token-on-start")
+
+    if (createAuthTokenOnStart) {
+      bind(classOf[InternalAuthTokenInitialiser])
+        .to(classOf[InternalAuthTokenInitialiserImpl])
+        .asEagerSingleton()
+    } else {
+      bind(classOf[InternalAuthTokenInitialiser])
+        .to(classOf[NoOpInternalAuthTokenInitialiser])
         .asEagerSingleton()
     }
   }

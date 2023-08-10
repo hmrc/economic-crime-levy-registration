@@ -23,11 +23,13 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.Application
 import play.api.http.{HeaderNames, Status}
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.JsValue
 import play.api.mvc._
 import play.api.test.Helpers._
-import play.api.test.{DefaultAwaitTimeout, FakeHeaders, FakeRequest, FutureAwaits, ResultExtractors}
+import play.api.test._
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.FakeAuthorisedAction
@@ -52,6 +54,19 @@ trait SpecBase
     with ScalaCheckPropertyChecks
     with EclTestData {
 
+  def configOverrides: Map[String, Any] = Map()
+
+  val additionalAppConfig: Map[String, Any] = Map(
+    "create-internal-auth-token-on-start" -> false,
+    "metrics.enabled"                     -> false,
+    "auditing.enabled"                    -> false
+  ) ++ configOverrides
+
+  override def fakeApplication(): Application =
+    GuiceApplicationBuilder()
+      .configure(additionalAppConfig)
+      .build()
+
   val cc: ControllerComponents                         = stubControllerComponents()
   val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   val appConfig: AppConfig                             = app.injector.instanceOf[AppConfig]
@@ -62,5 +77,4 @@ trait SpecBase
 
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
   implicit val hc: HeaderCarrier    = HeaderCarrier()
-
 }

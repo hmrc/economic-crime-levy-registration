@@ -22,11 +22,12 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.{NrsService, RegistrationValidationService, SubscriptionService}
+import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import java.time.Instant
 
 @Singleton
 class RegistrationSubmissionController @Inject() (
@@ -35,7 +36,8 @@ class RegistrationSubmissionController @Inject() (
   authorise: AuthorisedAction,
   registrationValidationService: RegistrationValidationService,
   subscriptionService: SubscriptionService,
-  nrsService: NrsService
+  nrsService: NrsService,
+  dmsService: DmsService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -52,8 +54,11 @@ class RegistrationSubmissionController @Inject() (
 
               Ok(Json.toJson(response.success))
             }
-          case Valid(Right(_))              =>
-            Future.successful(Ok("TODO: Implement sending data to DMS via ECL-335"))
+          case Valid(Right(registration))   =>
+            val now = Instant.now
+            dmsService.submitToDms(registration.base64EncodedDmsSubmissionHtml, now).map { response =>
+              Ok(Json.toJson(response))
+            }
           case Invalid(e)                   =>
             Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
         }

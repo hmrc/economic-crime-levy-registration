@@ -19,17 +19,21 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 import cats.implicits.catsSyntaxValidatedId
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
+import org.scalacheck.Arbitrary
+import play.api.Play.materializer
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError.DataInvalid
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EntityType, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.{NrsService, RegistrationValidationService, SubscriptionService}
+import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
 
+import java.util.Base64
 import scala.concurrent.Future
 
 class RegistrationSubmissionControllerSpec extends SpecBase {
@@ -38,6 +42,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
   val mockSubscriptionServiceService: SubscriptionService              = mock[SubscriptionService]
   val mockRegistrationRepository: RegistrationRepository               = mock[RegistrationRepository]
   val mockNrsService: NrsService                                       = mock[NrsService]
+  val mockDmsService: DmsService                                       = mock[DmsService]
 
   val controller = new RegistrationSubmissionController(
     cc,
@@ -45,16 +50,27 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
     fakeAuthorisedAction,
     mockRegistrationValidationService,
     mockSubscriptionServiceService,
-    mockNrsService
+    mockNrsService,
+    mockDmsService
   )
 
   "submitRegistration" should {
-    "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid" in forAll {
+    "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid for 'Normal' entities" in forAll(
+      Arbitrary.arbitrary[Registration],
+      Arbitrary.arbitrary[EntityType].retryUntil(_ != Other),
+      Arbitrary.arbitrary[EclSubscription],
+      Arbitrary.arbitrary[CreateEclSubscriptionResponse]
+    ) {
       (
-        registration: Registration,
+        aRegistration: Registration,
+        entityType: EntityType,
         eclSubscription: EclSubscription,
         subscriptionResponse: CreateEclSubscriptionResponse
       ) =>
+        val registration = aRegistration.copy(
+          entityType = Some(entityType)
+        )
+
         when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
         when(mockRegistrationValidationService.validateRegistration(any())).thenReturn(Left(eclSubscription).validNel)
@@ -76,8 +92,48 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         reset(mockNrsService)
     }
 
-    "return 500 INTERNAL_SERVER_ERROR with validation errors in the JSON response body when the registration data is invalid" in forAll {
-      registration: Registration =>
+    "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid for 'Other' entities" in forAll(
+      Arbitrary.arbitrary[Registration],
+      Arbitrary.arbitrary[CreateEclSubscriptionResponse]
+    ) {
+      (
+        aRegistration: Registration,
+        subscriptionResponse: CreateEclSubscriptionResponse
+      ) =>
+        val html         = "<html><head></head><body></body></html>"
+        val registration = aRegistration.copy(
+          entityType = Some(Other),
+          base64EncodedDmsSubmissionHtml = Some(Base64.getEncoder.encodeToString(html.getBytes))
+        )
+
+        when(mockRegistrationRepository.get(any()))
+          .thenReturn(Future.successful(Some(registration)))
+
+        when(mockRegistrationValidationService.validateRegistration(any()))
+          .thenReturn(Right(registration).validNel)
+
+        when(mockDmsService.submitToDms(any(), any())(any()))
+          .thenReturn(Future.successful(subscriptionResponse.success))
+
+        val result: Future[Result] =
+          controller.submitRegistration(registration.internalId)(fakeRequest)
+
+        status(result)        shouldBe OK
+        contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
+    }
+
+    "return 500 INTERNAL_SERVER_ERROR with validation errors in the JSON response body when the registration data is invalid" in forAll(
+      Arbitrary.arbitrary[Registration],
+      Arbitrary.arbitrary[EntityType].retryUntil(_ != Other)
+    ) {
+      (
+        aRegistration: Registration,
+        entityType: EntityType
+      ) =>
+        val registration = aRegistration.copy(
+          entityType = Some(entityType)
+        )
+
         when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
 
         when(mockRegistrationValidationService.validateRegistration(any()))
@@ -101,5 +157,4 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
       status(result) shouldBe NOT_FOUND
     }
   }
-
 }
