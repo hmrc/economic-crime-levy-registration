@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.config
 
 import play.api.Logging
+import play.api.http.Status.{ACCEPTED, CREATED}
 import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.models.Done
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
@@ -78,9 +79,28 @@ class InternalAuthTokenInitialiserImpl @Inject() (
       )
       .execute
       .flatMap { response =>
-        if (response.status == 201) {
+        if (response.status == CREATED) {
           logger.info("Auth token initialised")
-          Future.successful(Done)
+          httpClient
+            .post(url"${appConfig.internalAuthBaseUrl}/test-only/token")(HeaderCarrier())
+            .withBody(
+              Json.obj(
+                "token"       -> "dms-submission",
+                "principal"   -> appConfig.internalAuthToken,
+                "permissions" -> Seq(
+                  Json.obj(
+                    "resourceType"     -> appConfig.appName,
+                    "resourceLocation" -> "submit",
+                    "actions"          -> List("WRITE")
+                  )
+                )
+              )
+            )
+            .execute.map { r => r.status match {
+              case CREATED => Done
+              case _ => throw new RuntimeException("Unable to initialise internal-auth token")
+            }
+          }
         } else {
           Future.failed(new RuntimeException("Unable to initialise internal-auth token"))
         }

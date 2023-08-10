@@ -67,7 +67,7 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
   val dmsSubmissionBusinessArea: String       =
     configuration.get[String]("microservice.services.dms-submission.registration-submission.businessArea")
   val dmsSubmissionCallbackEndpoint: String   =
-    appBaseUrl + configuration.get[String](
+    configuration.get[String](
       "microservice.services.dms-submission.registration-submission.callbackEndpoint"
     )
   val dmsSubmissionCallbackUrl: String        = s"$appBaseUrl/$appName/$dmsSubmissionCallbackEndpoint"
