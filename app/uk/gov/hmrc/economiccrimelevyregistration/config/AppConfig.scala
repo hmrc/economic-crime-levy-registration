@@ -79,7 +79,5 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
     configuration.get[String]("microservice.services.dms-submission.registration-submission.formId")
   val dmsSubmissionSource: String             =
     configuration.get[String]("microservice.services.dms-submission.registration-submission.source")
-  val dmsSubmissionSubmissionMark: String     =
-    configuration.get[String]("microservice.services.dms-submission.registration-submission.submissionMark")
   val dmsSubmissionUrl: String                = dmsBaseUrl + "/dms-submission/submit"
 }

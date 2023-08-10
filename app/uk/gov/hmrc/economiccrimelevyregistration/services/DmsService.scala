@@ -60,7 +60,6 @@ class DmsService @Inject() (
         DataPart("metadata.timeOfReceipt", dateOfReceipt),
         DataPart("metadata.formId", appConfig.dmsSubmissionFormId),
         DataPart("metadata.customerId", appConfig.dmsSubmissionCustomerId),
-        DataPart("metadata.submissionMark", appConfig.dmsSubmissionSubmissionMark),
         DataPart("metadata.classificationType", appConfig.dmsSubmissionClassificationType),
         DataPart("metadata.businessArea", appConfig.dmsSubmissionBusinessArea),
         FilePart(
