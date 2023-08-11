@@ -73,8 +73,7 @@ class InternalAuthTokenInitialiserImpl @Inject() (
     httpClient
       .post(url"${appConfig.internalAuthBaseUrl}/test-only/token")(HeaderCarrier())
       .withBody(
-        Json.parse(
-          s"""
+        Json.parse(s"""
              |{
              | "token": "${appConfig.internalAuthToken}",
              | "principal": "${appConfig.appName}",
