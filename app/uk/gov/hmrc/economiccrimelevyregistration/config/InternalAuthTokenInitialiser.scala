@@ -85,12 +85,12 @@ class InternalAuthTokenInitialiserImpl @Inject() (
             .post(url"${appConfig.internalAuthBaseUrl}/test-only/token")(HeaderCarrier())
             .withBody(
               Json.obj(
-                "token"       -> "dms-submission",
-                "principal"   -> appConfig.internalAuthToken,
+                "token"       -> "71930935-381b-4e0c-bdcf-b51fc18b7589",
+                "principal"   -> "dms-submission",
                 "permissions" -> Seq(
                   Json.obj(
                     "resourceType"     -> appConfig.appName,
-                    "resourceLocation" -> "submit",
+                    "resourceLocation" -> "dms-registration-callback",
                     "actions"          -> List("WRITE")
                   )
                 )
