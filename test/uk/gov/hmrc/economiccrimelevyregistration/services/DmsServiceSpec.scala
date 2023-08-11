@@ -20,11 +20,11 @@ import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.DmsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import java.time.Instant
 import java.util.Base64
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
 
 class DmsServiceSpec extends SpecBase {
 
@@ -37,30 +37,35 @@ class DmsServiceSpec extends SpecBase {
   "submitToDms" should {
     "return correct value when the submission is successful" in {
       val encoded = Base64.getEncoder.encodeToString(html.getBytes)
-      test(Some(encoded), true, false)
+
+      when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.successful(Right(())))
+
+      val result = await(service.submitToDms(Some(encoded), now))
+
+      result shouldBe Right(CreateEclSubscriptionResponsePayload(now, ""))
     }
 
-    "throw an exception if submission fails" in {
+    "return upstream error if submission fails" in {
       val encoded = Base64.getEncoder.encodeToString(html.getBytes)
-      test(Some(encoded), false, true, "Could not send PDF to DMS queue")
+
+      val upstream5xxResponse = UpstreamErrorResponse.apply("", INTERNAL_SERVER_ERROR)
+      when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.successful(Left(upstream5xxResponse)))
+
+      val result = await(service.submitToDms(Some(encoded), now))
+
+      result shouldBe Left(upstream5xxResponse)
     }
 
-    "throw an exception if no data to submit" in {
-      test(None, false, true, "Base64 encoded DMS submission HTML not found in registration data")
-    }
-  }
+    "return upstream error if no data to submit" in {
 
-  private def test(
-    encoded: Option[String],
-    successful: Boolean,
-    expectException: Boolean,
-    message: String = ""
-  ) = {
-    when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.successful(successful))
-    Try(await(service.submitToDms(encoded, now))) match {
-      case Success(result) if !expectException => result       shouldBe CreateEclSubscriptionResponsePayload(now, "")
-      case Failure(e) if expectException       => e.getMessage shouldBe message
-      case _                                   => fail
+      val upstream5xxResponse = UpstreamErrorResponse.apply(
+        "Base64 encoded DMS submission HTML not found in registration data",
+        INTERNAL_SERVER_ERROR
+      )
+
+      val result = await(service.submitToDms(None, now))
+
+      result shouldBe Left(upstream5xxResponse)
     }
   }
 }

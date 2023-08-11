@@ -57,7 +57,8 @@ val excludedScoveragePackages: Seq[String] = Seq(
   "prod.*",
   ".*Routes.*",
   ".*testonly.*",
-  "testOnlyDoNotUseInAppConf.*"
+  "testOnlyDoNotUseInAppConf.*",
+  ".*config.*"
 )
 
 val scoverageSettings: Seq[Setting[_]] = Seq(
