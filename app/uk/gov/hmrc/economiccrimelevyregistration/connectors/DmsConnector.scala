@@ -49,15 +49,15 @@ class DmsConnector @Inject() (
 
   def sendPdf(
     body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]] with Product with Serializable, NotUsed]
-  )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] =
-    retryFor[Either[UpstreamErrorResponse, Unit]]("DMS submission")(retryCondition) {
+  )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, HttpResponse]] =
+    retryFor[Either[UpstreamErrorResponse, HttpResponse]]("DMS submission")(retryCondition) {
       httpClient
         .post(new URL(appConfig.dmsSubmissionUrl))
         .setHeader(AUTHORIZATION -> appConfig.internalAuthToken)
         .withBody(body)
         .execute[Either[UpstreamErrorResponse, HttpResponse]]
         .map {
-          case Right(_)                                   => Right(())
+          case Right(httpResponse: HttpResponse)          => Right(httpResponse)
           case Left(errorResponse: UpstreamErrorResponse) => throw errorResponse
         }
     }.recoverWith { case errorResponse: UpstreamErrorResponse =>

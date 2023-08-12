@@ -44,16 +44,19 @@ class DmsConnectorSpec extends SpecBase {
   )
 
   "sendPdf" should {
-    "return Unit if post to DMS queue succeeds" in {
+    "return HttpResponse if post to DMS queue succeeds" in {
+
+      val expectedResponse = HttpResponse.apply(ACCEPTED, "")
+
       when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
-        .thenReturn(Future.successful(Right(HttpResponse.apply(OK, ""))))
+        .thenReturn(Future.successful(Right(expectedResponse)))
 
       val result = await(connector.sendPdf(Source(Seq.empty)))
 
-      result shouldBe Right(())
+      result shouldBe Right(expectedResponse)
 
       verify(mockRequestBuilder, times(1))
         .execute(any(), any())

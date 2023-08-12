@@ -20,7 +20,7 @@ import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.DmsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 
 import java.time.Instant
 import java.util.Base64
@@ -36,9 +36,10 @@ class DmsServiceSpec extends SpecBase {
 
   "submitToDms" should {
     "return correct value when the submission is successful" in {
-      val encoded = Base64.getEncoder.encodeToString(html.getBytes)
+      val encoded          = Base64.getEncoder.encodeToString(html.getBytes)
+      val expectedResponse = HttpResponse.apply(ACCEPTED, "")
 
-      when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.successful(Right(())))
+      when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.successful(Right(expectedResponse)))
 
       val result = await(service.submitToDms(Some(encoded), now))
 
