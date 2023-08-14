@@ -157,12 +157,12 @@ class RegistrationSubmissionISpec extends ISpecBase {
       verify(1, postRequestedFor(urlEqualTo("/dms-submission/submit")))
     }
 
-    "return INTERNAL_SERVER_ERROR if call to DMS fails 3 times" in {
+    "return INTERNAL_SERVER_ERROR if call to DMS fails after three retries" in {
       stubAuthorised()
 
       val html = "<html><head></head><body></body></html>"
-      val charityRegistration  = random[ValidCharityRegistration]
-      val validRegistration    = charityRegistration.copy(
+      val charityRegistration = random[ValidCharityRegistration]
+      val validRegistration = charityRegistration.copy(
         registration = charityRegistration.registration.copy(
           base64EncodedDmsSubmissionHtml = Some(Base64.getEncoder.encodeToString(html.getBytes))
         )
@@ -184,9 +184,8 @@ class RegistrationSubmissionISpec extends ISpecBase {
         )
       )
 
-      status(result)        shouldBe INTERNAL_SERVER_ERROR
-      verify(3, postRequestedFor(urlEqualTo("/dms-submission/submit")))
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+      verify(4, postRequestedFor(urlEqualTo("/dms-submission/submit")))
     }
   }
-
 }

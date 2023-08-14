@@ -25,9 +25,9 @@ import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationReposi
 import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import java.time.Instant
 
 @Singleton
 class RegistrationSubmissionController @Inject() (
@@ -51,13 +51,13 @@ class RegistrationSubmissionController @Inject() (
                 registration.base64EncodedNrsSubmissionHtml,
                 response.success.eclReference
               )
-
               Ok(Json.toJson(response.success))
             }
           case Valid(Right(registration))   =>
             val now = Instant.now
-            dmsService.submitToDms(registration.base64EncodedDmsSubmissionHtml, now).map { response =>
-              Ok(Json.toJson(response))
+            dmsService.submitToDms(registration.base64EncodedDmsSubmissionHtml, now).map {
+              case Right(response) => Ok(Json.toJson(response))
+              case Left(_)         => InternalServerError("Could not send PDF to DMS queue")
             }
           case Invalid(e)                   =>
             Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
@@ -65,5 +65,4 @@ class RegistrationSubmissionController @Inject() (
       case None               => Future.successful(NotFound)
     }
   }
-
 }

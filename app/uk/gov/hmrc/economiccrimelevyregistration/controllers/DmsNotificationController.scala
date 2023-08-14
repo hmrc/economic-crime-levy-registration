@@ -37,7 +37,7 @@ class DmsNotificationController @Inject() (
   private val predicate = Predicate.Permission(
     resource = Resource(
       resourceType = ResourceType(appConfig.appName),
-      resourceLocation = ResourceLocation(routes.DmsNotificationController.dmsCallback().url)
+      resourceLocation = ResourceLocation("dms-registration-callback")
     ),
     action = IAAction("WRITE")
   )

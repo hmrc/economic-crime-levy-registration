@@ -113,7 +113,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
           .thenReturn(Right(registration).validNel)
 
         when(mockDmsService.submitToDms(any(), any())(any()))
-          .thenReturn(Future.successful(subscriptionResponse.success))
+          .thenReturn(Future.successful(Right(subscriptionResponse.success)))
 
         val result: Future[Result] =
           controller.submitRegistration(registration.internalId)(fakeRequest)
