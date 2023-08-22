@@ -43,7 +43,8 @@ final case class Registration(
   base64EncodedNrsSubmissionHtml: Option[String],
   base64EncodedDmsSubmissionHtml: Option[String],
   optOtherEntityJourneyData: Option[OtherEntityJourneyData],
-  lastUpdated: Option[Instant] = None
+  lastUpdated: Option[Instant] = None,
+  registrationType: Option[RegistrationType]
 ) {
   def otherEntityJourneyData: OtherEntityJourneyData =
     optOtherEntityJourneyData.getOrElse(OtherEntityJourneyData.empty())
@@ -73,6 +74,7 @@ object Registration {
     privateBetaAccessCode = None,
     base64EncodedNrsSubmissionHtml = None,
     base64EncodedDmsSubmissionHtml = None,
-    optOtherEntityJourneyData = None
+    optOtherEntityJourneyData = None,
+    registrationType = None
   )
 }
