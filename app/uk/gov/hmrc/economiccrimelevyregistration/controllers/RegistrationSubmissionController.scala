@@ -48,14 +48,14 @@ class RegistrationSubmissionController @Inject() (
           case Valid(Left(eclSubscription)) =>
             subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
               nrsService.submitToNrs(
-                registration.base64EncodedNrsSubmissionHtml,
+                registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
                 response.success.eclReference
               )
               Ok(Json.toJson(response.success))
             }
           case Valid(Right(registration))   =>
             val now = Instant.now
-            dmsService.submitToDms(registration.base64EncodedDmsSubmissionHtml, now).map {
+            dmsService.submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), now).map {
               case Right(response) => Ok(Json.toJson(response))
               case Left(_)         => InternalServerError("Could not send PDF to DMS queue")
             }
