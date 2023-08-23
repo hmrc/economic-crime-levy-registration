@@ -54,8 +54,7 @@ class RegistrationSubmissionController @Inject() (
               Ok(Json.toJson(response.success))
             }
           case Valid(Right(registration))   =>
-            val now = Instant.now
-            dmsService.submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), now).map {
+            dmsService.submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now()).map {
               case Right(response) => Ok(Json.toJson(response))
               case Left(_)         => InternalServerError("Could not send PDF to DMS queue")
             }
