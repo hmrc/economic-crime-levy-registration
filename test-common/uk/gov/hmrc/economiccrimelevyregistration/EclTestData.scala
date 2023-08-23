@@ -187,7 +187,7 @@ trait EclTestData {
           ),
           contactAddress = Some(eclAddress),
           amlSupervisor = Some(AmlSupervisor(Hmrc, None)),
-          base64EncodedNrsSubmissionHtml = Some(base64EncodedNrsSubmissionHtml)
+          base64EncodedFields = Some(Base64EncodedFields(Some(base64EncodedNrsSubmissionHtml), None))
         )
     )
   }
