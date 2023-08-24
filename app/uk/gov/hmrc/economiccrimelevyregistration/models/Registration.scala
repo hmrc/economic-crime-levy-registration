@@ -40,10 +40,10 @@ final case class Registration(
   contactAddressIsUk: Option[Boolean],
   partnershipName: Option[String],
   privateBetaAccessCode: Option[String],
-  base64EncodedNrsSubmissionHtml: Option[String],
-  base64EncodedDmsSubmissionHtml: Option[String],
+  base64EncodedFields: Option[Base64EncodedFields],
   optOtherEntityJourneyData: Option[OtherEntityJourneyData],
-  lastUpdated: Option[Instant] = None
+  lastUpdated: Option[Instant] = None,
+  registrationType: Option[RegistrationType]
 ) {
   def otherEntityJourneyData: OtherEntityJourneyData =
     optOtherEntityJourneyData.getOrElse(OtherEntityJourneyData.empty())
@@ -71,8 +71,8 @@ object Registration {
     contactAddressIsUk = None,
     partnershipName = None,
     privateBetaAccessCode = None,
-    base64EncodedNrsSubmissionHtml = None,
-    base64EncodedDmsSubmissionHtml = None,
-    optOtherEntityJourneyData = None
+    base64EncodedFields = None,
+    optOtherEntityJourneyData = None,
+    registrationType = None
   )
 }

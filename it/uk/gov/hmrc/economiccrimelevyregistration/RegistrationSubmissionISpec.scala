@@ -8,7 +8,7 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.KeyValue
+import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, KeyValue}
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{CreateEnrolmentRequest, EclEnrolment}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponse
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.StartOfFirstEclFinancialYear
@@ -129,11 +129,11 @@ class RegistrationSubmissionISpec extends ISpecBase {
     "return 200 OK when the registration data for 'other' entity is valid" in {
       stubAuthorised()
 
-      val html = "<html><head></head><body></body></html>"
-      val charityRegistration  = random[ValidCharityRegistration]
-      val validRegistration    = charityRegistration.copy(
+      val html                = "<html><head></head><body></body></html>"
+      val charityRegistration = random[ValidCharityRegistration]
+      val validRegistration   = charityRegistration.copy(
         registration = charityRegistration.registration.copy(
-          base64EncodedDmsSubmissionHtml = Some(Base64.getEncoder.encodeToString(html.getBytes))
+          base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
         )
       )
 
@@ -153,18 +153,18 @@ class RegistrationSubmissionISpec extends ISpecBase {
         )
       )
 
-      status(result)        shouldBe OK
+      status(result) shouldBe OK
       verify(1, postRequestedFor(urlEqualTo("/dms-submission/submit")))
     }
 
     "return INTERNAL_SERVER_ERROR if call to DMS fails after three retries" in {
       stubAuthorised()
 
-      val html = "<html><head></head><body></body></html>"
+      val html                = "<html><head></head><body></body></html>"
       val charityRegistration = random[ValidCharityRegistration]
-      val validRegistration = charityRegistration.copy(
+      val validRegistration   = charityRegistration.copy(
         registration = charityRegistration.registration.copy(
-          base64EncodedDmsSubmissionHtml = Some(Base64.getEncoder.encodeToString(html.getBytes))
+          base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
         )
       )
 

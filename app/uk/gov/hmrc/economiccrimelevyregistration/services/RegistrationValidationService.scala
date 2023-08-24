@@ -22,6 +22,7 @@ import cats.implicits._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, NonUKEstablishment, Trust, UnincorporatedAssociation}
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.{Amendment, Initial}
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
@@ -44,18 +45,23 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     registration.entityType match {
       case Some(Other) => validateOtherEntity(registration)
       case _           =>
-        transformToEclSubscription(registration) match {
-          case Valid(Left(eclSubscription)) =>
-            schemaValidator
-              .validateAgainstJsonSchema(
-                eclSubscription.subscription,
-                SchemaLoader.loadSchema("create-ecl-subscription-request.json")
-              )
-              .map(_ => Left(eclSubscription))
-          case Valid(Right(_))              =>
-            DataValidationError(DataInvalid, "Data was not transformed into a valid ECL subscription").invalidNel
-          case invalid                      => invalid
+        registration.registrationType match {
+          case Some(Amendment) => transformToAmendedEclSubscription(registration)
+          case _               =>
+            transformToEclSubscription(registration) match {
+              case Valid(Left(eclSubscription)) =>
+                schemaValidator
+                  .validateAgainstJsonSchema(
+                    eclSubscription.subscription,
+                    SchemaLoader.loadSchema("create-ecl-subscription-request.json")
+                  )
+                  .map(_ => Left(eclSubscription))
+              case Valid(Right(_))              =>
+                DataValidationError(DataInvalid, "Data was not transformed into a valid ECL subscription").invalidNel
+              case invalid                      => invalid
+            }
         }
+
     }
 
   private def transformToEclSubscription(
@@ -105,6 +111,17 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
           )
         )
     }
+
+  private def transformToAmendedEclSubscription(
+    registration: Registration
+  ): ValidationResult[Either[EclSubscription, Registration]] =
+    (
+      validateAmlSupervisor(registration),
+      validateOptExists(registration.businessSector, "Business sector"),
+      validateContactDetails("First", registration.contacts.firstContactDetails),
+      validateSecondContactDetails(registration.contacts),
+      validateEclAddress(registration.contactAddress)
+    ).mapN((_, _, _, _, _) => Right(registration))
 
   private def validateContactDetails(
     firstOrSecond: String,
