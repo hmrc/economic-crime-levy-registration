@@ -626,8 +626,7 @@ trait EclTestData {
             companyRegistrationNumber = Some(companyNumber),
             utrType = Some(utrType),
             ctUtr = if (utrType == CtUtr) Some(utrNumber) else None,
-            saUtr = if (utrType == SaUtr) Some(utrNumber) else None,
-            overseasTaxIdentifier = Some(taxIdentifier)
+            saUtr = if (utrType == SaUtr) Some(utrNumber) else None
           )
         )
       )

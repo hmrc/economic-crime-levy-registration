@@ -450,11 +450,9 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         data.saUtr,
         data.utrType.contains(SaUtr),
         "Self Assessment Unique Taxpayer Reference"
-      ),
-      validateOptExists(data.overseasTaxIdentifier, "Overseas tax identifier")
+      )
     ).mapN {
       (
-        _,
         _,
         _,
         _,
