@@ -514,8 +514,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
           companyRegistrationNumber = None,
           utrType = if (none) None else Some(utrType),
           ctUtr = None,
-          saUtr = None,
-          overseasTaxIdentifier = None
+          saUtr = None
         )
         val invalidCharityRegistration = validNonUkEstablishmentRegistration.registration.copy(
           optOtherEntityJourneyData = Some(otherEntityJourneyData)
@@ -531,8 +530,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
           }
         val expectedErrors             = Seq(
           DataValidationError(DataMissing, "Company registration number is missing"),
-          DataValidationError(DataMissing, message + " is missing"),
-          DataValidationError(DataMissing, "Overseas tax identifier is missing")
+          DataValidationError(DataMissing, message + " is missing")
         )
         val result                     = service.validateRegistration(invalidCharityRegistration)
         result.isValid shouldBe false
