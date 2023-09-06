@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.Validated.{Invalid, Valid}
+import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
@@ -40,9 +41,10 @@ class RegistrationSubmissionController @Inject() (
   dmsService: DmsService,
   auditService: AuditService
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc)
+    with Logging {
 
-  def submitRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
+  def submitRegistration(id: String) = authorise.async { implicit request =>
     registrationRepository.get(id).flatMap {
       case Some(registration) =>
         registrationValidationService.validateRegistration(registration) match {
@@ -63,9 +65,16 @@ class RegistrationSubmissionController @Inject() (
                     response.eclReference
                   )
                 Ok(Json.toJson(response))
-              case Left(_)         => InternalServerError("Could not send PDF to DMS queue")
+              case Left(e)         =>
+                logger.error(
+                  s"Failed to submit PDF to DMS: ${e.getMessage()}"
+                )
+                InternalServerError("Could not send PDF to DMS queue")
             }
           case Invalid(e)                   =>
+            logger.error(
+              s"Invalid registration: ${e.toList.mkString(",")}"
+            )
             Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
         }
       case None               => Future.successful(NotFound)
