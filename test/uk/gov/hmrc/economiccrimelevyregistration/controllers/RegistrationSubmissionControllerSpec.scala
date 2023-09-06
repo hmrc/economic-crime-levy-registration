@@ -31,7 +31,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationEr
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
 import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, EntityType, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
+import uk.gov.hmrc.economiccrimelevyregistration.services.{AuditService, DmsService, NrsService, RegistrationValidationService, SubscriptionService}
 
 import java.util.Base64
 import scala.concurrent.Future
@@ -43,6 +43,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
   val mockRegistrationRepository: RegistrationRepository               = mock[RegistrationRepository]
   val mockNrsService: NrsService                                       = mock[NrsService]
   val mockDmsService: DmsService                                       = mock[DmsService]
+  val mockAuditService: AuditService                                   = mock[AuditService]
 
   val controller = new RegistrationSubmissionController(
     cc,
@@ -51,7 +52,8 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
     mockRegistrationValidationService,
     mockSubscriptionServiceService,
     mockNrsService,
-    mockDmsService
+    mockDmsService,
+    mockAuditService
   )
 
   "submitRegistration" should {

@@ -22,7 +22,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
+import uk.gov.hmrc.economiccrimelevyregistration.services.{AuditService, DmsService, NrsService, RegistrationValidationService, SubscriptionService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Instant
@@ -37,7 +37,8 @@ class RegistrationSubmissionController @Inject() (
   registrationValidationService: RegistrationValidationService,
   subscriptionService: SubscriptionService,
   nrsService: NrsService,
-  dmsService: DmsService
+  dmsService: DmsService,
+  auditService: AuditService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
@@ -55,7 +56,13 @@ class RegistrationSubmissionController @Inject() (
             }
           case Valid(Right(registration))   =>
             dmsService.submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now()).map {
-              case Right(response) => Ok(Json.toJson(response))
+              case Right(response) =>
+                auditService
+                  .successfulSubscriptionAndEnrolment(
+                    registration,
+                    response.eclReference
+                  )
+                Ok(Json.toJson(response))
               case Left(_)         => InternalServerError("Could not send PDF to DMS queue")
             }
           case Invalid(e)                   =>
