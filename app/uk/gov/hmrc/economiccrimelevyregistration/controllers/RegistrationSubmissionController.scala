@@ -17,12 +17,13 @@
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.Validated.{Invalid, Valid}
+import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
+import uk.gov.hmrc.economiccrimelevyregistration.services.{AuditService, DmsService, NrsService, RegistrationValidationService, SubscriptionService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Instant
@@ -37,11 +38,13 @@ class RegistrationSubmissionController @Inject() (
   registrationValidationService: RegistrationValidationService,
   subscriptionService: SubscriptionService,
   nrsService: NrsService,
-  dmsService: DmsService
+  dmsService: DmsService,
+  auditService: AuditService
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc)
+    with Logging {
 
-  def submitRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
+  def submitRegistration(id: String) = authorise.async { implicit request =>
     registrationRepository.get(id).flatMap {
       case Some(registration) =>
         registrationValidationService.validateRegistration(registration) match {
@@ -55,10 +58,23 @@ class RegistrationSubmissionController @Inject() (
             }
           case Valid(Right(registration))   =>
             dmsService.submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now()).map {
-              case Right(response) => Ok(Json.toJson(response))
-              case Left(_)         => InternalServerError("Could not send PDF to DMS queue")
+              case Right(response) =>
+                auditService
+                  .successfulSubscriptionAndEnrolment(
+                    registration,
+                    response.eclReference
+                  )
+                Ok(Json.toJson(response))
+              case Left(e)         =>
+                logger.error(
+                  s"Failed to submit PDF to DMS: ${e.getMessage()}"
+                )
+                InternalServerError("Could not send PDF to DMS queue")
             }
           case Invalid(e)                   =>
+            logger.error(
+              s"Invalid registration: ${e.toList.mkString(",")}"
+            )
             Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
         }
       case None               => Future.successful(NotFound)
