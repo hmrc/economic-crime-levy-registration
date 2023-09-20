@@ -471,7 +471,7 @@ trait EclTestData {
     Option[MdtpInformation] ~ Option[String] ~ LoginTimes ~
     Option[Credentials] ~ Option[Name] ~ Option[LocalDate] ~ Option[String] ~
     Option[AffinityGroup] ~ Option[String] ~ AgentInformation ~ Option[CredentialRole] ~ Option[String] ~
-    Option[ItmpName] ~ Option[LocalDate] ~ Option[ItmpAddress]
+    Option[ItmpName] ~ Option[LocalDate] ~ Option[ItmpAddress] ~ Enrolments
 
   def arbAuthRetrievals(internalId: Option[String]): Arbitrary[AuthRetrievals] = Arbitrary {
     for {
@@ -492,11 +492,12 @@ trait EclTestData {
       groupIdentifier    <- Arbitrary.arbitrary[Option[String]]
       itmpName           <- Arbitrary.arbitrary[Option[ItmpName]]
       itmpAddress        <- Arbitrary.arbitrary[Option[ItmpAddress]]
+      enrolments         <- Arbitrary.arbitrary[Enrolments]
     } yield internalId and externalId and confidenceLevel and nino and saUtr and
       mdtpInformation and credentialStrength and loginTimes and
       credentials and name and dateOfBirth and email and
       affinityGroup and agentInformation.agentCode and agentInformation and credentialRole and
-      groupIdentifier and itmpName and dateOfBirth and itmpAddress
+      groupIdentifier and itmpName and dateOfBirth and itmpAddress and enrolments
   }
 
   def arbValidNrsSubmission(request: FakeRequest[AnyContentAsEmpty.type], clock: Clock): Arbitrary[ValidNrsSubmission] =
@@ -504,7 +505,8 @@ trait EclTestData {
       for {
         eclRegistrationReference <- Arbitrary.arbitrary[String]
         nrsIdentityData          <- Arbitrary.arbitrary[NrsIdentityData]
-        authorisedRequest         = AuthorisedRequest(request, nrsIdentityData.internalId, nrsIdentityData)
+        authorisedRequest         =
+          AuthorisedRequest(request, nrsIdentityData.internalId, nrsIdentityData, Some(eclRegistrationReference))
       } yield ValidNrsSubmission(
         base64EncodedNrsSubmissionHtml = base64EncodedNrsSubmissionHtml,
         eclRegistrationReference = eclRegistrationReference,

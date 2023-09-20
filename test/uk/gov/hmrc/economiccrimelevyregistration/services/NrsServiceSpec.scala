@@ -50,7 +50,8 @@ class NrsServiceSpec extends SpecBase {
       val request = AuthorisedRequest(
         fakeRequestWithAuthorisation,
         validNrsSubmission.nrsSubmission.metadata.identityData.internalId,
-        validNrsSubmission.nrsSubmission.metadata.identityData
+        validNrsSubmission.nrsSubmission.metadata.identityData,
+        Some(validNrsSubmission.eclRegistrationReference)
       )
 
       val result =
@@ -70,7 +71,8 @@ class NrsServiceSpec extends SpecBase {
       val request = AuthorisedRequest(
         fakeRequestWithAuthorisation,
         validNrsSubmission.nrsSubmission.metadata.identityData.internalId,
-        validNrsSubmission.nrsSubmission.metadata.identityData
+        validNrsSubmission.nrsSubmission.metadata.identityData,
+        Some(validNrsSubmission.eclRegistrationReference)
       )
 
       val result = intercept[IllegalStateException] {

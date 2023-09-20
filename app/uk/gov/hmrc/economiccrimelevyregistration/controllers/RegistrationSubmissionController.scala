@@ -57,21 +57,32 @@ class RegistrationSubmissionController @Inject() (
               Ok(Json.toJson(response.success))
             }
           case Valid(Right(registration))   =>
-            dmsService.submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now()).map {
-              case Right(response) =>
-                auditService
-                  .successfulSubscriptionAndEnrolment(
-                    registration,
-                    response.eclReference
-                  )
-                Ok(Json.toJson(response))
-              case Left(e)         =>
-                logger.error(
-                  s"Failed to submit PDF to DMS: ${e.getMessage()}"
+            request.eclRegistrationReference match {
+              case None               => Future.successful(InternalServerError("Null value for eclRegistrationReference"))
+              case Some(eclReference) =>
+                nrsService.submitToNrs(
+                  registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                  eclReference
                 )
-                InternalServerError("Could not send PDF to DMS queue")
+                dmsService
+                  .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
+                  .map {
+                    case Right(response) =>
+                      auditService
+                        .successfulSubscriptionAndEnrolment(
+                          registration,
+                          response.eclReference
+                        )
+                      Ok(Json.toJson(response))
+                    case Left(e)         =>
+                      logger.error(
+                        s"Failed to submit PDF to DMS: ${e.getMessage()}"
+                      )
+                      InternalServerError("Could not send PDF to DMS queue")
+                  }
             }
-          case Invalid(e)                   =>
+
+          case Invalid(e) =>
             logger.error(
               s"Invalid registration: ${e.toList.mkString(",")}"
             )

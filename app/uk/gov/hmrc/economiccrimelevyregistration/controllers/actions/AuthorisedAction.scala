@@ -24,6 +24,7 @@ import play.api.mvc._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.retrieve.~
+import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.NrsIdentityData
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
 import uk.gov.hmrc.http.UnauthorizedException
@@ -51,13 +52,18 @@ class BaseAuthorisedAction @Inject() (
         Retrievals.mdtpInformation and Retrievals.credentialStrength and Retrievals.loginTimes and
         Retrievals.credentials and Retrievals.name and Retrievals.dateOfBirth and Retrievals.email and
         Retrievals.affinityGroup and Retrievals.agentCode and Retrievals.agentInformation and Retrievals.credentialRole and Retrievals.groupIdentifier and
-        Retrievals.itmpName and Retrievals.itmpDateOfBirth and Retrievals.itmpAddress
+        Retrievals.itmpName and Retrievals.itmpDateOfBirth and Retrievals.itmpAddress and Retrievals.allEnrolments
     ) {
       case optInternalId ~ optExternalId ~ confidenceLevel ~ optNino ~ optSaUtr ~
           optMdtpInformation ~ optCredentialStrength ~ loginTimes ~ optCredentials ~ optName ~ optDateOfBirth ~
           optEmail ~ optAffinityGroup ~ optAgentCode ~ agentInformation ~ optCredentialRole ~ optGroupIdentifier ~
-          optItmpName ~ optItmpDateOfBirth ~ optItmpAddress =>
+          optItmpName ~ optItmpDateOfBirth ~ optItmpAddress ~ enrolments =>
         val internalId = optInternalId.getOrElse(throw new UnauthorizedException("Unable to retrieve internalId"))
+
+        val eclRegistrationReference: Option[String] =
+          enrolments.enrolments
+            .find(_.key == EclEnrolment.ServiceName)
+            .flatMap(_.getIdentifier(EclEnrolment.IdentifierKey).map(_.value))
 
         val nrsIdentityData = NrsIdentityData(
           internalId = internalId,
@@ -82,7 +88,7 @@ class BaseAuthorisedAction @Inject() (
           loginTimes = loginTimes
         )
 
-        block(AuthorisedRequest(request, internalId, nrsIdentityData))
+        block(AuthorisedRequest(request, internalId, nrsIdentityData, eclRegistrationReference))
     }(hc(request), executionContext) recover { case e: AuthorisationException =>
       Unauthorized(
         Json.toJson(
