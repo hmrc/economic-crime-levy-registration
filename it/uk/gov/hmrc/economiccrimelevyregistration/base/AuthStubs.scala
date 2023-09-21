@@ -19,7 +19,8 @@ trait AuthStubs { self: WireMockStubs =>
              |     "previousLogin": "2016-11-01T12:00:00.000Z"
              |  },
              |  "agentInformation": {},
-             |  "confidenceLevel": 50
+             |  "confidenceLevel": 50,
+             |  "allEnrolments": []
              |}
          """.stripMargin)
     )

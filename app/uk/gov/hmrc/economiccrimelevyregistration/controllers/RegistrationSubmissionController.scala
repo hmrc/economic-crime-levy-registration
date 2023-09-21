@@ -60,29 +60,34 @@ class RegistrationSubmissionController @Inject() (
             request.eclRegistrationReference match {
               case None               => Future.successful(InternalServerError("Null value for eclRegistrationReference"))
               case Some(eclReference) =>
-                nrsService.submitToNrs(
-                  registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                  eclReference
-                )
-                dmsService
-                  .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
-                  .map {
-                    case Right(response) =>
-                      auditService
-                        .successfulSubscriptionAndEnrolment(
-                          registration,
-                          response.eclReference
-                        )
-                      Ok(Json.toJson(response))
-                    case Left(e)         =>
-                      logger.error(
-                        s"Failed to submit PDF to DMS: ${e.getMessage()}"
-                      )
-                      InternalServerError("Could not send PDF to DMS queue")
+                nrsService
+                  .submitToNrs(
+                    registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                    eclReference
+                  )
+                  .flatMap { _ =>
+                    dmsService
+                      .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
+                      .map {
+                        case Right(response) =>
+                          auditService
+                            .successfulSubscriptionAndEnrolment(
+                              registration,
+                              response.eclReference
+                            )
+                          Ok(Json.toJson(response))
+                        case Left(e)         =>
+                          logger.error(
+                            s"Failed to submit PDF to DMS: ${e.getMessage()}"
+                          )
+                          InternalServerError("Could not send PDF to DMS queue")
+                      }
+                  }
+                  .recover { case _ =>
+                    InternalServerError("Failed to submit to NRS")
                   }
             }
-
-          case Invalid(e) =>
+          case Invalid(e)                   =>
             logger.error(
               s"Invalid registration: ${e.toList.mkString(",")}"
             )
