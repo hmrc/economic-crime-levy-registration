@@ -133,7 +133,12 @@ class RegistrationSubmissionISpec extends ISpecBase {
       val charityRegistration = random[ValidCharityRegistration]
       val validRegistration   = charityRegistration.copy(
         registration = charityRegistration.registration.copy(
-          base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
+          base64EncodedFields = Some(
+            Base64EncodedFields(
+              Some(Base64.getEncoder.encodeToString(html.getBytes)),
+              Some(Base64.getEncoder.encodeToString(html.getBytes))
+            )
+          )
         )
       )
 

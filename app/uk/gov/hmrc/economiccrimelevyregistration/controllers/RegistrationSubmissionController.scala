@@ -59,6 +59,10 @@ class RegistrationSubmissionController @Inject() (
           case Valid(Right(registration))   =>
             dmsService.submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now()).map {
               case Right(response) =>
+                nrsService.submitToNrs(
+                  registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                  response.eclReference
+                )
                 auditService
                   .successfulSubscriptionAndEnrolment(
                     registration,

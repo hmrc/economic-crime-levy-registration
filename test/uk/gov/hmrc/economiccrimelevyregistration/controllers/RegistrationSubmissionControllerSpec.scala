@@ -29,6 +29,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError.DataInvalid
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
+import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.NrsSubmissionResponse
 import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, EntityType, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.{AuditService, DmsService, NrsService, RegistrationValidationService, SubscriptionService}
@@ -61,13 +62,15 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
       Arbitrary.arbitrary[Registration],
       Arbitrary.arbitrary[EntityType].retryUntil(_ != Other),
       Arbitrary.arbitrary[EclSubscription],
-      Arbitrary.arbitrary[CreateEclSubscriptionResponse]
+      Arbitrary.arbitrary[CreateEclSubscriptionResponse],
+      Arbitrary.arbitrary[NrsSubmissionResponse]
     ) {
       (
         aRegistration: Registration,
         entityType: EntityType,
         eclSubscription: EclSubscription,
-        subscriptionResponse: CreateEclSubscriptionResponse
+        subscriptionResponse: CreateEclSubscriptionResponse,
+        nrsSubmissionResponse: NrsSubmissionResponse
       ) =>
         val registration = aRegistration.copy(
           entityType = Some(entityType)
@@ -83,6 +86,9 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         )
           .thenReturn(Future.successful(subscriptionResponse))
 
+        when(mockNrsService.submitToNrs(any(), any())(any(), any()))
+          .thenReturn(Future.successful(nrsSubmissionResponse))
+
         val result: Future[Result] =
           controller.submitRegistration(registration.internalId)(fakeRequest)
 
@@ -96,11 +102,13 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
     "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid for 'Other' entities" in forAll(
       Arbitrary.arbitrary[Registration],
-      Arbitrary.arbitrary[CreateEclSubscriptionResponse]
+      Arbitrary.arbitrary[CreateEclSubscriptionResponse],
+      Arbitrary.arbitrary[NrsSubmissionResponse]
     ) {
       (
         aRegistration: Registration,
-        subscriptionResponse: CreateEclSubscriptionResponse
+        subscriptionResponse: CreateEclSubscriptionResponse,
+        nrsSubmissionResponse: NrsSubmissionResponse
       ) =>
         val html         = "<html><head></head><body></body></html>"
         val registration = aRegistration.copy(
@@ -116,6 +124,9 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
         when(mockDmsService.submitToDms(any(), any())(any()))
           .thenReturn(Future.successful(Right(subscriptionResponse.success)))
+
+        when(mockNrsService.submitToNrs(any(), any())(any(), any()))
+          .thenReturn(Future.successful(nrsSubmissionResponse))
 
         val result: Future[Result] =
           controller.submitRegistration(registration.internalId)(fakeRequest)

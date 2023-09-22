@@ -9,7 +9,8 @@ trait DmsStubs { self: WireMockStubs =>
   def stubDmsSuccess(): StubMapping =
     stub(
       post(urlEqualTo("/dms-submission/submit")),
-      aResponse().withStatus(ACCEPTED)
+      aResponse()
+        .withStatus(ACCEPTED)
     )
 
   def stubDms5xx(): StubMapping =
