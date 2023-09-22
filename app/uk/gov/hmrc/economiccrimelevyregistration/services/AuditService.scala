@@ -36,7 +36,7 @@ class AuditService @Inject() (
   )(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
-        registrationData = registrationData,
+        registrationData = registrationData.copy(base64EncodedFields = None),
         submissionResult = RegistrationResult(RequestStatus.Success, Some(eclReference), None),
         enrolmentResult = Some(EnrolmentResult(RequestStatus.Success, None))
       ).extendedDataEvent
@@ -48,7 +48,7 @@ class AuditService @Inject() (
   )(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
-        registrationData = registrationData,
+        registrationData = registrationData.copy(base64EncodedFields = None),
         submissionResult = RegistrationResult(RequestStatus.Failed, None, Some(failureReason)),
         enrolmentResult = None
       ).extendedDataEvent
@@ -61,7 +61,7 @@ class AuditService @Inject() (
   )(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
-        registrationData = registrationData,
+        registrationData = registrationData.copy(base64EncodedFields = None),
         submissionResult = RegistrationResult(RequestStatus.Success, Some(eclReference), None),
         enrolmentResult = Some(EnrolmentResult(RequestStatus.Failed, Some(enrolmentFailureReason)))
       ).extendedDataEvent
