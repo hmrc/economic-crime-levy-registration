@@ -4,6 +4,11 @@ GET           /registrations/:id                             uk.gov.hmrc.economi
 PUT           /registrations                                 uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.upsertRegistration
 DELETE        /registrations/:id                             uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationController.deleteRegistration(id)
 
+GET           /registration-additional-info/:id              uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationAdditionalInfoController.get(id)
+PUT           /registration-additional-info                  uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationAdditionalInfoController.upsert
+DELETE        /registration-additional-info/:id              uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationAdditionalInfoController.delete(id)
+
+
 GET           /registrations/:id/validation-errors           uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationValidationController.getValidationErrors(id)
 
 POST          /submit-registration/:id                       uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationSubmissionController.submitRegistration(id)
