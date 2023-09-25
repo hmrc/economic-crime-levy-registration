@@ -18,11 +18,11 @@ package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import play.api.libs.json.{Json, OFormat}
 
-final case class RegistrationLiability(
+final case class RegistrationAdditionalInfo (
   internalId: String,
   liabilityYear: Option[Int]
 )
 
-object RegistrationLiability {
-  implicit val format: OFormat[RegistrationLiability] = Json.format[RegistrationLiability]
+object RegistrationAdditionalInfo {
+  implicit val format: OFormat[RegistrationAdditionalInfo] = Json.format[RegistrationAdditionalInfo]
 }
