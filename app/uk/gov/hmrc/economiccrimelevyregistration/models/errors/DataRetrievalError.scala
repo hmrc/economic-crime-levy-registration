@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.models
+package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 
-import play.api.libs.json.{Json, OFormat}
+trait DataRetrievalError
 
-import java.time.Instant
-
-case class RegistrationAdditionalInfo(
-  internalId: String,
-  liabilityYear: Option[Int],
-  eclReference: Option[String],
-  lastUpdated: Option[Instant]
-)
-
-object RegistrationAdditionalInfo {
-  implicit val format: OFormat[RegistrationAdditionalInfo] = Json.format[RegistrationAdditionalInfo]
+object DataRetrievalError {
+  case class NotFound(id: String) extends DataRetrievalError
+  case class InternalUnexpectedError(message: String, cause: Option[Throwable]) extends DataRetrievalError
 }

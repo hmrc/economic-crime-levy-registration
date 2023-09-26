@@ -29,9 +29,9 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError.DataInvalid
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
-import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, EntityType, Registration}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, EntityType, Registration, RegistrationAdditionalInfo}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.{AuditService, DmsService, NrsService, RegistrationValidationService, SubscriptionService}
+import uk.gov.hmrc.economiccrimelevyregistration.services.{AuditService, DmsService, NrsService, RegistrationAdditionalInfoService, RegistrationValidationService, SubscriptionService}
 
 import java.util.Base64
 import scala.concurrent.Future
