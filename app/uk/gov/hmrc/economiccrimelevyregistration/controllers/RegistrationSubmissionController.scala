@@ -21,6 +21,7 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.{AuditService, DmsService, NrsService, RegistrationAdditionalInfoService, RegistrationValidationService, SubscriptionService}
@@ -57,15 +58,16 @@ class RegistrationSubmissionController @Inject() (
               )
               Ok(Json.toJson(response.success))
             }
-          case Valid(Right(registration))   =>
+
+          case Valid(Right(registration)) if registration.registrationType.contains(Amendment) =>
             registrationAdditionalInfoService
               .get(registration.internalId)
               .foldF[Result](
-                error => {
+                _ => {
                   logger.error(
-                    "Failed to submit PDF to DMS"
+                    s"Failed to find additional information for amendment with internal id: ${registration.internalId}"
                   )
-                  Future.successful(InternalServerError("Could not send PDF to DMS queue"))
+                  Future.successful(InternalServerError("Failed to find additional information for amendment"))
                 },
                 registrationAdditionalInfo =>
                   dmsService
@@ -74,7 +76,7 @@ class RegistrationSubmissionController @Inject() (
                       case Right(response) =>
                         nrsService.submitToNrs(
                           registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                          registrationAdditionalInfo.eclReference.getOrElse(response.eclReference)
+                          registrationAdditionalInfo.eclReference.get
                         )
 
                         auditService
@@ -90,7 +92,29 @@ class RegistrationSubmissionController @Inject() (
                         InternalServerError("Could not send PDF to DMS queue")
                     }
               )
-          case Invalid(e)                   =>
+          case Valid(Right(registration))                                                      =>
+            dmsService
+              .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
+              .map {
+                case Right(response) =>
+                  nrsService.submitToNrs(
+                    registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                    response.eclReference
+                  )
+
+                  auditService
+                    .successfulSubscriptionAndEnrolment(
+                      registration,
+                      response.eclReference
+                    )
+                  Ok(Json.toJson(response))
+                case Left(e)         =>
+                  logger.error(
+                    s"Failed to submit PDF to DMS: ${e.getMessage()}"
+                  )
+                  InternalServerError("Could not send PDF to DMS queue")
+              }
+          case Invalid(e)                                                                      =>
             logger.error(
               s"Invalid registration: ${e.toList.mkString(",")}"
             )
