@@ -8,6 +8,7 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Initial
 import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, KeyValue}
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{CreateEnrolmentRequest, EclEnrolment}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponse
@@ -133,7 +134,13 @@ class RegistrationSubmissionISpec extends ISpecBase {
       val charityRegistration = random[ValidCharityRegistration]
       val validRegistration   = charityRegistration.copy(
         registration = charityRegistration.registration.copy(
-          base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
+          registrationType = Some(Initial),
+          base64EncodedFields = Some(
+            Base64EncodedFields(
+              Some(Base64.getEncoder.encodeToString(html.getBytes)),
+              Some(Base64.getEncoder.encodeToString(html.getBytes))
+            )
+          )
         )
       )
 

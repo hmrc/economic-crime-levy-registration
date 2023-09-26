@@ -21,6 +21,7 @@ import cats.implicits.catsSyntaxValidatedId
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.scalacheck.Arbitrary
+import org.scalatest.freespec.AnyFreeSpec
 import play.api.Play.materializer
 import play.api.libs.json.Json
 import play.api.mvc.Result
@@ -98,7 +99,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         reset(mockNrsService)
     }
 
-    "when the registration type is Initial" in {
+    "when the registration type is Initial" should {
       "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid for 'Other' entities" in forAll(
         Arbitrary.arbitrary[Registration],
         Arbitrary.arbitrary[CreateEclSubscriptionResponse]
@@ -157,8 +158,8 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
       }
     }
 
-    "when the registration type is Amendment" in {
-      "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid for 'Other' entities" in forAll(
+    "when the registration type is Amendment" should {
+      "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid" in forAll(
         Arbitrary.arbitrary[Registration],
         Arbitrary.arbitrary[CreateEclSubscriptionResponse],
         Arbitrary.arbitrary[RegistrationAdditionalInfo]
@@ -170,15 +171,16 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         ) =>
           val html         = "<html><head></head><body></body></html>"
           val registration = aRegistration.copy(
-            entityType = Some(Other),
             registrationType = Some(Initial),
             base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
           )
 
+          val registrationAdditionalInfo = RegistrationAdditionalInfo(aRegistration.internalId, None, None, None)
+
           when(mockRegistrationRepository.get(any()))
             .thenReturn(Future.successful(Some(registration)))
 
-          when(mockRegistrationAdditionalInfoService.get(any()))
+          when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
           when(mockRegistrationValidationService.validateRegistration(any()))
