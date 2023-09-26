@@ -70,27 +70,37 @@ class RegistrationSubmissionController @Inject() (
                   Future.successful(InternalServerError("Failed to find additional information for amendment"))
                 },
                 registrationAdditionalInfo =>
-                  dmsService
-                    .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
-                    .map {
-                      case Right(response) =>
-                        nrsService.submitToNrs(
-                          registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                          registrationAdditionalInfo.eclReference.get
-                        )
+                  registrationAdditionalInfo.eclReference match {
+                    case Some(eclRef) =>
+                      dmsService
+                        .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
+                        .flatMap {
+                          case Right(response) =>
+                            nrsService.submitToNrs(
+                              registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                              eclRef
+                            )
 
-                        auditService
-                          .successfulSubscriptionAndEnrolment(
-                            registration,
-                            response.eclReference
-                          )
-                        Ok(Json.toJson(response))
-                      case Left(e)         =>
-                        logger.error(
-                          s"Failed to submit PDF to DMS: ${e.getMessage()}"
-                        )
-                        InternalServerError("Could not send PDF to DMS queue")
-                    }
+                            auditService
+                              .successfulSubscriptionAndEnrolment(
+                                registration,
+                                eclRef
+                              )
+                            Future.successful(Ok(Json.toJson(response)))
+                          case Left(e)         =>
+                            logger.error(
+                              s"Failed to submit PDF to DMS: ${e.getMessage()}"
+                            )
+                            Future.successful(InternalServerError("Could not send PDF to DMS queue"))
+                        }
+                    case None         =>
+                      logger.error(
+                        s"Expected eclReference to be present in additional information for amendment with internal id: ${registration.internalId}"
+                      )
+                      Future.successful(
+                        InternalServerError("Expected eclReference to be present in additional information")
+                      )
+                  }
               )
           case Valid(Right(registration))                                                      =>
             dmsService
