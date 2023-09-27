@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.time.TaxYear
 
 import java.time.Instant
 
@@ -25,7 +26,20 @@ case class RegistrationAdditionalInfo(
   liabilityYear: Option[Int],
   eclReference: Option[String],
   lastUpdated: Option[Instant]
-)
+) {
+  private val financialYear: TaxYear = {
+    liabilityYear match {
+      case Some(year) if year == TaxYear.current.startYear =>
+        TaxYear.current
+      case Some(_)                                         =>
+        TaxYear.current.previous
+      case None                                            => TaxYear.current
+    }
+  }
+
+  val isPreviousFinancialYear: Boolean = financialYear == TaxYear.current.previous
+
+}
 
 object RegistrationAdditionalInfo {
   implicit val format: OFormat[RegistrationAdditionalInfo] = Json.format[RegistrationAdditionalInfo]

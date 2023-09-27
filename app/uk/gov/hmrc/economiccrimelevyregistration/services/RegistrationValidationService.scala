@@ -46,8 +46,10 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     registrationAdditionalInfo: Option[RegistrationAdditionalInfo]
   ): ValidationResult[Either[EclSubscription, Registration]] =
     (registration.entityType, registrationAdditionalInfo) match {
-      case (Some(Other), Some(RegistrationAdditionalInfo(_, liability, _, _))) if liability. => validateOtherEntity(registration) // liability issue also applies here
-      case _           =>
+      case (Some(Other), Some(registrationAdditionalInfo)) if registrationAdditionalInfo.isPreviousFinancialYear =>
+        validateOtherEntityPreviousFinancialYear(registration)
+      case (Some(Other), _)  => validateOtherEntity(registration)
+      case _                   =>
         registration.registrationType match {
           case Some(Amendment) => transformToAmendedEclSubscription(registration)
           case _               =>
@@ -65,6 +67,54 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
             }
         }
 
+    }
+
+  private def transformToEclSubscription(
+                                          registration: Registration
+                                        ): ValidationResult[Either[EclSubscription, Registration]] =
+    (
+      validateLegalEntityDetails(registration),
+      validateBusinessPartnerId(registration),
+      validateAmlSupervisor(registration), //liability - don't validate if liability year is before the current year
+      validateOptExists(registration.businessSector, "Business sector"),
+      validateContactDetails("First", registration.contacts.firstContactDetails),
+      validateSecondContactDetails(registration.contacts),
+      validateEclAddress(registration.contactAddress),
+      validateAmlRegulatedActivity(registration), //liability
+      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"), //liability
+      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"), //liability
+      validateConditionalOptExists( //liability
+        registration.relevantApLength,
+        registration.relevantAp12Months.contains(false),
+        "Relevant AP length"
+      ),
+      validateRevenueMeetsThreshold(registration) //liability
+    ).mapN {
+      (
+        legalEntityDetails,
+        businessPartnerId,
+        amlSupervisor,
+        businessSector,
+        firstContactDetails,
+        secondContactDetails,
+        contactAddress,
+        _,
+        _,
+        _,
+        _,
+        _
+      ) =>
+        Left(
+          EclSubscription(
+            businessPartnerId = businessPartnerId,
+            subscription = Subscription(
+              legalEntityDetails = legalEntityDetails(amlSupervisor, businessSector.toString),
+              correspondenceAddressDetails = contactAddress,
+              primaryContactDetails = firstContactDetails,
+              secondaryContactDetails = secondContactDetails
+            )
+          )
+        )
     }
 
   private def transformToEclSubscription(
@@ -359,6 +409,125 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     }
 
   private def missingErrorMessage(missingDataDescription: String): String = s"$missingDataDescription is missing"
+
+  private def validateOtherEntityLiabilityCurrentFinancialYear(
+    registration: Registration
+  ): ValidationResult[Either[EclSubscription, Registration]] =
+    (
+      validateAmlSupervisor(registration),
+      validateOptExists(registration.businessSector, "Business sector"),
+      validateContactDetails("First", registration.contacts.firstContactDetails),
+      validateSecondContactDetails(registration.contacts),
+      validateEclAddress(registration.contactAddress),
+      validateAmlRegulatedActivity(registration),
+      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
+      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
+      validateConditionalOptExists(
+        registration.relevantApLength,
+        registration.relevantAp12Months.contains(false),
+        "Relevant AP length"
+      ),
+      validateRevenueMeetsThreshold(registration),
+      validateOptExists(registration.optOtherEntityJourneyData, "Other entity data"),
+      validateOptExists(registration.otherEntityJourneyData.businessName, "Business name"),
+      registration.otherEntityJourneyData.entityType match {
+        case None                            => DataValidationError(DataMissing, missingErrorMessage("Other entity type")).invalidNel
+        case Some(Charity)                   => validateCharity(registration)
+        case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)
+        case Some(Trust)                     => validateTrust(registration)
+        case Some(NonUKEstablishment)        => validateNonUkEstablishment(registration)
+      }
+    ).mapN {
+      (
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _
+      ) =>
+        Right(registration)
+    }
+
+  private def validateOtherEntityLiabilityPreviousFinancialYear(
+    registration: Registration
+  ): ValidationResult[Either[EclSubscription, Registration]] =
+    (
+      validateAmlSupervisor(registration),
+      validateOptExists(registration.businessSector, "Business sector"),
+      validateContactDetails("First", registration.contacts.firstContactDetails),
+      validateSecondContactDetails(registration.contacts),
+      validateEclAddress(registration.contactAddress),
+      validateAmlRegulatedActivity(registration),
+      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
+      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
+      validateConditionalOptExists(
+        registration.relevantApLength,
+        registration.relevantAp12Months.contains(false),
+        "Relevant AP length"
+      ),
+      validateRevenueMeetsThreshold(registration),
+      validateOptExists(registration.optOtherEntityJourneyData, "Other entity data"),
+      validateOptExists(registration.otherEntityJourneyData.businessName, "Business name"),
+      registration.otherEntityJourneyData.entityType match {
+        case None                            => DataValidationError(DataMissing, missingErrorMessage("Other entity type")).invalidNel
+        case Some(Charity)                   => validateCharity(registration)
+        case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)
+        case Some(Trust)                     => validateTrust(registration)
+        case Some(NonUKEstablishment)        => validateNonUkEstablishment(registration)
+      }
+    ).mapN {
+      (
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _
+      ) =>
+        Right(registration)
+    }
+
+
+  private def validateOtherEntityPreviousFinancialYear(
+                                   registration: Registration
+                                 ): ValidationResult[Either[EclSubscription, Registration]] =
+    (
+      validateAmlSupervisor(registration),
+      validateAmlRegulatedActivity(registration),
+      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
+      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
+      validateConditionalOptExists(
+        registration.relevantApLength,
+        registration.relevantAp12Months.contains(false),
+        "Relevant AP length"
+      ),
+      validateRevenueMeetsThreshold(registration),
+    ).mapN {
+      (
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+      ) =>
+        Right(registration)
+    }
 
   private def validateOtherEntity(
     registration: Registration

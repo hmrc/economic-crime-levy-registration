@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.time.TaxYear
 
 final case class EclSubscription(
   businessPartnerId: String,
@@ -56,8 +57,6 @@ object LegalEntityDetails {
     val Individual   = "01"
     val Organisation = "02"
   }
-
-  val StartOfFirstEclFinancialYear = "2022-04-01"
 
   implicit val format: OFormat[LegalEntityDetails] = Json.format[LegalEntityDetails]
 }
