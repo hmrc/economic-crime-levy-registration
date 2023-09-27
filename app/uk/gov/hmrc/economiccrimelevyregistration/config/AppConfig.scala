@@ -86,4 +86,6 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
   val dmsSubmissionSource: String             =
     configuration.get[String]("microservice.services.dms-submission.registration-submission.source")
   val dmsSubmissionUrl: String                = dmsBaseUrl + "/dms-submission/submit"
+
+  val amendRegistrationNrsEnabled: Boolean = configuration.get[Boolean]("features.amendRegistrationNrsEnabled")
 }

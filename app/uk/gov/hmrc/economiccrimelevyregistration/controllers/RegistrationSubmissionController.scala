@@ -79,12 +79,13 @@ class RegistrationSubmissionController @Inject() (
                         .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
                         .flatMap {
                           case Right(response) =>
-                            nrsService.submitToNrs(
-                              registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                              eclRef,
-                              appConfig.eclAmendRegistrationNotableEvent
-                            )
-
+                            if (appConfig.amendRegistrationNrsEnabled) {
+                              nrsService.submitToNrs(
+                                registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                                eclRef,
+                                appConfig.eclAmendRegistrationNotableEvent
+                              )
+                            }
                             auditService
                               .successfulSubscriptionAndEnrolment(
                                 registration,
