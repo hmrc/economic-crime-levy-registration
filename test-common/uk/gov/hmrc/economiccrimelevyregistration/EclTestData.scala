@@ -122,6 +122,13 @@ trait EclTestData {
     } yield registration.copy(internalId = internalId)
   }
 
+  implicit val arbRegistrationAdditionalInfo: Arbitrary[RegistrationAdditionalInfo] = Arbitrary {
+    for {
+      registrationAdditionalInfo <- MkArbitrary[RegistrationAdditionalInfo].arbitrary.arbitrary
+      internalId                 <- Gen.nonEmptyListOf(Arbitrary.arbitrary[Char]).map(_.mkString)
+    } yield registrationAdditionalInfo.copy(internalId = internalId)
+  }
+
   def alphaNumStringsWithMaxLength(maxLength: Int): Gen[String] =
     for {
       length <- choose(1, maxLength)
