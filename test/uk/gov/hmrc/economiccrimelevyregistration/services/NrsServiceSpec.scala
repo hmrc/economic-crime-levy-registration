@@ -22,6 +22,7 @@ import org.scalacheck.Arbitrary
 import play.api.http.HeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.ValidNrsSubmission
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.NrsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
@@ -36,15 +37,24 @@ class NrsServiceSpec extends SpecBase {
   private val fixedPointInTime             = Instant.parse("2007-12-25T10:15:30.00Z")
   private val stubClock: Clock             = Clock.fixed(fixedPointInTime, ZoneId.systemDefault)
   private val fakeRequestWithAuthorisation = fakeRequest.withHeaders((HeaderNames.AUTHORIZATION, "test"))
-
-  val service = new NrsService(mockNrsConnector, stubClock)
+  val mockAppConfig: AppConfig             = mock[AppConfig]
+  val service                              = new NrsService(mockNrsConnector, stubClock)
 
   "submitToNrs" should {
     "return the NRS submission ID when the submission is successful" in forAll(
       arbValidNrsSubmission(fakeRequestWithAuthorisation, stubClock).arbitrary,
       Arbitrary.arbitrary[NrsSubmissionResponse]
     ) { (validNrsSubmission: ValidNrsSubmission, nrsSubmissionResponse: NrsSubmissionResponse) =>
-      when(mockNrsConnector.submitToNrs(ArgumentMatchers.eq(validNrsSubmission.nrsSubmission))(any()))
+      when(
+        mockNrsConnector.submitToNrs(
+          ArgumentMatchers.eq(
+            validNrsSubmission.nrsSubmission.copy(metadata =
+              validNrsSubmission.nrsSubmission.metadata
+                .copy(notableEvent = mockAppConfig.eclFirstTimeRegistrationNotableEvent)
+            )
+          )
+        )(any())
+      )
         .thenReturn(Future.successful(nrsSubmissionResponse))
 
       val request = AuthorisedRequest(
@@ -57,7 +67,8 @@ class NrsServiceSpec extends SpecBase {
         await(
           service.submitToNrs(
             Some(validNrsSubmission.base64EncodedNrsSubmissionHtml),
-            validNrsSubmission.eclRegistrationReference
+            validNrsSubmission.eclRegistrationReference,
+            mockAppConfig.eclFirstTimeRegistrationNotableEvent
           )(hc, request)
         )
 
@@ -77,7 +88,8 @@ class NrsServiceSpec extends SpecBase {
         await(
           service.submitToNrs(
             None,
-            validNrsSubmission.eclRegistrationReference
+            validNrsSubmission.eclRegistrationReference,
+            mockAppConfig.eclFirstTimeRegistrationNotableEvent
           )(hc, request)
         )
       }

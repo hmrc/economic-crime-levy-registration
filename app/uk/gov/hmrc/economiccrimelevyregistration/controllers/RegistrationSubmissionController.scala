@@ -20,6 +20,7 @@ import cats.data.Validated.{Invalid, Valid}
 import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
@@ -41,7 +42,8 @@ class RegistrationSubmissionController @Inject() (
   nrsService: NrsService,
   dmsService: DmsService,
   auditService: AuditService,
-  registrationAdditionalInfoService: RegistrationAdditionalInfoService
+  registrationAdditionalInfoService: RegistrationAdditionalInfoService,
+  appConfig: AppConfig
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
@@ -54,7 +56,8 @@ class RegistrationSubmissionController @Inject() (
             subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
               nrsService.submitToNrs(
                 registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                response.success.eclReference
+                response.success.eclReference,
+                appConfig.eclFirstTimeRegistrationNotableEvent
               )
               Ok(Json.toJson(response.success))
             }
@@ -70,27 +73,38 @@ class RegistrationSubmissionController @Inject() (
                   Future.successful(InternalServerError("Failed to find additional information for amendment"))
                 },
                 registrationAdditionalInfo =>
-                  dmsService
-                    .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
-                    .map {
-                      case Right(response) =>
-                        nrsService.submitToNrs(
-                          registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                          registrationAdditionalInfo.eclReference.get
-                        )
+                  registrationAdditionalInfo.eclReference match {
+                    case Some(eclRef) =>
+                      dmsService
+                        .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
+                        .flatMap {
+                          case Right(response) =>
+                            nrsService.submitToNrs(
+                              registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                              eclRef,
+                              appConfig.eclAmendRegistrationNotableEvent
+                            )
 
-                        auditService
-                          .successfulSubscriptionAndEnrolment(
-                            registration,
-                            response.eclReference
-                          )
-                        Ok(Json.toJson(response))
-                      case Left(e)         =>
-                        logger.error(
-                          s"Failed to submit PDF to DMS: ${e.getMessage()}"
-                        )
-                        InternalServerError("Could not send PDF to DMS queue")
-                    }
+                            auditService
+                              .successfulSubscriptionAndEnrolment(
+                                registration,
+                                eclRef
+                              )
+                            Future.successful(Ok(Json.toJson(response)))
+                          case Left(e)         =>
+                            logger.error(
+                              s"Failed to submit PDF to DMS: ${e.getMessage()}"
+                            )
+                            Future.successful(InternalServerError("Could not send PDF to DMS queue"))
+                        }
+                    case None         =>
+                      logger.error(
+                        s"Expected eclReference to be present in additional information for amendment with internal id: ${registration.internalId}"
+                      )
+                      Future.successful(
+                        InternalServerError("Expected eclReference to be present in additional information")
+                      )
+                  }
               )
           case Valid(Right(registration))                                                      =>
             dmsService
@@ -99,7 +113,8 @@ class RegistrationSubmissionController @Inject() (
                 case Right(response) =>
                   nrsService.submitToNrs(
                     registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                    response.eclReference
+                    response.eclReference,
+                    appConfig.eclFirstTimeRegistrationNotableEvent
                   )
 
                   auditService
