@@ -20,6 +20,7 @@ import cats.data.Validated.{Invalid, Valid}
 import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
@@ -41,7 +42,8 @@ class RegistrationSubmissionController @Inject() (
   nrsService: NrsService,
   dmsService: DmsService,
   auditService: AuditService,
-  registrationAdditionalInfoService: RegistrationAdditionalInfoService
+  registrationAdditionalInfoService: RegistrationAdditionalInfoService,
+  appConfig: AppConfig
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
@@ -54,7 +56,8 @@ class RegistrationSubmissionController @Inject() (
             subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
               nrsService.submitToNrs(
                 registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                response.success.eclReference
+                response.success.eclReference,
+                appConfig.eclFirstTimeRegistrationNotableEvent
               )
               Ok(Json.toJson(response.success))
             }
@@ -78,7 +81,8 @@ class RegistrationSubmissionController @Inject() (
                           case Right(response) =>
                             nrsService.submitToNrs(
                               registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                              eclRef
+                              eclRef,
+                              appConfig.eclAmendRegistrationNotableEvent
                             )
 
                             auditService
@@ -109,7 +113,8 @@ class RegistrationSubmissionController @Inject() (
                 case Right(response) =>
                   nrsService.submitToNrs(
                     registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                    response.eclReference
+                    response.eclReference,
+                    appConfig.eclFirstTimeRegistrationNotableEvent
                   )
 
                   auditService

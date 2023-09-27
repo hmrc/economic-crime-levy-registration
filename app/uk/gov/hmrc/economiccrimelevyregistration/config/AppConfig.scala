@@ -28,6 +28,12 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
 
   val appName: String = configuration.get[String]("appName")
 
+  val eclFirstTimeRegistrationNotableEvent: String =
+    configuration.get[String]("microservice.services.nrs.notable-events.ecl-first-time-registration")
+
+  val eclAmendRegistrationNotableEvent: String =
+    configuration.get[String]("microservice.services.nrs.notable-events.ecl-amend-registration")
+
   val appBaseUrl: String = servicesConfig.baseUrl("self")
 
   val mongoTtl: Int = configuration.get[Int]("mongodb.timeToLiveInSeconds")
