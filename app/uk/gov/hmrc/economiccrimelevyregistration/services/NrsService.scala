@@ -38,7 +38,8 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
 
   def submitToNrs(
     optBase64EncodedNrsSubmissionHtml: Option[String],
-    eclRegistrationReference: String
+    eclRegistrationReference: String,
+    eventName: String
   )(implicit hc: HeaderCarrier, request: AuthorisedRequest[_]): Future[NrsSubmissionResponse] = {
     val userAuthToken: String                  = request.headers.get(HeaderNames.AUTHORIZATION).get
     val headerData: JsObject                   = new JsObject(request.headers.toMap.map(x => x._1 -> JsString(x._2 mkString ",")))
@@ -50,7 +51,7 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
 
     val nrsMetadata = NrsMetadata(
       businessId = "ecl",
-      notableEvent = "ecl-registration",
+      notableEvent = eventName,
       payloadContentType = MimeTypes.HTML,
       payloadSha256Checksum = payloadSha256Checksum(base64EncodedNrsSubmissionHtml),
       userSubmissionTimestamp = Instant.now(clock),

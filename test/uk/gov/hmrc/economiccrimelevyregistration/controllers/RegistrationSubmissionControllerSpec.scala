@@ -26,6 +26,7 @@ import play.api.Play.materializer
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Initial
@@ -48,6 +49,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
   val mockDmsService: DmsService                                               = mock[DmsService]
   val mockAuditService: AuditService                                           = mock[AuditService]
   val mockRegistrationAdditionalInfoService: RegistrationAdditionalInfoService = mock[RegistrationAdditionalInfoService]
+  val mockAppConfig: AppConfig                                                 = mock[AppConfig]
 
   val controller = new RegistrationSubmissionController(
     cc,
@@ -58,7 +60,8 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
     mockNrsService,
     mockDmsService,
     mockAuditService,
-    mockRegistrationAdditionalInfoService
+    mockRegistrationAdditionalInfoService,
+    mockAppConfig
   )
 
   "submitRegistration" should {
@@ -74,6 +77,8 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         eclSubscription: EclSubscription,
         subscriptionResponse: CreateEclSubscriptionResponse
       ) =>
+        reset(mockNrsService)
+
         val registration = aRegistration.copy(
           entityType = Some(entityType)
         )
@@ -94,9 +99,11 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         status(result)        shouldBe OK
         contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
 
-        verify(mockNrsService, times(1)).submitToNrs(any(), any())(any(), any())
-
-        reset(mockNrsService)
+        verify(mockNrsService, times(1)).submitToNrs(
+          any(),
+          any(),
+          any()
+        )(any(), any())
     }
 
     "when the registration type is Initial" should {
@@ -169,6 +176,8 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
           subscriptionResponse: CreateEclSubscriptionResponse,
           registrationAdditionalInfo: RegistrationAdditionalInfo
         ) =>
+          reset(mockNrsService)
+
           val html         = "<html><head></head><body></body></html>"
           val registration = aRegistration.copy(
             registrationType = Some(Initial),
@@ -194,6 +203,12 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
           status(result)        shouldBe OK
           contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
+
+          verify(mockNrsService, times(1)).submitToNrs(
+            any(),
+            any(),
+            any()
+          )(any(), any())
       }
 
       "return 500 INTERNAL_SERVER_ERROR with validation errors in the JSON response body when the registration data is invalid" in forAll(
