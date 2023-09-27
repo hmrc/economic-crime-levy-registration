@@ -41,9 +41,12 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
 
   type ValidationResult[A] = ValidatedNel[DataValidationError, A]
 
-  def validateRegistration(registration: Registration): ValidationResult[Either[EclSubscription, Registration]] =
-    registration.entityType match {
-      case Some(Other) => validateOtherEntity(registration)
+  def validateRegistration(
+    registration: Registration,
+    registrationAdditionalInfo: Option[RegistrationAdditionalInfo]
+  ): ValidationResult[Either[EclSubscription, Registration]] =
+    (registration.entityType, registrationAdditionalInfo) match {
+      case (Some(Other), Some(RegistrationAdditionalInfo(_, liability, _, _))) if liability. => validateOtherEntity(registration) // liability issue also applies here
       case _           =>
         registration.registrationType match {
           case Some(Amendment) => transformToAmendedEclSubscription(registration)
@@ -70,20 +73,20 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     (
       validateLegalEntityDetails(registration),
       validateBusinessPartnerId(registration),
-      validateAmlSupervisor(registration),
+      validateAmlSupervisor(registration), //liability - don't validate if liability year is before the current year
       validateOptExists(registration.businessSector, "Business sector"),
       validateContactDetails("First", registration.contacts.firstContactDetails),
       validateSecondContactDetails(registration.contacts),
       validateEclAddress(registration.contactAddress),
-      validateAmlRegulatedActivity(registration),
-      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
-      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
-      validateConditionalOptExists(
+      validateAmlRegulatedActivity(registration), //liability
+      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"), //liability
+      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"), //liability
+      validateConditionalOptExists( //liability
         registration.relevantApLength,
         registration.relevantAp12Months.contains(false),
         "Relevant AP length"
       ),
-      validateRevenueMeetsThreshold(registration)
+      validateRevenueMeetsThreshold(registration) //liability
     ).mapN {
       (
         legalEntityDetails,
@@ -281,6 +284,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       case _                         => DataValidationError(DataMissing, missingErrorMessage("Sole trader SA UTR or NINO")).invalidNel
     }
 
+  //liabilkty in additional info is not the current year, don't validate
   private def validateAmlRegulatedActivity(registration: Registration): ValidationResult[Registration] =
     registration.carriedOutAmlRegulatedActivityInCurrentFy match {
       case Some(true)  => registration.validNel
@@ -290,6 +294,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         DataValidationError(DataMissing, missingErrorMessage("Carried out AML regulated activity choice")).invalidNel
     }
 
+  //liabilkty in additional info is not the current year, don't validate
   private def validateAmlSupervisor(registration: Registration): ValidationResult[String] =
     registration.amlSupervisor match {
       case Some(AmlSupervisor(GamblingCommission | FinancialConductAuthority, _)) =>
