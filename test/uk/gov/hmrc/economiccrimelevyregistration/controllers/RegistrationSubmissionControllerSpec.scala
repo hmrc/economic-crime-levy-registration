@@ -167,101 +167,105 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
     "when the registration type is Amendment" should {
       "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid " +
         "and amend NRS is enabled" in forAll(
-        Arbitrary.arbitrary[Registration],
-        Arbitrary.arbitrary[CreateEclSubscriptionResponse],
-        Arbitrary.arbitrary[RegistrationAdditionalInfo]
-      ) {
-        (
-          aRegistration: Registration,
-          subscriptionResponse: CreateEclSubscriptionResponse,
-          registrationAdditionalInfo: RegistrationAdditionalInfo
-        ) =>
-          reset(mockNrsService)
-          reset(mockAppConfig)
+          Arbitrary.arbitrary[Registration],
+          Arbitrary.arbitrary[CreateEclSubscriptionResponse],
+          Arbitrary.arbitrary[RegistrationAdditionalInfo]
+        ) {
+          (
+            aRegistration: Registration,
+            subscriptionResponse: CreateEclSubscriptionResponse,
+            registrationAdditionalInfo: RegistrationAdditionalInfo
+          ) =>
+            reset(mockNrsService)
+            reset(mockAppConfig)
 
-          when(mockAppConfig.amendRegistrationNrsEnabled).thenReturn(true)
+            when(mockAppConfig.amendRegistrationNrsEnabled).thenReturn(true)
 
-          val html         = "<html><head></head><body></body></html>"
-          val registration = aRegistration.copy(
-            registrationType = Some(Amendment),
-            base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
-          )
+            val html         = "<html><head></head><body></body></html>"
+            val registration = aRegistration.copy(
+              registrationType = Some(Amendment),
+              base64EncodedFields =
+                Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
+            )
 
-          val registrationAdditionalInfo = RegistrationAdditionalInfo(aRegistration.internalId, None, Some("Test"), None)
+            val registrationAdditionalInfo =
+              RegistrationAdditionalInfo(aRegistration.internalId, None, Some("Test"), None)
 
-          when(mockRegistrationRepository.get(any()))
-            .thenReturn(Future.successful(Some(registration)))
+            when(mockRegistrationRepository.get(any()))
+              .thenReturn(Future.successful(Some(registration)))
 
-          when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
-            .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
+            when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
+              .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
-          when(mockRegistrationValidationService.validateRegistration(any()))
-            .thenReturn(Right(registration).validNel)
+            when(mockRegistrationValidationService.validateRegistration(any()))
+              .thenReturn(Right(registration).validNel)
 
-          when(mockDmsService.submitToDms(any(), any())(any()))
-            .thenReturn(Future.successful(Right(subscriptionResponse.success)))
+            when(mockDmsService.submitToDms(any(), any())(any()))
+              .thenReturn(Future.successful(Right(subscriptionResponse.success)))
 
-          val result: Future[Result] =
-            controller.submitRegistration(registration.internalId)(fakeRequest)
+            val result: Future[Result] =
+              controller.submitRegistration(registration.internalId)(fakeRequest)
 
-          status(result)        shouldBe OK
-          contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
+            status(result)        shouldBe OK
+            contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
 
-          verify(mockNrsService, times(1)).submitToNrs(
-            any(),
-            any(),
-            any()
-          )(any(), any())
-      }
+            verify(mockNrsService, times(1)).submitToNrs(
+              any(),
+              any(),
+              any()
+            )(any(), any())
+        }
 
       "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid " +
         "and amend NRS is disabled" in forAll(
-        Arbitrary.arbitrary[Registration],
-        Arbitrary.arbitrary[CreateEclSubscriptionResponse],
-        Arbitrary.arbitrary[RegistrationAdditionalInfo]
-      ) {
-        (
-          aRegistration: Registration,
-          subscriptionResponse: CreateEclSubscriptionResponse,
-          registrationAdditionalInfo: RegistrationAdditionalInfo
-        ) =>
-          reset(mockNrsService)
-          reset(mockAppConfig)
+          Arbitrary.arbitrary[Registration],
+          Arbitrary.arbitrary[CreateEclSubscriptionResponse],
+          Arbitrary.arbitrary[RegistrationAdditionalInfo]
+        ) {
+          (
+            aRegistration: Registration,
+            subscriptionResponse: CreateEclSubscriptionResponse,
+            registrationAdditionalInfo: RegistrationAdditionalInfo
+          ) =>
+            reset(mockNrsService)
+            reset(mockAppConfig)
 
-          when(mockAppConfig.amendRegistrationNrsEnabled).thenReturn(false)
+            when(mockAppConfig.amendRegistrationNrsEnabled).thenReturn(false)
 
-          val html = "<html><head></head><body></body></html>"
-          val registration = aRegistration.copy(
-            registrationType = Some(Amendment),
-            base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
-          )
+            val html         = "<html><head></head><body></body></html>"
+            val registration = aRegistration.copy(
+              registrationType = Some(Amendment),
+              base64EncodedFields =
+                Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
+            )
 
-          val registrationAdditionalInfo = RegistrationAdditionalInfo(aRegistration.internalId, None, Some("Test"), None)
+            val registrationAdditionalInfo =
+              RegistrationAdditionalInfo(aRegistration.internalId, None, Some("Test"), None)
 
-          when(mockRegistrationRepository.get(any()))
-            .thenReturn(Future.successful(Some(registration)))
+            when(mockRegistrationRepository.get(any()))
+              .thenReturn(Future.successful(Some(registration)))
 
-          when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
-            .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
+            when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
+              .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
-          when(mockRegistrationValidationService.validateRegistration(any()))
-            .thenReturn(Right(registration).validNel)
+            when(mockRegistrationValidationService.validateRegistration(any()))
+              .thenReturn(Right(registration).validNel)
 
-          when(mockDmsService.submitToDms(any(), any())(any()))
-            .thenReturn(Future.successful(Right(subscriptionResponse.success)))
+            when(mockDmsService.submitToDms(any(), any())(any()))
+              .thenReturn(Future.successful(Right(subscriptionResponse.success)))
 
-          val result: Future[Result] =
-            controller.submitRegistration(registration.internalId)(fakeRequest)
+            val result: Future[Result] =
+              controller.submitRegistration(registration.internalId)(fakeRequest)
 
-          status(result) shouldBe OK
-          contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
+            status(result)        shouldBe OK
+            contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
 
-          verify(mockNrsService, times(0)).submitToNrs(
-            any(),
-            any(),
-            any()
-          )(any(), any())
-      }
+            verify(mockNrsService, times(0)).submitToNrs(
+              any(),
+              any(),
+              any()
+            )(any(), any())
+        }
 
       "return 500 INTERNAL_SERVER_ERROR with validation errors in the JSON response body when the registration data is invalid" in forAll(
         Arbitrary.arbitrary[Registration],
