@@ -17,7 +17,6 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.time.TaxYear
 
 final case class EclSubscription(
   businessPartnerId: String,

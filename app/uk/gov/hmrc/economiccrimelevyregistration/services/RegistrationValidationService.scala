@@ -19,7 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import cats.implicits._
-import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
+import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc, Unknown}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, NonUKEstablishment, Trust, UnincorporatedAssociation}
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
@@ -28,7 +28,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.{CustomerType, StartOfFirstEclFinancialYear}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.StringUtils._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.{SchemaLoader, SchemaValidator}
@@ -43,17 +43,15 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
 
   def validateRegistration(
     registration: Registration,
-    registrationAdditionalInfo: Option[RegistrationAdditionalInfo]
+    registrationAdditionalInfo: RegistrationAdditionalInfo
   ): ValidationResult[Either[EclSubscription, Registration]] =
-    (registration.entityType, registrationAdditionalInfo) match {
-      case (Some(Other), Some(registrationAdditionalInfo)) if registrationAdditionalInfo.isPreviousFinancialYear =>
-        validateOtherEntityPreviousFinancialYear(registration)
-      case (Some(Other), _)  => validateOtherEntity(registration)
-      case _                   =>
+    (registration.entityType) match {
+      case Some(Other) => validateOtherEntity(registration)
+      case _           =>
         registration.registrationType match {
           case Some(Amendment) => transformToAmendedEclSubscription(registration)
           case _               =>
-            transformToEclSubscription(registration) match {
+            transformToEclSubscription(registration, registrationAdditionalInfo) match {
               case Valid(Left(eclSubscription)) =>
                 schemaValidator
                   .validateAgainstJsonSchema(
@@ -70,93 +68,38 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     }
 
   private def transformToEclSubscription(
-                                          registration: Registration
-                                        ): ValidationResult[Either[EclSubscription, Registration]] =
-    (
-      validateLegalEntityDetails(registration),
-      validateBusinessPartnerId(registration),
-      validateAmlSupervisor(registration), //liability - don't validate if liability year is before the current year
-      validateOptExists(registration.businessSector, "Business sector"),
-      validateContactDetails("First", registration.contacts.firstContactDetails),
-      validateSecondContactDetails(registration.contacts),
-      validateEclAddress(registration.contactAddress),
-      validateAmlRegulatedActivity(registration), //liability
-      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"), //liability
-      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"), //liability
-      validateConditionalOptExists( //liability
-        registration.relevantApLength,
-        registration.relevantAp12Months.contains(false),
-        "Relevant AP length"
-      ),
-      validateRevenueMeetsThreshold(registration) //liability
-    ).mapN {
-      (
-        legalEntityDetails,
-        businessPartnerId,
-        amlSupervisor,
-        businessSector,
-        firstContactDetails,
-        secondContactDetails,
-        contactAddress,
-        _,
-        _,
-        _,
-        _,
-        _
-      ) =>
-        Left(
-          EclSubscription(
-            businessPartnerId = businessPartnerId,
-            subscription = Subscription(
-              legalEntityDetails = legalEntityDetails(amlSupervisor, businessSector.toString),
-              correspondenceAddressDetails = contactAddress,
-              primaryContactDetails = firstContactDetails,
-              secondaryContactDetails = secondContactDetails
-            )
-          )
-        )
-    }
-
-  private def transformToEclSubscription(
-    registration: Registration
+    registration: Registration,
+    registrationAdditionalInfo: RegistrationAdditionalInfo
   ): ValidationResult[Either[EclSubscription, Registration]] =
     (
-      validateLegalEntityDetails(registration),
+      validateAmlRegulatedActivityCommonFields(registration),
+      validateLegalEntityDetails(registration, registrationAdditionalInfo),
       validateBusinessPartnerId(registration),
-      validateAmlSupervisor(registration), //liability - don't validate if liability year is before the current year
       validateOptExists(registration.businessSector, "Business sector"),
       validateContactDetails("First", registration.contacts.firstContactDetails),
       validateSecondContactDetails(registration.contacts),
-      validateEclAddress(registration.contactAddress),
-      validateAmlRegulatedActivity(registration), //liability
-      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"), //liability
-      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"), //liability
-      validateConditionalOptExists( //liability
-        registration.relevantApLength,
-        registration.relevantAp12Months.contains(false),
-        "Relevant AP length"
-      ),
-      validateRevenueMeetsThreshold(registration) //liability
+      validateEclAddress(registration.contactAddress)
     ).mapN {
       (
+        _,
         legalEntityDetails,
         businessPartnerId,
-        amlSupervisor,
         businessSector,
         firstContactDetails,
         secondContactDetails,
-        contactAddress,
-        _,
-        _,
-        _,
-        _,
-        _
+        contactAddress
       ) =>
         Left(
           EclSubscription(
             businessPartnerId = businessPartnerId,
             subscription = Subscription(
-              legalEntityDetails = legalEntityDetails(amlSupervisor, businessSector.toString),
+              legalEntityDetails = legalEntityDetails(
+                registration.amlSupervisor
+                  .map(_.supervisorType)
+                  .getOrElse(Unknown)
+                  .toString,
+                businessSector.toString
+              ),
               correspondenceAddressDetails = contactAddress,
               primaryContactDetails = firstContactDetails,
               secondaryContactDetails = secondContactDetails
@@ -219,7 +162,8 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
   }
 
   private def validateLegalEntityDetails(
-    registration: Registration
+    registration: Registration,
+    registrationAdditionalInfo: RegistrationAdditionalInfo
   ): ValidationResult[(String, String) => LegalEntityDetails] = {
     val grsJourneyData: (
       Option[IncorporatedEntityJourneyData],
@@ -247,7 +191,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = None,
                 customerType = CustomerType.Organisation,
                 registrationDate = registrationDate,
-                liabilityStartDate = StartOfFirstEclFinancialYear,
+                liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear,
                 _,
                 _
               )
@@ -269,7 +213,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = None,
                 customerType = CustomerType.Organisation,
                 registrationDate = registrationDate,
-                liabilityStartDate = StartOfFirstEclFinancialYear,
+                liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear,
                 _,
                 _
               )
@@ -292,7 +236,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = None,
                 customerType = CustomerType.Organisation,
                 registrationDate = registrationDate,
-                liabilityStartDate = StartOfFirstEclFinancialYear,
+                liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear,
                 _,
                 _
               )
@@ -311,7 +255,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 lastName = Some(s.fullName.lastName),
                 customerType = CustomerType.Individual,
                 registrationDate = registrationDate,
-                liabilityStartDate = StartOfFirstEclFinancialYear,
+                liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear,
                 _,
                 _
               )
@@ -334,17 +278,13 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       case _                         => DataValidationError(DataMissing, missingErrorMessage("Sole trader SA UTR or NINO")).invalidNel
     }
 
-  //liabilkty in additional info is not the current year, don't validate
   private def validateAmlRegulatedActivity(registration: Registration): ValidationResult[Registration] =
     registration.carriedOutAmlRegulatedActivityInCurrentFy match {
-      case Some(true)  => registration.validNel
-      case Some(false) =>
-        DataValidationError(DataInvalid, "Carried out AML regulated activity cannot be false").invalidNel
-      case _           =>
+      case Some(_) => registration.validNel
+      case _       =>
         DataValidationError(DataMissing, missingErrorMessage("Carried out AML regulated activity choice")).invalidNel
     }
 
-  //liabilkty in additional info is not the current year, don't validate
   private def validateAmlSupervisor(registration: Registration): ValidationResult[String] =
     registration.amlSupervisor match {
       case Some(AmlSupervisor(GamblingCommission | FinancialConductAuthority, _)) =>
@@ -502,10 +442,9 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         Right(registration)
     }
 
-
   private def validateOtherEntityPreviousFinancialYear(
-                                   registration: Registration
-                                 ): ValidationResult[Either[EclSubscription, Registration]] =
+    registration: Registration
+  ): ValidationResult[Either[EclSubscription, Registration]] =
     (
       validateAmlSupervisor(registration),
       validateAmlRegulatedActivity(registration),
@@ -516,7 +455,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         registration.relevantAp12Months.contains(false),
         "Relevant AP length"
       ),
-      validateRevenueMeetsThreshold(registration),
+      validateRevenueMeetsThreshold(registration)
     ).mapN {
       (
         _,
@@ -524,7 +463,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         _,
         _,
         _,
-        _,
+        _
       ) =>
         Right(registration)
     }
@@ -533,20 +472,11 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     registration: Registration
   ): ValidationResult[Either[EclSubscription, Registration]] =
     (
-      validateAmlSupervisor(registration),
+      validateAmlRegulatedActivityCommonFields(registration),
       validateOptExists(registration.businessSector, "Business sector"),
       validateContactDetails("First", registration.contacts.firstContactDetails),
       validateSecondContactDetails(registration.contacts),
       validateEclAddress(registration.contactAddress),
-      validateAmlRegulatedActivity(registration),
-      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
-      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
-      validateConditionalOptExists(
-        registration.relevantApLength,
-        registration.relevantAp12Months.contains(false),
-        "Relevant AP length"
-      ),
-      validateRevenueMeetsThreshold(registration),
       validateOptExists(registration.optOtherEntityJourneyData, "Other entity data"),
       validateOptExists(registration.otherEntityJourneyData.businessName, "Business name"),
       registration.otherEntityJourneyData.entityType match {
@@ -565,14 +495,36 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         _,
         _,
         _,
-        _,
-        _,
-        _,
-        _,
-        _,
         _
-      ) => Right(registration)
+      ) =>
+        Right(registration)
     }
+
+  private def validateAmlRegulatedActivityCommonFields(
+    registration: Registration
+  ): ValidationResult[Either[EclSubscription, Registration]] =
+    if (registration.carriedOutAmlRegulatedActivityInCurrentFy.contains(true)) {
+      (
+        validateAmlSupervisor(registration),
+        validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
+        validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
+        validateConditionalOptExists(
+          registration.relevantApLength,
+          registration.relevantAp12Months.contains(false),
+          "Relevant AP length"
+        ),
+        validateRevenueMeetsThreshold(registration)
+      ).mapN {
+        (
+          _,
+          _,
+          _,
+          _,
+          _
+        ) =>
+          Right(registration)
+      }
+    } else { validateAmlRegulatedActivity(registration).map(_ => Right(registration)) }
 
   private def validateCharity(
     registration: Registration

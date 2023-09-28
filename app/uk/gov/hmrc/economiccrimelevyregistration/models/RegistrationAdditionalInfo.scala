@@ -27,18 +27,13 @@ case class RegistrationAdditionalInfo(
   eclReference: Option[String],
   lastUpdated: Option[Instant]
 ) {
-  private val financialYear: TaxYear = {
+  val StartOfEclFinancialYear: String = {
     liabilityYear match {
-      case Some(year) if year == TaxYear.current.startYear =>
-        TaxYear.current
-      case Some(_)                                         =>
-        TaxYear.current.previous
-      case None                                            => TaxYear.current
+      case Some(year) =>
+        s"$year-01-04"
+      case None       => s"${TaxYear.current.currentYear}-01-04"
     }
   }
-
-  val isPreviousFinancialYear: Boolean = financialYear == TaxYear.current.previous
-
 }
 
 object RegistrationAdditionalInfo {

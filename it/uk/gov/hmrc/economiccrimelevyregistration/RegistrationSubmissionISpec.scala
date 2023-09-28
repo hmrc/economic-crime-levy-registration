@@ -9,10 +9,9 @@ import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Initial
-import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, KeyValue}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, KeyValue, RegistrationAdditionalInfo}
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{CreateEnrolmentRequest, EclEnrolment}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponse
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.StartOfFirstEclFinancialYear
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 
 import java.time.format.DateTimeFormatter
@@ -24,8 +23,9 @@ class RegistrationSubmissionISpec extends ISpecBase {
     "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid" in {
       stubAuthorised()
 
-      val validRegistration    = random[ValidIncorporatedEntityRegistration]
-      val subscriptionResponse = CreateEclSubscriptionResponse(success =
+      val validRegistration          = random[ValidIncorporatedEntityRegistration]
+      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
+      val subscriptionResponse       = CreateEclSubscriptionResponse(success =
         random[CreateEclSubscriptionResponse].success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
       )
 
@@ -35,7 +35,10 @@ class RegistrationSubmissionISpec extends ISpecBase {
         validRegistration.expectedEclSubscription.copy(subscription =
           validRegistration.expectedEclSubscription.subscription.copy(
             legalEntityDetails = validRegistration.expectedEclSubscription.subscription.legalEntityDetails
-              .copy(registrationDate = registrationDate, liabilityStartDate = StartOfFirstEclFinancialYear)
+              .copy(
+                registrationDate = registrationDate,
+                liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear
+              )
           )
         ),
         subscriptionResponse
@@ -78,10 +81,11 @@ class RegistrationSubmissionISpec extends ISpecBase {
     "retry the NRS submission call 3 times after the initial attempt if it fails with a 5xx response" in {
       stubAuthorised()
 
-      val validRegistration    = random[ValidIncorporatedEntityRegistration]
-      val subscriptionResponse = CreateEclSubscriptionResponse(success =
+      val validRegistration          = random[ValidIncorporatedEntityRegistration]
+      val subscriptionResponse       = CreateEclSubscriptionResponse(success =
         random[CreateEclSubscriptionResponse].success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
       )
+      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
 
       val registrationDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
 
@@ -89,7 +93,10 @@ class RegistrationSubmissionISpec extends ISpecBase {
         validRegistration.expectedEclSubscription.copy(subscription =
           validRegistration.expectedEclSubscription.subscription.copy(
             legalEntityDetails = validRegistration.expectedEclSubscription.subscription.legalEntityDetails
-              .copy(registrationDate = registrationDate, liabilityStartDate = StartOfFirstEclFinancialYear)
+              .copy(
+                registrationDate = registrationDate,
+                liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear
+              )
           )
         ),
         subscriptionResponse

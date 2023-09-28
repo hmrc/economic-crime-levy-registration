@@ -19,10 +19,9 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 import cats.data.Validated.{Invalid, Valid}
 import play.api.Logging
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
-import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
@@ -54,96 +53,93 @@ class RegistrationSubmissionController @Inject() (
       case Some(registration) =>
         registrationAdditionalInfoService
           .get(registration.internalId)
-          .fold(
-            error => None,
-            additionalInfo => Some(additionalInfo)
-          )
-          .flatMap { additionalInfoOption: Option[RegistrationAdditionalInfo] =>
-            registrationValidationService.validateRegistration(registration, additionalInfoOption) match {
-              case Valid(Left(eclSubscription)) =>
-                subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
-                  nrsService.submitToNrs(
-                    registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                    response.success.eclReference,
-                    appConfig.eclFirstTimeRegistrationNotableEvent
-                  )
-                  Ok(Json.toJson(response.success))
-                }
-
-              case Valid(Right(registration)) if registration.registrationType.contains(Amendment) =>
-                additionalInfoOption match {
-                  case None =>
-                    logger.error(
-                      s"Failed to find additional information for amendment with internal id: ${registration.internalId}"
+          .foldF(
+            error => {
+              logger.error(
+                s"Failed to find additional information for amendment with internal id: ${registration.internalId}"
+              )
+              Future.successful(InternalServerError("Failed to find additional information for amendment"))
+            },
+            additionalInfo =>
+              registrationValidationService.validateRegistration(registration, additionalInfo) match {
+                case Valid(Left(eclSubscription)) =>
+                  subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
+                    nrsService.submitToNrs(
+                      registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                      response.success.eclReference,
+                      appConfig.eclFirstTimeRegistrationNotableEvent
                     )
-                    Future.successful(InternalServerError("Failed to find additional information for amendment"))
-
-                  case Some(registrationAdditionalInfo) =>
-                    registrationAdditionalInfo.eclReference match {
-                      case Some(eclRef) =>
-                        dmsService
-                          .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
-                          .flatMap {
-                            case Right(response) =>
-                              if (appConfig.amendRegistrationNrsEnabled) {
-                                nrsService.submitToNrs(
-                                  registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                                  eclRef,
-                                  appConfig.eclAmendRegistrationNotableEvent
-                                )
-                              }
-                              auditService
-                                .successfulSubscriptionAndEnrolment(
-                                  registration,
-                                  eclRef
-                                )
-                              Future.successful(Ok(Json.toJson(response)))
-                            case Left(e)         =>
-                              logger.error(
-                                s"Failed to submit PDF to DMS: ${e.getMessage()}"
-                              )
-                              Future.successful(InternalServerError("Could not send PDF to DMS queue"))
-                          }
-                      case None         =>
-                        logger.error(
-                          s"Expected eclReference to be present in additional information for amendment with internal id: ${registration.internalId}"
-                        )
-                        Future.successful(
-                          InternalServerError("Expected eclReference to be present in additional information")
-                        )
-                    }
-                }
-              case Valid(Right(registration))                                                      =>
-                dmsService
-                  .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
-                  .map {
-                    case Right(response) =>
-                      nrsService.submitToNrs(
-                        registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                        response.eclReference,
-                        appConfig.eclFirstTimeRegistrationNotableEvent
-                      )
-
-                      auditService
-                        .successfulSubscriptionAndEnrolment(
-                          registration,
-                          response.eclReference
-                        )
-                      Ok(Json.toJson(response))
-                    case Left(e)         =>
-                      logger.error(
-                        s"Failed to submit PDF to DMS: ${e.getMessage()}"
-                      )
-                      InternalServerError("Could not send PDF to DMS queue")
+                    Ok(Json.toJson(response.success))
                   }
-              case Invalid(e)                                                                      =>
-                logger.error(
-                  s"Invalid registration: ${e.toList.mkString(",")}"
-                )
-                Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
-            }
-          }
+
+                case Valid(Right(registration)) if registration.registrationType.contains(Amendment) =>
+                  additionalInfo.eclReference match {
+                    case Some(eclRef) =>
+                      dmsService
+                        .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
+                        .flatMap {
+                          case Right(response) =>
+                            if (appConfig.amendRegistrationNrsEnabled) {
+                              nrsService.submitToNrs(
+                                registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                                eclRef,
+                                appConfig.eclAmendRegistrationNotableEvent
+                              )
+                            }
+                            auditService
+                              .successfulSubscriptionAndEnrolment(
+                                registration,
+                                eclRef
+                              )
+                            Future.successful(Ok(Json.toJson(response)))
+                          case Left(e)         =>
+                            logger.error(
+                              s"Failed to submit PDF to DMS: ${e.getMessage()}"
+                            )
+                            Future.successful(InternalServerError("Could not send PDF to DMS queue"))
+                        }
+                    case None         =>
+                      logger.error(
+                        s"Expected eclReference to be present in additional information for amendment with internal id: ${registration.internalId}"
+                      )
+
+                      Future.successful(
+                        InternalServerError("Expected eclReference to be present in additional information")
+                      )
+                  }
+
+                case Valid(Right(registration)) =>
+                  dmsService
+                    .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
+                    .flatMap {
+                      case Right(response) =>
+                        nrsService.submitToNrs(
+                          registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                          response.eclReference,
+                          appConfig.eclFirstTimeRegistrationNotableEvent
+                        )
+
+                        auditService
+                          .successfulSubscriptionAndEnrolment(
+                            registration,
+                            response.eclReference
+                          )
+                        Future.successful(Ok(Json.toJson(response)))
+                      case Left(e)         =>
+                        logger.error(
+                          s"Failed to submit PDF to DMS: ${e.getMessage()}"
+                        )
+                        Future.successful(InternalServerError("Could not send PDF to DMS queue"))
+                    }
+                case Invalid(e)                 =>
+                  logger.error(
+                    s"Invalid registration: ${e.toList.mkString(",")}"
+                  )
+                  Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
+              }
+          )
       case None               => Future.successful(NotFound)
     }
   }
+
 }

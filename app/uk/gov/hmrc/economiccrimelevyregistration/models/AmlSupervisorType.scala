@@ -25,6 +25,7 @@ object AmlSupervisorType {
   case object GamblingCommission extends AmlSupervisorType
   case object FinancialConductAuthority extends AmlSupervisorType
   case object Other extends AmlSupervisorType
+  case object Unknown extends AmlSupervisorType
 
   implicit val format: Format[AmlSupervisorType] = new Format[AmlSupervisorType] {
     override def reads(json: JsValue): JsResult[AmlSupervisorType] = json.validate[String] match {
@@ -34,6 +35,7 @@ object AmlSupervisorType {
           case "GamblingCommission"        => JsSuccess(GamblingCommission)
           case "FinancialConductAuthority" => JsSuccess(FinancialConductAuthority)
           case "Other"                     => JsSuccess(Other)
+          case "Unknown"                   => JsSuccess(Unknown)
           case s                           => JsError(s"$s is not a valid AmlSupervisor")
         }
       case e: JsError          => e
