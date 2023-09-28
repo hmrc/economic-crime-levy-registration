@@ -482,10 +482,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidRegistration = Registration
           .empty("")
           .copy(
-            entityType = Some(Other)
+            entityType = Some(Other),
+            carriedOutAmlRegulatedActivityInCurrentFy = Some(true)
           )
         val expectedErrors      = Seq(
-          DataValidationError(DataMissing, "Carried out AML regulated activity choice is missing"),
           DataValidationError(DataMissing, "Relevant AP 12 months choice is missing"),
           DataValidationError(DataMissing, "Relevant AP revenue is missing"),
           DataValidationError(DataMissing, "Revenue meets threshold flag is missing"),
