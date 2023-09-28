@@ -30,7 +30,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
-import uk.gov.hmrc.economiccrimelevyregistration.models.{AmlSupervisor, AmlSupervisorType, ContactDetails, Registration, RegistrationAdditionalInfo, UtrType}
+import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.SchemaValidator
 
 import java.time.{Clock, Instant, ZoneId}
@@ -50,9 +50,18 @@ class RegistrationValidationServiceSpec extends SpecBase {
         validIncorporatedEntityRegistration: ValidIncorporatedEntityRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
+
+        val expectedEclSubscription = validIncorporatedEntityRegistration.expectedEclSubscription
+        val updatedExpectedEclSubscription = expectedEclSubscription.copy(subscription =
+          expectedEclSubscription.subscription.copy(legalEntityDetails =
+            expectedEclSubscription.subscription.legalEntityDetails
+              .copy(liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear)
+          )
+        )
+
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(validIncorporatedEntityRegistration.expectedEclSubscription.subscription),
+            ArgumentMatchers.eq(updatedExpectedEclSubscription.subscription),
             any()
           )(any())
         ).thenReturn(validIncorporatedEntityRegistration.expectedEclSubscription.subscription.validNel)
@@ -63,13 +72,6 @@ class RegistrationValidationServiceSpec extends SpecBase {
             registrationAdditionalInfo
           )
 
-        val expectedEclSubscription        = validIncorporatedEntityRegistration.expectedEclSubscription
-        val updatedExpectedEclSubscription = expectedEclSubscription.copy(subscription =
-          expectedEclSubscription.subscription.copy(legalEntityDetails =
-            expectedEclSubscription.subscription.legalEntityDetails
-              .copy(liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear)
-          )
-        )
         result shouldBe Valid(Left(updatedExpectedEclSubscription))
     }
 
@@ -78,15 +80,24 @@ class RegistrationValidationServiceSpec extends SpecBase {
         validSoleTraderRegistration: ValidSoleTraderRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
+
+        val expectedEclSubscription = validSoleTraderRegistration.expectedEclSubscription
+        val updatedExpectedEclSubscription = expectedEclSubscription.copy(subscription =
+          expectedEclSubscription.subscription.copy(legalEntityDetails =
+            expectedEclSubscription.subscription.legalEntityDetails
+              .copy(liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear)
+          )
+        )
+
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(validSoleTraderRegistration.expectedEclSubscription.subscription),
+            ArgumentMatchers.eq(updatedExpectedEclSubscription.subscription),
             any()
           )(any())
         ).thenReturn(validSoleTraderRegistration.expectedEclSubscription.subscription.validNel)
 
         val result = service.validateRegistration(validSoleTraderRegistration.registration, registrationAdditionalInfo)
-        result shouldBe Valid(Left(validSoleTraderRegistration.expectedEclSubscription))
+        result shouldBe Valid(Left(updatedExpectedEclSubscription))
     }
 
     "return the ECL subscription if the registration for a limited partnership is valid" in forAll {
@@ -94,16 +105,25 @@ class RegistrationValidationServiceSpec extends SpecBase {
         validLimitedPartnershipRegistration: ValidLimitedPartnershipRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
+
+        val expectedEclSubscription = validLimitedPartnershipRegistration.expectedEclSubscription
+        val updatedExpectedEclSubscription = expectedEclSubscription.copy(subscription =
+          expectedEclSubscription.subscription.copy(legalEntityDetails =
+            expectedEclSubscription.subscription.legalEntityDetails
+              .copy(liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear)
+          )
+        )
+
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(validLimitedPartnershipRegistration.expectedEclSubscription.subscription),
+            ArgumentMatchers.eq(updatedExpectedEclSubscription.subscription),
             any()
           )(any())
         ).thenReturn(validLimitedPartnershipRegistration.expectedEclSubscription.subscription.validNel)
 
         val result =
           service.validateRegistration(validLimitedPartnershipRegistration.registration, registrationAdditionalInfo)
-        result shouldBe Valid(Left(validLimitedPartnershipRegistration.expectedEclSubscription))
+        result shouldBe Valid(Left(updatedExpectedEclSubscription))
     }
 
     "return the ECL subscription if the registration for a scottish or general partnership is valid" in forAll {
@@ -111,9 +131,18 @@ class RegistrationValidationServiceSpec extends SpecBase {
         validScottishOrGeneralPartnershipRegistration: ValidScottishOrGeneralPartnershipRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
+
+        val expectedEclSubscription = validScottishOrGeneralPartnershipRegistration.expectedEclSubscription
+        val updatedExpectedEclSubscription = expectedEclSubscription.copy(subscription =
+          expectedEclSubscription.subscription.copy(legalEntityDetails =
+            expectedEclSubscription.subscription.legalEntityDetails
+              .copy(liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear)
+          )
+        )
+
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription.subscription),
+            ArgumentMatchers.eq(updatedExpectedEclSubscription.subscription),
             any()
           )(any())
         ).thenReturn(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription.subscription.validNel)
@@ -122,7 +151,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
           validScottishOrGeneralPartnershipRegistration.registration,
           registrationAdditionalInfo
         )
-        result shouldBe Valid(Left(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription))
+        result shouldBe Valid(Left(updatedExpectedEclSubscription))
     }
 
     "return a non-empty list of errors when unconditional mandatory registration data items are missing" in forAll {
