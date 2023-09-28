@@ -27,6 +27,7 @@ case class RegistrationAdditionalInfo(
   eclReference: Option[String],
   lastUpdated: Option[Instant]
 ) {
+
   val StartOfEclFinancialYear: String = {
     liabilityYear match {
       case Some(year) =>
@@ -37,5 +38,6 @@ case class RegistrationAdditionalInfo(
 }
 
 object RegistrationAdditionalInfo {
+
   implicit val format: OFormat[RegistrationAdditionalInfo] = Json.format[RegistrationAdditionalInfo]
 }

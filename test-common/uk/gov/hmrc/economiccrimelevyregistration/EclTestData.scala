@@ -49,7 +49,8 @@ import java.time.{Clock, Instant, LocalDate}
 
 final case class ValidIncorporatedEntityRegistration(
   registration: Registration,
-  expectedEclSubscription: EclSubscription
+  expectedEclSubscription: EclSubscription,
+  registrationAdditionalInfo: RegistrationAdditionalInfo
 )
 
 final case class ValidSoleTraderRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
@@ -266,7 +267,8 @@ trait EclTestData {
           ),
           secondaryContactDetails = None
         )
-      )
+      ),
+      registrationAdditionalInfo.copy(internalId = commonRegistrationData.registration.internalId)
     )
   }
 

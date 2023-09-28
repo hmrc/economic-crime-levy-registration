@@ -21,7 +21,7 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
 
@@ -39,6 +39,12 @@ class RegistrationValidationISpec extends ISpecBase {
         )
       ).futureValue
 
+      callRoute(
+        FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
+          Json.toJson(validRegistration.registrationAdditionalInfo)
+        )
+      ).futureValue
+
       lazy val validationResult =
         callRoute(
           FakeRequest(
@@ -46,29 +52,51 @@ class RegistrationValidationISpec extends ISpecBase {
           )
         )
 
-      status(validationResult) shouldBe NO_CONTENT
+      val expectedErrors = Seq(
+        DataValidationError(DataMissing, "Business sector is missing"),
+        DataValidationError(DataMissing, "First contact name is missing"),
+        DataValidationError(DataMissing, "First contact role is missing"),
+        DataValidationError(DataMissing, "First contact email is missing"),
+        DataValidationError(DataMissing, "First contact number is missing"),
+        DataValidationError(DataMissing, "Contact address is missing"),
+        DataValidationError(DataMissing, "Entity type is missing"),
+        DataValidationError(DataMissing, "Second contact choice is missing")
+      )
+
+      status(validationResult)                                      shouldBe OK
+      contentAsJson(validationResult).as[DataValidationErrors].errors should contain allElementsOf expectedErrors
+
     }
 
     "return 200 OK with validation errors in the JSON response body when the registration data is invalid" in {
       stubAuthorised()
 
-      val internalId = random[String]
+      val internalId                 = random[String]
+      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
 
-      val invalidRegistration = Registration.empty(internalId)
+      val invalidRegistration =
+        Registration.empty(internalId).copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(false))
 
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(Json.toJson(invalidRegistration))
+      ).futureValue
+
+      callRoute(
+        FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
+          Json.toJson(RegistrationAdditionalInfo(invalidRegistration.internalId, None, None, None))
+        )
+      ).futureValue
+
+      callRoute(
+        FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
+          Json.toJson(registrationAdditionalInfo)
+        )
       ).futureValue
 
       lazy val validationResult =
         callRoute(FakeRequest(routes.RegistrationValidationController.getValidationErrors(internalId)))
 
       val expectedErrors = Seq(
-        DataValidationError(DataMissing, "Carried out AML regulated activity choice is missing"),
-        DataValidationError(DataMissing, "Relevant AP 12 months choice is missing"),
-        DataValidationError(DataMissing, "Relevant AP revenue is missing"),
-        DataValidationError(DataMissing, "Revenue meets threshold flag is missing"),
-        DataValidationError(DataMissing, "AML supervisor is missing"),
         DataValidationError(DataMissing, "Business sector is missing"),
         DataValidationError(DataMissing, "First contact name is missing"),
         DataValidationError(DataMissing, "First contact role is missing"),
