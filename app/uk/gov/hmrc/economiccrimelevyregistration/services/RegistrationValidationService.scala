@@ -53,6 +53,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
           case _               =>
             transformToEclSubscription(registration, registrationAdditionalInfo) match {
               case Valid(Left(eclSubscription)) =>
+                println(s"EclSubscription: $eclSubscription")
                 schemaValidator
                   .validateAgainstJsonSchema(
                     eclSubscription.subscription,
@@ -349,124 +350,6 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     }
 
   private def missingErrorMessage(missingDataDescription: String): String = s"$missingDataDescription is missing"
-
-  private def validateOtherEntityLiabilityCurrentFinancialYear(
-    registration: Registration
-  ): ValidationResult[Either[EclSubscription, Registration]] =
-    (
-      validateAmlSupervisor(registration),
-      validateOptExists(registration.businessSector, "Business sector"),
-      validateContactDetails("First", registration.contacts.firstContactDetails),
-      validateSecondContactDetails(registration.contacts),
-      validateEclAddress(registration.contactAddress),
-      validateAmlRegulatedActivity(registration),
-      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
-      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
-      validateConditionalOptExists(
-        registration.relevantApLength,
-        registration.relevantAp12Months.contains(false),
-        "Relevant AP length"
-      ),
-      validateRevenueMeetsThreshold(registration),
-      validateOptExists(registration.optOtherEntityJourneyData, "Other entity data"),
-      validateOptExists(registration.otherEntityJourneyData.businessName, "Business name"),
-      registration.otherEntityJourneyData.entityType match {
-        case None                            => DataValidationError(DataMissing, missingErrorMessage("Other entity type")).invalidNel
-        case Some(Charity)                   => validateCharity(registration)
-        case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)
-        case Some(Trust)                     => validateTrust(registration)
-        case Some(NonUKEstablishment)        => validateNonUkEstablishment(registration)
-      }
-    ).mapN {
-      (
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _
-      ) =>
-        Right(registration)
-    }
-
-  private def validateOtherEntityLiabilityPreviousFinancialYear(
-    registration: Registration
-  ): ValidationResult[Either[EclSubscription, Registration]] =
-    (
-      validateAmlSupervisor(registration),
-      validateOptExists(registration.businessSector, "Business sector"),
-      validateContactDetails("First", registration.contacts.firstContactDetails),
-      validateSecondContactDetails(registration.contacts),
-      validateEclAddress(registration.contactAddress),
-      validateAmlRegulatedActivity(registration),
-      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
-      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
-      validateConditionalOptExists(
-        registration.relevantApLength,
-        registration.relevantAp12Months.contains(false),
-        "Relevant AP length"
-      ),
-      validateRevenueMeetsThreshold(registration),
-      validateOptExists(registration.optOtherEntityJourneyData, "Other entity data"),
-      validateOptExists(registration.otherEntityJourneyData.businessName, "Business name"),
-      registration.otherEntityJourneyData.entityType match {
-        case None                            => DataValidationError(DataMissing, missingErrorMessage("Other entity type")).invalidNel
-        case Some(Charity)                   => validateCharity(registration)
-        case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)
-        case Some(Trust)                     => validateTrust(registration)
-        case Some(NonUKEstablishment)        => validateNonUkEstablishment(registration)
-      }
-    ).mapN {
-      (
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _
-      ) =>
-        Right(registration)
-    }
-
-  private def validateOtherEntityPreviousFinancialYear(
-    registration: Registration
-  ): ValidationResult[Either[EclSubscription, Registration]] =
-    (
-      validateAmlSupervisor(registration),
-      validateAmlRegulatedActivity(registration),
-      validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
-      validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
-      validateConditionalOptExists(
-        registration.relevantApLength,
-        registration.relevantAp12Months.contains(false),
-        "Relevant AP length"
-      ),
-      validateRevenueMeetsThreshold(registration)
-    ).mapN {
-      (
-        _,
-        _,
-        _,
-        _,
-        _,
-        _
-      ) =>
-        Right(registration)
-    }
 
   private def validateOtherEntity(
     registration: Registration
