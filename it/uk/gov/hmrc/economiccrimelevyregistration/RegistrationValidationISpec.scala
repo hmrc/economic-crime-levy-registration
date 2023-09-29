@@ -43,7 +43,7 @@ class RegistrationValidationISpec extends ISpecBase {
 
       callRoute(
         FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
-          Json.toJson(validRegistration.registrationAdditionalInfo)
+          Json.toJson(validRegistration.registrationAdditionalInfo.copy(liabilityYear = Some(2023)))
         )
       ).futureValue
 

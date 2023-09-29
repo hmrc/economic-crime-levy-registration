@@ -80,7 +80,8 @@ final case class ValidNrsSubmission(
 )
 
 final case class ValidCharityRegistration(
-  registration: Registration
+  registration: Registration,
+  registrationAdditionalInfo: RegistrationAdditionalInfo
 )
 
 final case class ValidUnincorporatedAssociationRegistration(
@@ -548,10 +549,11 @@ trait EclTestData {
 
   implicit val arbValidCharityRegistration: Arbitrary[ValidCharityRegistration] = Arbitrary {
     for {
-      businessName           <- Arbitrary.arbitrary[String]
-      charityNumber          <- Arbitrary.arbitrary[String]
-      companyNumber          <- Arbitrary.arbitrary[String]
-      commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
+      businessName               <- Arbitrary.arbitrary[String]
+      charityNumber              <- Arbitrary.arbitrary[String]
+      companyNumber              <- Arbitrary.arbitrary[String]
+      commonRegistrationData     <- Arbitrary.arbitrary[CommonRegistrationData]
+      registrationAdditionalInfo <- Arbitrary.arbitrary[RegistrationAdditionalInfo]
     } yield ValidCharityRegistration(
       commonRegistrationData.registration.copy(
         entityType = Some(Other),
@@ -566,7 +568,8 @@ trait EclTestData {
             companyRegistrationNumber = Some(companyNumber)
           )
         )
-      )
+      ),
+      registrationAdditionalInfo.copy(internalId = commonRegistrationData.registration.internalId)
     )
   }
 

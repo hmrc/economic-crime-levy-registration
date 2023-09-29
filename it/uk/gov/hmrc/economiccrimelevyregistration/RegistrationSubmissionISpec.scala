@@ -24,7 +24,7 @@ class RegistrationSubmissionISpec extends ISpecBase {
       stubAuthorised()
 
       val validRegistration          = random[ValidIncorporatedEntityRegistration]
-      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
+      val registrationAdditionalInfo = random[RegistrationAdditionalInfo].copy(liabilityYear = Some(2023), internalId = validRegistration.registration.internalId)
       val subscriptionResponse       = CreateEclSubscriptionResponse(success =
         random[CreateEclSubscriptionResponse].success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
       )
@@ -62,6 +62,12 @@ class RegistrationSubmissionISpec extends ISpecBase {
         )
       ).futureValue
 
+      callRoute(
+        FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
+          Json.toJson(registrationAdditionalInfo)
+        )
+      ).futureValue
+
       val result = callRoute(
         FakeRequest(
           routes.RegistrationSubmissionController.submitRegistration(validRegistration.registration.internalId)
@@ -85,7 +91,7 @@ class RegistrationSubmissionISpec extends ISpecBase {
       val subscriptionResponse       = CreateEclSubscriptionResponse(success =
         random[CreateEclSubscriptionResponse].success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
       )
-      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
+      val registrationAdditionalInfo = random[RegistrationAdditionalInfo].copy(liabilityYear = Some(2023), internalId = validRegistration.registration.internalId)
 
       val registrationDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
 
@@ -117,6 +123,13 @@ class RegistrationSubmissionISpec extends ISpecBase {
           Json.toJson(validRegistration.registration)
         )
       ).futureValue
+
+      callRoute(
+        FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
+          Json.toJson(registrationAdditionalInfo)
+        )
+      ).futureValue
+
 
       val result = callRoute(
         FakeRequest(
@@ -157,6 +170,12 @@ class RegistrationSubmissionISpec extends ISpecBase {
         )
       ).futureValue
 
+      callRoute(
+        FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
+          Json.toJson(validRegistration.registrationAdditionalInfo)
+        )
+      ).futureValue
+
       stubDmsSuccess()
 
       val result = callRoute(
@@ -185,6 +204,12 @@ class RegistrationSubmissionISpec extends ISpecBase {
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(
           Json.toJson(validRegistration.registration)
+        )
+      ).futureValue
+
+      callRoute(
+        FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
+          Json.toJson(validRegistration.registrationAdditionalInfo)
         )
       ).futureValue
 
