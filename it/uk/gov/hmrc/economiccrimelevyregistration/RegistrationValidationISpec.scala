@@ -21,7 +21,7 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
 
@@ -33,42 +33,60 @@ class RegistrationValidationISpec extends ISpecBase {
 
       val validRegistration = random[ValidIncorporatedEntityRegistration]
 
+      val updatedRegistration = validRegistration.registration.copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true))
+
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(
-          Json.toJson(validRegistration.registration)
+          Json.toJson(updatedRegistration)
+        )
+      ).futureValue
+
+      callRoute(
+        FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
+          Json.toJson(validRegistration.registrationAdditionalInfo.copy(liabilityYear = Some(2023)))
         )
       ).futureValue
 
       lazy val validationResult =
         callRoute(
           FakeRequest(
-            routes.RegistrationValidationController.getValidationErrors(validRegistration.registration.internalId)
+            routes.RegistrationValidationController.getValidationErrors(updatedRegistration.internalId)
           )
         )
 
-      status(validationResult) shouldBe NO_CONTENT
+      status(validationResult)                                      shouldBe NO_CONTENT
+
     }
 
     "return 200 OK with validation errors in the JSON response body when the registration data is invalid" in {
       stubAuthorised()
 
-      val internalId = random[String]
+      val internalId                 = random[String]
+      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
 
-      val invalidRegistration = Registration.empty(internalId)
+      val invalidRegistration =
+        Registration.empty(internalId).copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(false))
 
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(Json.toJson(invalidRegistration))
+      ).futureValue
+
+      callRoute(
+        FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
+          Json.toJson(RegistrationAdditionalInfo(invalidRegistration.internalId, None, None, None))
+        )
+      ).futureValue
+
+      callRoute(
+        FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
+          Json.toJson(registrationAdditionalInfo)
+        )
       ).futureValue
 
       lazy val validationResult =
         callRoute(FakeRequest(routes.RegistrationValidationController.getValidationErrors(internalId)))
 
       val expectedErrors = Seq(
-        DataValidationError(DataMissing, "Carried out AML regulated activity choice is missing"),
-        DataValidationError(DataMissing, "Relevant AP 12 months choice is missing"),
-        DataValidationError(DataMissing, "Relevant AP revenue is missing"),
-        DataValidationError(DataMissing, "Revenue meets threshold flag is missing"),
-        DataValidationError(DataMissing, "AML supervisor is missing"),
         DataValidationError(DataMissing, "Business sector is missing"),
         DataValidationError(DataMissing, "First contact name is missing"),
         DataValidationError(DataMissing, "First contact role is missing"),

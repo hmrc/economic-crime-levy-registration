@@ -37,7 +37,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.{CustomerType, StartOfFirstEclFinancialYear}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
@@ -49,7 +49,8 @@ import java.time.{Clock, Instant, LocalDate}
 
 final case class ValidIncorporatedEntityRegistration(
   registration: Registration,
-  expectedEclSubscription: EclSubscription
+  expectedEclSubscription: EclSubscription,
+  registrationAdditionalInfo: RegistrationAdditionalInfo
 )
 
 final case class ValidSoleTraderRegistration(registration: Registration, expectedEclSubscription: EclSubscription)
@@ -79,7 +80,8 @@ final case class ValidNrsSubmission(
 )
 
 final case class ValidCharityRegistration(
-  registration: Registration
+  registration: Registration,
+  registrationAdditionalInfo: RegistrationAdditionalInfo
 )
 
 final case class ValidUnincorporatedAssociationRegistration(
@@ -227,6 +229,7 @@ trait EclTestData {
       incorporatedEntityJourneyData <- Arbitrary.arbitrary[IncorporatedEntityJourneyData]
       ctutr                         <- RegexpGen.from(Regex.customerIdentificationNumber)
       commonRegistrationData        <- Arbitrary.arbitrary[CommonRegistrationData]
+      registrationAdditionalInfo    <- Arbitrary.arbitrary[RegistrationAdditionalInfo]
     } yield ValidIncorporatedEntityRegistration(
       commonRegistrationData.registration.copy(
         entityType = Some(entityType),
@@ -251,7 +254,7 @@ trait EclTestData {
             lastName = None,
             customerType = CustomerType.Organisation,
             registrationDate = "2007-12-25",
-            liabilityStartDate = StartOfFirstEclFinancialYear,
+            liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear,
             amlSupervisor = "Hmrc",
             businessSector = commonRegistrationData.registration.businessSector.get.toString
           ),
@@ -265,7 +268,8 @@ trait EclTestData {
           ),
           secondaryContactDetails = None
         )
-      )
+      ),
+      registrationAdditionalInfo.copy(internalId = commonRegistrationData.registration.internalId)
     )
   }
 
@@ -276,6 +280,7 @@ trait EclTestData {
       sautr                       <- RegexpGen.from(Regex.customerIdentificationNumber)
       nino                        <- RegexpGen.from(Regex.customerIdentificationNumber)
       commonRegistrationData      <- Arbitrary.arbitrary[CommonRegistrationData]
+      registrationAdditionalInfo  <- Arbitrary.arbitrary[RegistrationAdditionalInfo]
     } yield ValidSoleTraderRegistration(
       commonRegistrationData.registration.copy(
         entityType = Some(SoleTrader),
@@ -301,7 +306,7 @@ trait EclTestData {
             lastName = Some(soleTraderEntityJourneyData.fullName.lastName),
             customerType = CustomerType.Individual,
             registrationDate = "2007-12-25",
-            liabilityStartDate = StartOfFirstEclFinancialYear,
+            liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear,
             amlSupervisor = "Hmrc",
             businessSector = commonRegistrationData.registration.businessSector.get.toString
           ),
@@ -327,6 +332,7 @@ trait EclTestData {
       sautr                        <- RegexpGen.from(Regex.customerIdentificationNumber)
       commonRegistrationData       <- Arbitrary.arbitrary[CommonRegistrationData]
       partnershipType              <- Arbitrary.arbitrary[LimitedPartnershipType]
+      registrationAdditionalInfo   <- Arbitrary.arbitrary[RegistrationAdditionalInfo]
     } yield ValidLimitedPartnershipRegistration(
       commonRegistrationData.registration.copy(
         entityType = Some(partnershipType.entityType),
@@ -352,7 +358,7 @@ trait EclTestData {
             lastName = None,
             customerType = CustomerType.Organisation,
             registrationDate = "2007-12-25",
-            liabilityStartDate = StartOfFirstEclFinancialYear,
+            liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear,
             amlSupervisor = "Hmrc",
             businessSector = commonRegistrationData.registration.businessSector.get.toString
           ),
@@ -379,6 +385,7 @@ trait EclTestData {
         sautr                        <- RegexpGen.from(Regex.customerIdentificationNumber)
         postcode                     <- RegexpGen.from(Regex.customerIdentificationNumber)
         commonRegistrationData       <- Arbitrary.arbitrary[CommonRegistrationData]
+        registrationAdditionalInfo   <- Arbitrary.arbitrary[RegistrationAdditionalInfo]
         partnershipType              <- Arbitrary.arbitrary[ScottishOrGeneralPartnershipType]
         partnershipName               = "Test Partnership Name"
       } yield ValidScottishOrGeneralPartnershipRegistration(
@@ -407,7 +414,7 @@ trait EclTestData {
               lastName = None,
               customerType = CustomerType.Organisation,
               registrationDate = "2007-12-25",
-              liabilityStartDate = StartOfFirstEclFinancialYear,
+              liabilityStartDate = registrationAdditionalInfo.StartOfEclFinancialYear,
               amlSupervisor = "Hmrc",
               businessSector = commonRegistrationData.registration.businessSector.get.toString
             ),
@@ -542,10 +549,11 @@ trait EclTestData {
 
   implicit val arbValidCharityRegistration: Arbitrary[ValidCharityRegistration] = Arbitrary {
     for {
-      businessName           <- Arbitrary.arbitrary[String]
-      charityNumber          <- Arbitrary.arbitrary[String]
-      companyNumber          <- Arbitrary.arbitrary[String]
-      commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
+      businessName               <- Arbitrary.arbitrary[String]
+      charityNumber              <- Arbitrary.arbitrary[String]
+      companyNumber              <- Arbitrary.arbitrary[String]
+      commonRegistrationData     <- Arbitrary.arbitrary[CommonRegistrationData]
+      registrationAdditionalInfo <- Arbitrary.arbitrary[RegistrationAdditionalInfo]
     } yield ValidCharityRegistration(
       commonRegistrationData.registration.copy(
         entityType = Some(Other),
@@ -560,7 +568,8 @@ trait EclTestData {
             companyRegistrationNumber = Some(companyNumber)
           )
         )
-      )
+      ),
+      registrationAdditionalInfo.copy(internalId = commonRegistrationData.registration.internalId)
     )
   }
 

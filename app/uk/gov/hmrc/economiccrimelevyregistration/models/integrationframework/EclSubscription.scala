@@ -57,8 +57,6 @@ object LegalEntityDetails {
     val Organisation = "02"
   }
 
-  val StartOfFirstEclFinancialYear = "2022-04-01"
-
   implicit val format: OFormat[LegalEntityDetails] = Json.format[LegalEntityDetails]
 }
 

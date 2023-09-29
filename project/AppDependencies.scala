@@ -14,7 +14,8 @@ object AppDependencies {
     "io.circe"          %% "circe-json-schema"                 % "0.2.0",
     "io.circe"          %% "circe-parser"                      % "0.14.5",
     "uk.gov.hmrc"       %% "internal-auth-client-play-28"      % "1.6.0",
-    "com.beachape"      %% "enumeratum-play-json"              % "1.7.0"
+    "com.beachape"      %% "enumeratum-play-json"              % "1.7.0",
+    "uk.gov.hmrc"       %% "tax-year"                          % "3.3.0"
   )
 
   val test: Seq[ModuleID]    = Seq(
