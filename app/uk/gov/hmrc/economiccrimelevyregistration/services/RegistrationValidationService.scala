@@ -54,7 +54,6 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
           case _               =>
             transformToEclSubscription(registration, registrationAdditionalInfo) match {
               case Valid(Left(eclSubscription)) =>
-                println(s"Service: ${Json.toJson(eclSubscription)}")
                 schemaValidator
                   .validateAgainstJsonSchema(
                     eclSubscription.subscription,
