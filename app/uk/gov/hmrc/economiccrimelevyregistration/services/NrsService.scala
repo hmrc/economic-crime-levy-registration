@@ -73,7 +73,9 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
         nrsSubmissionResponse
       }
       .recover { case e: Throwable =>
-        logger.error(s"Failed to send NRS submission after initial attempt and 3 retries: ${e.getMessage}")
+        logger.error(
+          s"Failed to send NRS submission for ECL reference $eclRegistrationReference with notable event $eventName: ${e.getMessage}"
+        )
         throw e
       }
   }
