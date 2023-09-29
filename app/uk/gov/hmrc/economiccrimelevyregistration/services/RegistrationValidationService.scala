@@ -19,6 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import cats.implicits._
+import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc, Unknown}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, NonUKEstablishment, Trust, UnincorporatedAssociation}
@@ -53,6 +54,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
           case _               =>
             transformToEclSubscription(registration, registrationAdditionalInfo) match {
               case Valid(Left(eclSubscription)) =>
+                println(s"Service: ${Json.toJson(eclSubscription)}")
                 schemaValidator
                   .validateAgainstJsonSchema(
                     eclSubscription.subscription,

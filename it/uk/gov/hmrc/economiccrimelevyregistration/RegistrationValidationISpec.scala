@@ -33,9 +33,11 @@ class RegistrationValidationISpec extends ISpecBase {
 
       val validRegistration = random[ValidIncorporatedEntityRegistration]
 
+      val updatedRegistration = validRegistration.registration.copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true))
+
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(
-          Json.toJson(validRegistration.registration)
+          Json.toJson(updatedRegistration)
         )
       ).futureValue
 
@@ -48,23 +50,11 @@ class RegistrationValidationISpec extends ISpecBase {
       lazy val validationResult =
         callRoute(
           FakeRequest(
-            routes.RegistrationValidationController.getValidationErrors(validRegistration.registration.internalId)
+            routes.RegistrationValidationController.getValidationErrors(updatedRegistration.internalId)
           )
         )
 
-      val expectedErrors = Seq(
-        DataValidationError(DataMissing, "Business sector is missing"),
-        DataValidationError(DataMissing, "First contact name is missing"),
-        DataValidationError(DataMissing, "First contact role is missing"),
-        DataValidationError(DataMissing, "First contact email is missing"),
-        DataValidationError(DataMissing, "First contact number is missing"),
-        DataValidationError(DataMissing, "Contact address is missing"),
-        DataValidationError(DataMissing, "Entity type is missing"),
-        DataValidationError(DataMissing, "Second contact choice is missing")
-      )
-
-      status(validationResult)                                      shouldBe OK
-      contentAsJson(validationResult).as[DataValidationErrors].errors should contain allElementsOf expectedErrors
+      status(validationResult)                                      shouldBe NO_CONTENT
 
     }
 

@@ -21,6 +21,7 @@ import cats.implicits.catsSyntaxValidatedId
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.scalacheck.{Arbitrary, Gen}
+import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
@@ -50,8 +51,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         validIncorporatedEntityRegistration: ValidIncorporatedEntityRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
-
-        val expectedEclSubscription = validIncorporatedEntityRegistration.expectedEclSubscription
+        val expectedEclSubscription        = validIncorporatedEntityRegistration.expectedEclSubscription
         val updatedExpectedEclSubscription = expectedEclSubscription.copy(subscription =
           expectedEclSubscription.subscription.copy(legalEntityDetails =
             expectedEclSubscription.subscription.legalEntityDetails
@@ -80,8 +80,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         validSoleTraderRegistration: ValidSoleTraderRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
-
-        val expectedEclSubscription = validSoleTraderRegistration.expectedEclSubscription
+        val expectedEclSubscription        = validSoleTraderRegistration.expectedEclSubscription
         val updatedExpectedEclSubscription = expectedEclSubscription.copy(subscription =
           expectedEclSubscription.subscription.copy(legalEntityDetails =
             expectedEclSubscription.subscription.legalEntityDetails
@@ -105,8 +104,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         validLimitedPartnershipRegistration: ValidLimitedPartnershipRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
-
-        val expectedEclSubscription = validLimitedPartnershipRegistration.expectedEclSubscription
+        val expectedEclSubscription        = validLimitedPartnershipRegistration.expectedEclSubscription
         val updatedExpectedEclSubscription = expectedEclSubscription.copy(subscription =
           expectedEclSubscription.subscription.copy(legalEntityDetails =
             expectedEclSubscription.subscription.legalEntityDetails
@@ -131,8 +129,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         validScottishOrGeneralPartnershipRegistration: ValidScottishOrGeneralPartnershipRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
-
-        val expectedEclSubscription = validScottishOrGeneralPartnershipRegistration.expectedEclSubscription
+        val expectedEclSubscription        = validScottishOrGeneralPartnershipRegistration.expectedEclSubscription
         val updatedExpectedEclSubscription = expectedEclSubscription.copy(subscription =
           expectedEclSubscription.subscription.copy(legalEntityDetails =
             expectedEclSubscription.subscription.legalEntityDetails
@@ -312,21 +309,21 @@ class RegistrationValidationServiceSpec extends SpecBase {
         result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
     }
 
-    "return an error if the registration data contains the AML regulated activity choice as false" in forAll {
+    "return an error if the registration data does not contain the AML regulated activity choice" in forAll {
       (
         validRegistration: ValidIncorporatedEntityRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
         val invalidRegistration = validRegistration.registration
-          .copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(false))
+          .copy(carriedOutAmlRegulatedActivityInCurrentFy = None)
 
         val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
 
         result.isValid shouldBe false
         result.leftMap(nec =>
           nec.toList should contain only DataValidationError(
-            DataInvalid,
-            "Carried out AML regulated activity cannot be false"
+            DataMissing,
+            "Carried out AML regulated activity choice is missing"
           )
         )
     }
