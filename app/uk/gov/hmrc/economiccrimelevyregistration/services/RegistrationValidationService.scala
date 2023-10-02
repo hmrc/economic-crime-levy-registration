@@ -298,9 +298,8 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
 
   private def validateRevenueMeetsThreshold(registration: Registration): ValidationResult[Registration] =
     registration.revenueMeetsThreshold match {
-      case Some(true)  => registration.validNel
-      case Some(false) => DataValidationError(DataInvalid, "Revenue does not meet the liability threshold").invalidNel
-      case _           => DataValidationError(DataMissing, missingErrorMessage("Revenue meets threshold flag")).invalidNel
+      case Some(_) => registration.validNel
+      case _       => DataValidationError(DataMissing, missingErrorMessage("Revenue meets threshold flag")).invalidNel
     }
 
   private def validateEclAddress(eclAddress: Option[EclAddress]): ValidationResult[CorrespondenceAddressDetails] =

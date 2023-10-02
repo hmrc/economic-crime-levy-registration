@@ -352,21 +352,21 @@ class RegistrationValidationServiceSpec extends SpecBase {
         )
     }
 
-    "return an error if the registration data contains the revenue meets threshold flag as false" in forAll {
+    "return an error if the registration data contains the revenue meets threshold flag not set" in forAll {
       (
         validRegistration: ValidIncorporatedEntityRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
         val invalidRegistration = validRegistration.registration
-          .copy(revenueMeetsThreshold = Some(false))
+          .copy(revenueMeetsThreshold = None)
 
         val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
 
         result.isValid shouldBe false
         result.leftMap(nec =>
           nec.toList should contain only DataValidationError(
-            DataInvalid,
-            "Revenue does not meet the liability threshold"
+            DataMissing,
+            "Revenue meets threshold flag is missing"
           )
         )
     }

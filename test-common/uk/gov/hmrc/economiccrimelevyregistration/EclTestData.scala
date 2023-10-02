@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.derivedArbitrary
+import com.danielasfregola.randomdatagenerator.RandomDataGenerator.{derivedArbitrary, random}
 import org.bson.types.ObjectId
 import org.scalacheck.Gen.{choose, listOfN}
 import org.scalacheck.derive.MkArbitrary
@@ -184,7 +184,7 @@ trait EclTestData {
           relevantAp12Months = Some(relevantAp12Months),
           relevantApLength = if (relevantAp12Months) None else Some(relevantApLength),
           relevantApRevenue = Some(relevantApRevenue),
-          revenueMeetsThreshold = Some(true),
+          revenueMeetsThreshold = Some(random[Boolean]),
           contacts = Contacts.empty.copy(
             firstContactDetails = ContactDetails(
               name = Some(firstContactName),
