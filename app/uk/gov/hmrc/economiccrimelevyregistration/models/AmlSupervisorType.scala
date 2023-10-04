@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import play.api.libs.json._
+import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Other
 
 sealed trait AmlSupervisorType
 
@@ -45,7 +46,13 @@ object AmlSupervisorType {
   }
 }
 
-final case class AmlSupervisor(supervisorType: AmlSupervisorType, otherProfessionalBody: Option[String])
+final case class AmlSupervisor(supervisorType: AmlSupervisorType, otherProfessionalBody: Option[String]) {
+  val professionalBody: String =
+    supervisorType match {
+      case Other => otherProfessionalBody.map(_.toString).getOrElse("Unknown")
+      case value => value.toString
+    }
+}
 
 object AmlSupervisor {
   implicit val format: OFormat[AmlSupervisor] = Json.format[AmlSupervisor]

@@ -96,9 +96,8 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
             subscription = Subscription(
               legalEntityDetails = legalEntityDetails(
                 registration.amlSupervisor
-                  .map(_.supervisorType)
-                  .getOrElse(Unknown)
-                  .toString,
+                  .map(_.professionalBody)
+                  .getOrElse("Unknown"),
                 businessSector.toString
               ),
               correspondenceAddressDetails = contactAddress,
