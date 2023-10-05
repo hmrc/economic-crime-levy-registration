@@ -31,8 +31,8 @@ case class RegistrationAdditionalInfo(
   val StartOfEclFinancialYear: String = {
     liabilityYear match {
       case Some(year) =>
-        s"$year-01-04"
-      case None       => s"${TaxYear.current.currentYear}-01-04"
+        s"$year-04-01"
+      case None       => s"${TaxYear.current.currentYear}-04-01"
     }
   }
 }
