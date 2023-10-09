@@ -94,7 +94,11 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
         when(
           mockSubscriptionServiceService
-            .subscribeToEcl(ArgumentMatchers.eq(eclSubscription), ArgumentMatchers.eq(registration))(any())
+            .subscribeToEcl(
+              ArgumentMatchers.eq(eclSubscription),
+              ArgumentMatchers.eq(registration),
+              ArgumentMatchers.eq(registrationAdditionalInfo.liabilityYear)
+            )(any())
         )
           .thenReturn(Future.successful(subscriptionResponse))
 

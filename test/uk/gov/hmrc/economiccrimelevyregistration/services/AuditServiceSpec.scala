@@ -35,7 +35,7 @@ class AuditServiceSpec extends SpecBase {
         when(mockAuditConnector.sendExtendedEvent(any())(any(), any()))
           .thenReturn(Future.successful(AuditResult.Success))
 
-        val result = await(service.successfulSubscriptionAndEnrolment(registration, eclReference))
+        val result = await(service.successfulSubscriptionAndEnrolment(registration, eclReference, None))
 
         result shouldBe AuditResult.Success
 
@@ -51,7 +51,7 @@ class AuditServiceSpec extends SpecBase {
         when(mockAuditConnector.sendExtendedEvent(any())(any(), any()))
           .thenReturn(Future.successful(AuditResult.Success))
 
-        val result = await(service.failedSubscription(registration, failureReason))
+        val result = await(service.failedSubscription(registration, failureReason, None))
 
         result shouldBe AuditResult.Success
 
@@ -67,7 +67,8 @@ class AuditServiceSpec extends SpecBase {
         when(mockAuditConnector.sendExtendedEvent(any())(any(), any()))
           .thenReturn(Future.successful(AuditResult.Success))
 
-        val result = await(service.successfulSubscriptionFailedEnrolment(registration, eclReference, failureReason))
+        val result =
+          await(service.successfulSubscriptionFailedEnrolment(registration, eclReference, failureReason, None))
 
         result shouldBe AuditResult.Success
 
