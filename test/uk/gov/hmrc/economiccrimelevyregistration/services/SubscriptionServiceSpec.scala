@@ -48,7 +48,8 @@ class SubscriptionServiceSpec extends SpecBase {
       (
         registration: Registration,
         eclSubscription: EclSubscription,
-        subscriptionResponse: CreateEclSubscriptionResponse
+        subscriptionResponse: CreateEclSubscriptionResponse,
+        year: Int
       ) =>
         when(mockIntegrationFrameworkConnector.subscribeToEcl(ArgumentMatchers.eq(eclSubscription))(any()))
           .thenReturn(Future.successful(Right(subscriptionResponse)))
@@ -56,13 +57,14 @@ class SubscriptionServiceSpec extends SpecBase {
         when(mockTaxEnrolmentsConnector.enrol(any())(any()))
           .thenReturn(Future.successful(Right(HttpResponse(OK, "", Map.empty))))
 
-        val result = await(service.subscribeToEcl(eclSubscription, registration))
+        val result = await(service.subscribeToEcl(eclSubscription, registration, Some(year)))
 
         result shouldBe subscriptionResponse
 
         verify(mockAuditService, times(1)).successfulSubscriptionAndEnrolment(
           ArgumentMatchers.eq(registration),
-          ArgumentMatchers.eq(subscriptionResponse.success.eclReference)
+          ArgumentMatchers.eq(subscriptionResponse.success.eclReference),
+          ArgumentMatchers.eq(Some(year))
         )(any())
 
         reset(mockAuditService)
@@ -73,7 +75,8 @@ class SubscriptionServiceSpec extends SpecBase {
         registration: Registration,
         eclSubscription: EclSubscription,
         subscriptionResponse: CreateEclSubscriptionResponse,
-        workItem: WorkItem[KnownFactsWorkItem]
+        workItem: WorkItem[KnownFactsWorkItem],
+        year: Int
       ) =>
         val updatedSubscriptionResponse = CreateEclSubscriptionResponse(success =
           subscriptionResponse.success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
@@ -96,7 +99,7 @@ class SubscriptionServiceSpec extends SpecBase {
         when(mockKnownFactsQueueRepository.pushNew(ArgumentMatchers.eq(expectedKnownFactsWorkItem), any(), any()))
           .thenReturn(Future.successful(workItem.copy(item = expectedKnownFactsWorkItem)))
 
-        val result = await(service.subscribeToEcl(eclSubscription, registration))
+        val result = await(service.subscribeToEcl(eclSubscription, registration, Some(year)))
 
         result shouldBe updatedSubscriptionResponse
 
@@ -108,7 +111,8 @@ class SubscriptionServiceSpec extends SpecBase {
         verify(mockAuditService, times(1)).successfulSubscriptionFailedEnrolment(
           ArgumentMatchers.eq(registration),
           ArgumentMatchers.eq(subscriptionResponse.success.eclReference),
-          ArgumentMatchers.eq(error.getMessage())
+          ArgumentMatchers.eq(error.getMessage()),
+          ArgumentMatchers.eq(Some(year))
         )(any())
 
         reset(mockAuditService)
@@ -117,7 +121,8 @@ class SubscriptionServiceSpec extends SpecBase {
     "throw an exception when the subscription fails" in forAll {
       (
         registration: Registration,
-        eclSubscription: EclSubscription
+        eclSubscription: EclSubscription,
+        year: Int
       ) =>
         val error = UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR)
 
@@ -125,13 +130,17 @@ class SubscriptionServiceSpec extends SpecBase {
           .thenReturn(Future.successful(Left(error)))
 
         val result = intercept[UpstreamErrorResponse] {
-          await(service.subscribeToEcl(eclSubscription, registration))
+          await(service.subscribeToEcl(eclSubscription, registration, Some(year)))
         }
 
         result shouldBe error
 
         verify(mockAuditService, times(1))
-          .failedSubscription(ArgumentMatchers.eq(registration), ArgumentMatchers.eq(error.getMessage()))(any())
+          .failedSubscription(
+            ArgumentMatchers.eq(registration),
+            ArgumentMatchers.eq(error.getMessage()),
+            ArgumentMatchers.eq(Some(year))
+          )(any())
 
         reset(mockAuditService)
     }

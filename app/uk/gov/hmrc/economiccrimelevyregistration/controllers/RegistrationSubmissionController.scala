@@ -63,13 +63,14 @@ class RegistrationSubmissionController @Inject() (
             additionalInfo =>
               registrationValidationService.validateRegistration(registration, additionalInfo) match {
                 case Valid(Left(eclSubscription)) =>
-                  subscriptionService.subscribeToEcl(eclSubscription, registration).map { response =>
-                    nrsService.submitToNrs(
-                      registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                      response.success.eclReference,
-                      appConfig.eclFirstTimeRegistrationNotableEvent
-                    )
-                    Ok(Json.toJson(response.success))
+                  subscriptionService.subscribeToEcl(eclSubscription, registration, additionalInfo.liabilityYear).map {
+                    response =>
+                      nrsService.submitToNrs(
+                        registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                        response.success.eclReference,
+                        appConfig.eclFirstTimeRegistrationNotableEvent
+                      )
+                      Ok(Json.toJson(response.success))
                   }
 
                 case Valid(Right(registration)) if registration.registrationType.contains(Amendment) =>
@@ -89,7 +90,8 @@ class RegistrationSubmissionController @Inject() (
                             auditService
                               .successfulSubscriptionAndEnrolment(
                                 registration,
-                                eclRef
+                                eclRef,
+                                additionalInfo.liabilityYear
                               )
                             Future.successful(Ok(Json.toJson(response)))
                           case Left(e)         =>
@@ -116,7 +118,8 @@ class RegistrationSubmissionController @Inject() (
                         auditService
                           .successfulSubscriptionAndEnrolment(
                             registration,
-                            response.eclReference
+                            response.eclReference,
+                            additionalInfo.liabilityYear
                           )
                         Future.successful(Ok(Json.toJson(response)))
                       case Left(e)         =>

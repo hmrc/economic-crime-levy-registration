@@ -43,7 +43,8 @@ object EnrolmentResult {
 case class RegistrationSubmittedAuditEvent(
   registrationData: Registration,
   submissionResult: RegistrationResult,
-  enrolmentResult: Option[EnrolmentResult]
+  enrolmentResult: Option[EnrolmentResult],
+  liabilityFY: Option[Int]
 ) extends AuditEvent {
   override val auditType: String   = "RegistrationSubmitted"
   override val detailJson: JsValue = Json.toJson(this)

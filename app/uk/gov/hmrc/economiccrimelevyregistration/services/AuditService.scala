@@ -32,38 +32,44 @@ class AuditService @Inject() (
 
   def successfulSubscriptionAndEnrolment(
     registrationData: Registration,
-    eclReference: String
+    eclReference: String,
+    liabilityFY: Option[Int]
   )(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
         registrationData = registrationData.copy(base64EncodedFields = None),
         submissionResult = RegistrationResult(RequestStatus.Success, Some(eclReference), None),
-        enrolmentResult = Some(EnrolmentResult(RequestStatus.Success, None))
+        enrolmentResult = Some(EnrolmentResult(RequestStatus.Success, None)),
+        liabilityFY = liabilityFY
       ).extendedDataEvent
     )
 
   def failedSubscription(
     registrationData: Registration,
-    failureReason: String
+    failureReason: String,
+    liabilityFY: Option[Int]
   )(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
         registrationData = registrationData.copy(base64EncodedFields = None),
         submissionResult = RegistrationResult(RequestStatus.Failed, None, Some(failureReason)),
-        enrolmentResult = None
+        enrolmentResult = None,
+        liabilityFY = liabilityFY
       ).extendedDataEvent
     )
 
   def successfulSubscriptionFailedEnrolment(
     registrationData: Registration,
     eclReference: String,
-    enrolmentFailureReason: String
+    enrolmentFailureReason: String,
+    liabilityFY: Option[Int]
   )(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditConnector.sendExtendedEvent(
       RegistrationSubmittedAuditEvent(
         registrationData = registrationData.copy(base64EncodedFields = None),
         submissionResult = RegistrationResult(RequestStatus.Success, Some(eclReference), None),
-        enrolmentResult = Some(EnrolmentResult(RequestStatus.Failed, Some(enrolmentFailureReason)))
+        enrolmentResult = Some(EnrolmentResult(RequestStatus.Failed, Some(enrolmentFailureReason))),
+        liabilityFY = liabilityFY
       ).extendedDataEvent
     )
 

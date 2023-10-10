@@ -42,7 +42,8 @@ class SubscriptionService @Inject() (
 
   def subscribeToEcl(
     eclSubscription: EclSubscription,
-    registration: Registration
+    registration: Registration,
+    liabilityYear: Option[Int]
   )(implicit hc: HeaderCarrier): Future[CreateEclSubscriptionResponse] =
     integrationFrameworkConnector.subscribeToEcl(eclSubscription).flatMap {
       case Right(createSubscriptionSuccessResponse) =>
@@ -52,7 +53,8 @@ class SubscriptionService @Inject() (
             auditService.successfulSubscriptionFailedEnrolment(
               registration,
               createSubscriptionSuccessResponse.success.eclReference,
-              e.getMessage()
+              e.getMessage(),
+              liabilityYear
             )
 
             knownFactsQueueRepository
@@ -67,11 +69,15 @@ class SubscriptionService @Inject() (
               }
           case Right(_) =>
             auditService
-              .successfulSubscriptionAndEnrolment(registration, createSubscriptionSuccessResponse.success.eclReference)
+              .successfulSubscriptionAndEnrolment(
+                registration,
+                createSubscriptionSuccessResponse.success.eclReference,
+                liabilityYear
+              )
             Future.successful(createSubscriptionSuccessResponse)
         }
       case Left(e)                                  =>
-        auditService.failedSubscription(registration, e.getMessage())
+        auditService.failedSubscription(registration, e.getMessage(), liabilityYear)
         throw e
     }
 
