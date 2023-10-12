@@ -33,7 +33,8 @@ class RegistrationValidationISpec extends ISpecBase {
 
       val validRegistration = random[ValidIncorporatedEntityRegistration]
 
-      val updatedRegistration = validRegistration.registration.copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true))
+      val updatedRegistration =
+        validRegistration.registration.copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true))
 
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(
@@ -54,7 +55,7 @@ class RegistrationValidationISpec extends ISpecBase {
           )
         )
 
-      status(validationResult)                                      shouldBe NO_CONTENT
+      status(validationResult) shouldBe NO_CONTENT
 
     }
 
