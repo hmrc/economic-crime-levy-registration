@@ -10,11 +10,11 @@ lazy val root = (project in file("."))
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(itSettings): _*)
   .settings(majorVersion := 0)
-  .settings(ThisBuild / useSuperShell := false)
+  .settings(inThisBuild(buildSettings))
   .settings(scoverageSettings: _*)
   .settings(scalaCompilerOptions: _*)
   .settings(
-    Compile / unmanagedResourceDirectories += baseDirectory.value / "resources",
+    Compile / unmanagedResourceDirectories += baseDirectory.value / "resources"
   )
   .settings(
     scalaVersion := "2.13.8",
@@ -30,6 +30,11 @@ lazy val root = (project in file("."))
       EvictionWarningOptions.default.withWarnScalaVersionEviction(false),
     resolvers ++= Seq(Resolver.jcenterRepo)
   )
+
+lazy val buildSettings = Def.settings(
+  scalafmtOnCompile := true,
+  useSuperShell := false
+)
 
 lazy val testSettings: Seq[Def.Setting[_]] = Seq(
   unmanagedSourceDirectories := Seq(

@@ -24,7 +24,8 @@ class RegistrationSubmissionISpec extends ISpecBase {
       stubAuthorised()
 
       val validRegistration          = random[ValidIncorporatedEntityRegistration]
-      val registrationAdditionalInfo = random[RegistrationAdditionalInfo].copy(liabilityYear = Some(2023), internalId = validRegistration.registration.internalId)
+      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
+        .copy(liabilityYear = Some(2023), internalId = validRegistration.registration.internalId)
       val subscriptionResponse       = CreateEclSubscriptionResponse(success =
         random[CreateEclSubscriptionResponse].success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
       )
@@ -91,7 +92,8 @@ class RegistrationSubmissionISpec extends ISpecBase {
       val subscriptionResponse       = CreateEclSubscriptionResponse(success =
         random[CreateEclSubscriptionResponse].success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
       )
-      val registrationAdditionalInfo = random[RegistrationAdditionalInfo].copy(liabilityYear = Some(2023), internalId = validRegistration.registration.internalId)
+      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
+        .copy(liabilityYear = Some(2023), internalId = validRegistration.registration.internalId)
 
       val registrationDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
 
@@ -129,7 +131,6 @@ class RegistrationSubmissionISpec extends ISpecBase {
           Json.toJson(registrationAdditionalInfo)
         )
       ).futureValue
-
 
       val result = callRoute(
         FakeRequest(
