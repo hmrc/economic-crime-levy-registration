@@ -20,7 +20,7 @@ import cats.data.EitherT
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.mvc.Results.{Ok, Status}
-import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
+import uk.gov.hmrc.economiccrimelevyregistration.models.{RegistrationAdditionalInfo, SessionData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,12 +51,17 @@ trait BaseController {
 
   implicit val unitResponse: Converter[Unit] =
     new Converter[Unit] {
-      override def getResponse(response: Unit) = Ok
+      override def getResponse(response: Unit): Status = Ok
     }
 
   implicit val registrationAdditionalInfoResponse: Converter[RegistrationAdditionalInfo] =
     new Converter[RegistrationAdditionalInfo] {
-      override def getResponse(response: RegistrationAdditionalInfo) = Ok(Json.toJson(response))
+      override def getResponse(response: RegistrationAdditionalInfo): Result = Ok(Json.toJson(response))
+    }
+
+  implicit val sessionDataResponse: Converter[SessionData] =
+    new Converter[SessionData] {
+      override def getResponse(response: SessionData): Result = Ok(Json.toJson(response))
     }
 
 }
