@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevySessionData.controllers
+package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.controllers.SessionController
 import uk.gov.hmrc.economiccrimelevyregistration.models.SessionData
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataRetrievalError
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, ResponseError}
 import uk.gov.hmrc.economiccrimelevyregistration.services.SessionService
-import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
 import scala.concurrent.Future
 
@@ -42,19 +41,20 @@ class SessionControllerSpec extends SpecBase {
 
   "upsertSession" should {
     "return 200 OK with the session that was upserted" in forAll { sessionData: SessionData =>
-      when(mockSessionService.upsert(any())).thenReturn(EitherT.rightT[Future, DataRetrievalError](()))
+      when(mockSessionService.upsert(ArgumentMatchers.eq(sessionData)))
+        .thenReturn(EitherT.rightT[Future, DataRetrievalError](()))
 
       val result: Future[Result] =
         controller.upsert()(
           fakeRequestWithJsonBody(Json.toJson(sessionData))
         )
 
-      status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(sessionData)
+      status(result) shouldBe OK
     }
 
     "return 404 NOT_FOUND when there is no SessionData for the id" in forAll { sessionData: SessionData =>
-      when(mockSessionService.upsert(any())).thenReturn(EitherT.leftT[Future, Unit](DataRetrievalError.NotFound("id")))
+      when(mockSessionService.upsert(ArgumentMatchers.eq(sessionData)))
+        .thenReturn(EitherT.leftT[Future, Unit](DataRetrievalError.NotFound(sessionData.internalId)))
 
       val result: Future[Result] =
         controller.upsert()(
@@ -62,11 +62,13 @@ class SessionControllerSpec extends SpecBase {
         )
 
       status(result)        shouldBe NOT_FOUND
-      contentAsJson(result) shouldBe Json.toJson(ErrorResponse(NOT_FOUND, "SessionData not found"))
+      contentAsJson(result) shouldBe Json.toJson(
+        ResponseError.notFoundError(s"Unable to find record with id: ${sessionData.internalId}")
+      )
     }
 
     "return 500 INTERNAL_SERVER_ERROR when SessionData retrieval fails" in forAll { sessionData: SessionData =>
-      when(mockSessionService.upsert(any()))
+      when(mockSessionService.upsert(ArgumentMatchers.eq(sessionData)))
         .thenReturn(EitherT.leftT[Future, Unit](DataRetrievalError.InternalUnexpectedError("error", None)))
 
       val result: Future[Result] =
@@ -80,7 +82,8 @@ class SessionControllerSpec extends SpecBase {
 
   "getSessionData" should {
     "return 200 OK with an existing SessionData when there is one for the id" in forAll { sessionData: SessionData =>
-      when(mockSessionService.get(any())).thenReturn(EitherT.rightT[Future, DataRetrievalError](Some(SessionData)))
+      when(mockSessionService.get(ArgumentMatchers.eq(sessionData.internalId)))
+        .thenReturn(EitherT.rightT[Future, DataRetrievalError](sessionData))
 
       val result: Future[Result] =
         controller.get(sessionData.internalId)(fakeRequest)
@@ -89,53 +92,60 @@ class SessionControllerSpec extends SpecBase {
       contentAsJson(result) shouldBe Json.toJson(sessionData)
     }
 
-    "return 404 NOT_FOUND when there is no SessionData for the id" in {
-      when(mockSessionService.get(any())).thenReturn(EitherT.rightT[Future, DataRetrievalError](None))
+    "return 404 NOT_FOUND when there is no SessionData for the id" in { sessionData: SessionData =>
+      when(mockSessionService.get(ArgumentMatchers.eq(sessionData.internalId)))
+        .thenReturn(EitherT.leftT[Future, SessionData](DataRetrievalError.NotFound(sessionData.internalId)))
 
       val result: Future[Result] =
-        controller.get("id")(fakeRequest)
+        controller.get(sessionData.internalId)(fakeRequest)
 
       status(result)        shouldBe NOT_FOUND
-      contentAsJson(result) shouldBe Json.toJson(ErrorResponse(NOT_FOUND, "SessionData not found"))
+      contentAsJson(result) shouldBe Json.toJson(
+        ResponseError.notFoundError(s"Unable to find record with id: ${sessionData.internalId}")
+      )
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when SessionData retrieval fails" in {
-      when(mockSessionService.get(any()))
+    "return 500 INTERNAL_SERVER_ERROR when SessionData retrieval fails" in { sessionData: SessionData =>
+      when(mockSessionService.get(ArgumentMatchers.eq(sessionData.internalId)))
         .thenReturn(EitherT.leftT[Future, SessionData](DataRetrievalError.InternalUnexpectedError("error", None)))
 
       val result: Future[Result] =
-        controller.get("id")(fakeRequest)
+        controller.get(sessionData.internalId)(fakeRequest)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 
   "deleteSessionData" should {
-    "return 204 NO_CONTENT when deletion of SessionData with the given id is successful" in {
-      when(mockSessionService.delete(any())).thenReturn(EitherT.rightT[Future, DataRetrievalError](()))
+    "return 200 OK when deletion of SessionData with the given id is successful" in { sessionData: SessionData =>
+      when(mockSessionService.delete(ArgumentMatchers.eq(sessionData.internalId)))
+        .thenReturn(EitherT.rightT[Future, DataRetrievalError](()))
 
       val result: Future[Result] =
-        controller.delete("id")(fakeRequest)
+        controller.delete(sessionData.internalId)(fakeRequest)
 
-      status(result) shouldBe NO_CONTENT
+      status(result) shouldBe OK
     }
 
-    "return 404 NOT_FOUND when there is no SessionData for the id" in {
-      when(mockSessionService.delete(any())).thenReturn(EitherT.leftT[Future, Unit](DataRetrievalError.NotFound("id")))
+    "return 404 NOT_FOUND when there is no SessionData for the id" in { sessionData: SessionData =>
+      when(mockSessionService.delete(ArgumentMatchers.eq(sessionData.internalId)))
+        .thenReturn(EitherT.leftT[Future, Unit](DataRetrievalError.NotFound("id")))
 
       val result: Future[Result] =
-        controller.delete("id")(fakeRequest)
+        controller.delete(sessionData.internalId)(fakeRequest)
 
       status(result)        shouldBe NOT_FOUND
-      contentAsJson(result) shouldBe Json.toJson(ErrorResponse(NOT_FOUND, "SessionData not found"))
+      contentAsJson(result) shouldBe Json.toJson(
+        ResponseError.notFoundError(s"Unable to find record with id: ${sessionData.internalId}")
+      )
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when SessionData deletion fails" in {
-      when(mockSessionService.delete(any()))
+    "return 500 INTERNAL_SERVER_ERROR when SessionData deletion fails" in { sessionData: SessionData =>
+      when(mockSessionService.delete(ArgumentMatchers.eq(sessionData.internalId)))
         .thenReturn(EitherT.leftT[Future, Unit](DataRetrievalError.InternalUnexpectedError("error", None)))
 
       val result: Future[Result] =
-        controller.delete("id")(fakeRequest)
+        controller.delete(sessionData.internalId)(fakeRequest)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }

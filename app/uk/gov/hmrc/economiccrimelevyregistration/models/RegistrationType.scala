@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
-import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue}
 import play.api.mvc.JavascriptLiteral
 
 sealed abstract class RegistrationType(value: String)

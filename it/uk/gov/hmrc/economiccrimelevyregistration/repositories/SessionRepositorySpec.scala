@@ -26,7 +26,11 @@ class SessionRepositorySpec
   private val now              = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
 
-  private val session = SessionData(internalId = "test-id", lastUpdated = Some(Instant.ofEpochSecond(1)))
+  private val session = SessionData(
+    internalId = "test-id",
+    values = Map("email" -> "example@hmrc.com"),
+    lastUpdated = Some(Instant.ofEpochSecond(1))
+  )
 
   private val mockAppConfig = mock[AppConfig]
 
@@ -45,7 +49,7 @@ class SessionRepositorySpec
       val setResult     = repository.upsert(session).futureValue
       val updatedRecord = find(Filters.equal("internalId", session.internalId)).futureValue.headOption.value
 
-      setResult     shouldEqual true
+      setResult     shouldEqual ()
       updatedRecord shouldEqual expectedResult
     }
 
@@ -57,7 +61,7 @@ class SessionRepositorySpec
       val setResult     = repository.upsert(session).futureValue
       val updatedRecord = find(Filters.equal("internalId", session.internalId)).futureValue.headOption.value
 
-      setResult     shouldEqual true
+      setResult     shouldEqual ()
       updatedRecord shouldEqual expectedResult
     }
   }
@@ -83,14 +87,14 @@ class SessionRepositorySpec
 
       val result = repository.deleteRecord(session.internalId).futureValue
 
-      result                                    shouldEqual true
+      result                                    shouldEqual ()
       repository.get(session.internalId).futureValue should not be defined
     }
 
     "return true when there is no record to remove" in {
       val result = repository.deleteRecord("id that does not exist").futureValue
 
-      result shouldEqual true
+      result shouldEqual ()
     }
   }
 

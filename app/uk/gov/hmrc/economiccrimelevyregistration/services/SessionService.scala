@@ -17,9 +17,9 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import cats.data.EitherT
-import uk.gov.hmrc.economiccrimelevyregistration.models.{RegistrationAdditionalInfo, SessionData}
+import uk.gov.hmrc.economiccrimelevyregistration.models.SessionData
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataRetrievalError
-import uk.gov.hmrc.economiccrimelevyregistration.repositories.{RegistrationAdditionalInfoRepository, SessionRepository}
+import uk.gov.hmrc.economiccrimelevyregistration.repositories.SessionRepository
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,9 +27,9 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class SessionService @Inject() (
   sessionRepository: SessionRepository
-) {
+)(implicit ec: ExecutionContext) {
 
-  def get(id: String)(implicit ec: ExecutionContext): EitherT[Future, DataRetrievalError, SessionData] =
+  def get(id: String): EitherT[Future, DataRetrievalError, SessionData] =
     EitherT {
       sessionRepository.get(id).map {
         case Some(value) => Right(value)
@@ -39,7 +39,7 @@ class SessionService @Inject() (
 
   def upsert(
     sessionData: SessionData
-  )(implicit ec: ExecutionContext): EitherT[Future, DataRetrievalError, Unit] =
+  ): EitherT[Future, DataRetrievalError, Unit] =
     EitherT {
       sessionRepository.upsert(sessionData).map(Right(_)).recover { case e =>
         Left(DataRetrievalError.InternalUnexpectedError(e.getMessage, Some(e)))
@@ -48,7 +48,7 @@ class SessionService @Inject() (
 
   def delete(
     id: String
-  )(implicit ec: ExecutionContext): EitherT[Future, DataRetrievalError, Unit] =
+  ): EitherT[Future, DataRetrievalError, Unit] =
     EitherT {
       sessionRepository.deleteRecord(id).map(Right(_)).recover { case e =>
         Left(DataRetrievalError.InternalUnexpectedError(e.getMessage, Some(e)))

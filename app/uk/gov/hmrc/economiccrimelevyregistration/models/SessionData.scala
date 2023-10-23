@@ -20,7 +20,7 @@ import play.api.libs.json.{Json, OFormat}
 
 import java.time.Instant
 
-case class SessionData(internalId: String, lastUpdated: Option[Instant])
+case class SessionData(internalId: String, values: Map[String, String], lastUpdated: Option[Instant])
 
 object SessionData {
   implicit val format: OFormat[SessionData] = Json.format[SessionData]
