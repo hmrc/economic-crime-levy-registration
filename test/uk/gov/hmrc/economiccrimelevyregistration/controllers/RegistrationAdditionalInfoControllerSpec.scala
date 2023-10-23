@@ -121,7 +121,7 @@ class RegistrationAdditionalInfoControllerSpec extends SpecBase {
   }
 
   "delete" should {
-    "return 200 OK when deleting a registration additional info record succeeds" in forAll {
+    "return 204 NO_CONTENT when deleting a registration additional info record succeeds" in forAll {
       registrationAdditionalInfo: RegistrationAdditionalInfo =>
         when(
           mockRegistrationAdditionalInfoService.delete(ArgumentMatchers.eq(registrationAdditionalInfo.internalId))(
@@ -133,7 +133,7 @@ class RegistrationAdditionalInfoControllerSpec extends SpecBase {
         val result: Future[Result] =
           controller.delete(registrationAdditionalInfo.internalId)(fakeRequest)
 
-        status(result) shouldBe OK
+        status(result) shouldBe NO_CONTENT
     }
 
     "return 500 INTERNAL_SERVER_ERROR when deleting a registration additional info fails" in forAll {

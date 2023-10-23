@@ -40,19 +40,19 @@ class RegistrationAdditionalInfoController @Inject() (
     withJsonBody[RegistrationAdditionalInfo] { registrationAdditionalInfo =>
       (for {
         unit <- registrationAdditionalInfoService.upsert(registrationAdditionalInfo).asResponseError
-      } yield unit).convertToResult
+      } yield unit).convertToResult(OK)
     }
   }
 
   def get(id: String): Action[AnyContent] = authorise.async { _ =>
     (for {
       registrationAdditionalInfo <- registrationAdditionalInfoService.get(id).asResponseError
-    } yield registrationAdditionalInfo).convertToResult
+    } yield registrationAdditionalInfo).convertToResult(OK)
   }
 
   def delete(id: String): Action[AnyContent] = authorise.async { _ =>
     (for {
       unit <- registrationAdditionalInfoService.delete(id).asResponseError
-    } yield unit).convertToResult
+    } yield unit).convertToResult(NO_CONTENT)
   }
 }
