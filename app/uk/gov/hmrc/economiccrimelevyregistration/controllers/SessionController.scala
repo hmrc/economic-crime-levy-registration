@@ -40,19 +40,19 @@ class SessionController @Inject() (
     withJsonBody[SessionData] { sessionData =>
       (for {
         unit <- sessionService.upsert(sessionData).asResponseError
-      } yield unit).convertToResult
+      } yield unit).convertToResult(OK)
     }
   }
 
   def get(id: String): Action[AnyContent] = authorise.async { _ =>
     (for {
       sessionData <- sessionService.get(id).asResponseError
-    } yield sessionData).convertToResult
+    } yield sessionData).convertToResult(OK)
   }
 
   def delete(id: String): Action[AnyContent] = authorise.async { _ =>
     (for {
       unit <- sessionService.delete(id).asResponseError
-    } yield unit).convertToResult
+    } yield unit).convertToResult(NO_CONTENT)
   }
 }
