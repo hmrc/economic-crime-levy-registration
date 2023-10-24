@@ -65,11 +65,13 @@ class RegistrationSubmissionController @Inject() (
                 case Valid(Left(eclSubscription)) =>
                   subscriptionService.subscribeToEcl(eclSubscription, registration, additionalInfo.liabilityYear).map {
                     response =>
-                      nrsService.submitToNrs(
-                        registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                        response.success.eclReference,
-                        appConfig.eclFirstTimeRegistrationNotableEvent
-                      )
+                      if (appConfig.nrsSubmissionEnabled) {
+                        nrsService.submitToNrs(
+                          registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                          response.success.eclReference,
+                          appConfig.eclFirstTimeRegistrationNotableEvent
+                        )
+                      }
                       Ok(Json.toJson(response.success))
                   }
 
