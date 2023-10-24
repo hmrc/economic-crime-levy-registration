@@ -53,7 +53,6 @@ To format all the scala files in the project correctly:
 
 To check if there are any scalastyle errors, warnings or infos:
 > `sbt scalastyle`
->
 
 ## Feature flags
 
