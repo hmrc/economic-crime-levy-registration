@@ -79,6 +79,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
         reset(mockNrsService)
+        reset(mockAppConfig)
 
         val registration = aRegistration.copy(
           entityType = Some(entityType)
@@ -132,6 +133,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
         reset(mockNrsService)
+        reset(mockAppConfig)
 
         val registration = aRegistration.copy(
           entityType = Some(entityType)
@@ -163,7 +165,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         status(result)        shouldBe OK
         contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
 
-        verify(mockNrsService, times(1)).submitToNrs(
+        verify(mockNrsService, times(0)).submitToNrs(
           any(),
           any(),
           any()
