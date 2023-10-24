@@ -56,8 +56,8 @@ To check if there are any scalastyle errors, warnings or infos:
 
 ## Feature flags
 
-- enrolmentStoreProxyStubEnabled: When enabled we use the stub for Enrolment Store Proxy rather than the actual service
-- taxEnrolmentsFailureStubEnabled: When enabled we use the stub for Tax Enrolments rather than the actual service
+- enrolmentStoreProxyStubEnabled: When enabled we use the stub for Enrolment Store Proxy rather than the actual service.
+- taxEnrolmentsFailureStubEnabled: When enabled we use the stub for Tax Enrolments rather than the actual service.
 - amendRegistrationNrsEnabled: Controls submitting to NRS when submitting an amendment. The DMS submission will still occur if this is switched off. It only pertains to the NRS service.
 - nrsSubmissionEnabled: Controls submitting to NRS when submitting a registration for the first time. The DMS submission will still occur if this is switched off. It only pertains to the NRS service.
 
