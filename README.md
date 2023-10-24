@@ -53,6 +53,14 @@ To format all the scala files in the project correctly:
 
 To check if there are any scalastyle errors, warnings or infos:
 > `sbt scalastyle`
+>
+
+## Feature flags
+
+- enrolmentStoreProxyStubEnabled: When enabled we use the stub for Enrolment Store Proxy rather than the actual service
+- taxEnrolmentsFailureStubEnabled: When enabled we use the stub for Tax Enrolments rather than the actual service
+- amendRegistrationNrsEnabled: When enabled we submit a registration amendment to NRS
+- nrsSubmissionEnabled: When enabled we submit a first time registration to NRS
 
 ### License
 

@@ -88,4 +88,6 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
   val dmsSubmissionUrl: String                = dmsBaseUrl + "/dms-submission/submit"
 
   val amendRegistrationNrsEnabled: Boolean = configuration.get[Boolean]("features.amendRegistrationNrsEnabled")
+
+  val nrsSubmissionEnabled: Boolean = configuration.get[Boolean]("features.nrsSubmissionEnabled")
 }
