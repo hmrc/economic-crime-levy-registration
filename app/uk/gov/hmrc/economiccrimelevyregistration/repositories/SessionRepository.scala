@@ -21,7 +21,7 @@ import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model._
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
-import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
+import uk.gov.hmrc.economiccrimelevyregistration.models.SessionData
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
@@ -32,15 +32,15 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RegistrationAdditionalInfoRepository @Inject() (
+class SessionRepository @Inject() (
   mongoComponent: MongoComponent,
   appConfig: AppConfig,
   clock: Clock
 )(implicit ec: ExecutionContext)
-    extends PlayMongoRepository[RegistrationAdditionalInfo](
-      collectionName = "registrationAdditionalInfo",
+    extends PlayMongoRepository[SessionData](
+      collectionName = "session",
       mongoComponent = mongoComponent,
-      domainFormat = RegistrationAdditionalInfoRepository.format,
+      domainFormat = SessionRepository.format,
       indexes = Seq(
         IndexModel(
           Indexes.ascending("lastUpdated"),
@@ -63,20 +63,20 @@ class RegistrationAdditionalInfoRepository @Inject() (
       .toFuture()
       .map(_ => true)
 
-  def get(id: String): Future[Option[RegistrationAdditionalInfo]] =
+  def get(id: String): Future[Option[SessionData]] =
     keepAlive(id).flatMap { _ =>
       collection
         .find(byId(id))
         .headOption()
     }
 
-  def upsert(registration: RegistrationAdditionalInfo): Future[Unit] = {
-    val updatedRegistration = registration.copy(lastUpdated = Some(Instant.now(clock)))
+  def upsert(session: SessionData): Future[Unit] = {
+    val updatedSession = session.copy(lastUpdated = Some(Instant.now(clock)))
 
     collection
       .replaceOne(
-        filter = byId(updatedRegistration.internalId),
-        replacement = updatedRegistration,
+        filter = byId(updatedSession.internalId),
+        replacement = updatedSession,
         options = ReplaceOptions().upsert(true)
       )
       .toFuture()
@@ -90,8 +90,8 @@ class RegistrationAdditionalInfoRepository @Inject() (
       .map(_ => ())
 }
 
-object RegistrationAdditionalInfoRepository {
+object SessionRepository {
   implicit val instantFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
 
-  val format: Format[RegistrationAdditionalInfo] = Json.format[RegistrationAdditionalInfo]
+  val format: Format[SessionData] = Json.format[SessionData]
 }

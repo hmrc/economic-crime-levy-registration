@@ -19,17 +19,17 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
-import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
-import uk.gov.hmrc.economiccrimelevyregistration.services.RegistrationAdditionalInfoService
+import uk.gov.hmrc.economiccrimelevyregistration.models.SessionData
+import uk.gov.hmrc.economiccrimelevyregistration.services.SessionService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton()
-class RegistrationAdditionalInfoController @Inject() (
+class SessionController @Inject() (
   cc: ControllerComponents,
-  registrationAdditionalInfoService: RegistrationAdditionalInfoService,
+  sessionService: SessionService,
   authorise: AuthorisedAction
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
@@ -37,22 +37,22 @@ class RegistrationAdditionalInfoController @Inject() (
     with ErrorHandler {
 
   def upsert: Action[JsValue] = authorise(parse.json).async { implicit request =>
-    withJsonBody[RegistrationAdditionalInfo] { registrationAdditionalInfo =>
+    withJsonBody[SessionData] { sessionData =>
       (for {
-        unit <- registrationAdditionalInfoService.upsert(registrationAdditionalInfo).asResponseError
+        unit <- sessionService.upsert(sessionData).asResponseError
       } yield unit).convertToResult(OK)
     }
   }
 
   def get(id: String): Action[AnyContent] = authorise.async { _ =>
     (for {
-      registrationAdditionalInfo <- registrationAdditionalInfoService.get(id).asResponseError
-    } yield registrationAdditionalInfo).convertToResult(OK)
+      sessionData <- sessionService.get(id).asResponseError
+    } yield sessionData).convertToResult(OK)
   }
 
   def delete(id: String): Action[AnyContent] = authorise.async { _ =>
     (for {
-      unit <- registrationAdditionalInfoService.delete(id).asResponseError
+      unit <- sessionService.delete(id).asResponseError
     } yield unit).convertToResult(NO_CONTENT)
   }
 }

@@ -21,12 +21,12 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 
-class RegistrationAdditionalInfoISpec extends ISpecBase {
+class SessionISpec extends ISpecBase {
 
-  s"PUT ${routes.RegistrationAdditionalInfoController.upsert.url}"           should {
+  s"PUT ${routes.SessionController.upsert.url}"                              should {
     "create or update a registration additional info and return 200 OK with the registration" in {
       stubAuthorised()
 

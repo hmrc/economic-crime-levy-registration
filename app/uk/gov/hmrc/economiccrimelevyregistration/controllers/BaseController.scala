@@ -20,7 +20,7 @@ import cats.data.EitherT
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.mvc.Results.{Ok, Status}
-import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
+import uk.gov.hmrc.economiccrimelevyregistration.models.{RegistrationAdditionalInfo, SessionData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -38,25 +38,33 @@ trait BaseController {
 
   implicit class ResponseHandler[R](value: EitherT[Future, ResponseError, R]) {
 
-    def convertToResult(implicit c: Converter[R], ec: ExecutionContext): Future[Result] =
+    def convertToResult(responseCode: Int)(implicit c: Converter[R], ec: ExecutionContext): Future[Result] =
       value.fold(
         err => Status(err.code.statusCode)(Json.toJson(err)),
-        response => c.getResponse(response)
+        response => c.getResponse(response, responseCode)
       )
   }
 
   trait Converter[R] {
-    def getResponse(response: R): Result
+    def getResponse(response: R, responseCode: Int): Result
   }
 
   implicit val unitResponse: Converter[Unit] =
     new Converter[Unit] {
-      override def getResponse(response: Unit) = Ok
+      override def getResponse(response: Unit, responseCode: Int): Status = Status(responseCode)
     }
 
   implicit val registrationAdditionalInfoResponse: Converter[RegistrationAdditionalInfo] =
     new Converter[RegistrationAdditionalInfo] {
-      override def getResponse(response: RegistrationAdditionalInfo) = Ok(Json.toJson(response))
+      override def getResponse(response: RegistrationAdditionalInfo, responseCode: Int): Result = Status(responseCode)(
+        Json.toJson(response)
+      )
+    }
+
+  implicit val sessionDataResponse: Converter[SessionData] =
+    new Converter[SessionData] {
+      override def getResponse(response: SessionData, responseCode: Int): Result =
+        Status(responseCode)(Json.toJson(response))
     }
 
 }

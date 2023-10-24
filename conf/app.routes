@@ -8,6 +8,9 @@ GET           /registration-additional-info/:id              uk.gov.hmrc.economi
 PUT           /registration-additional-info                  uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationAdditionalInfoController.upsert
 DELETE        /registration-additional-info/:id              uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationAdditionalInfoController.delete(id)
 
+GET           /session/:id                                   uk.gov.hmrc.economiccrimelevyregistration.controllers.SessionController.get(id)
+PUT           /session                                       uk.gov.hmrc.economiccrimelevyregistration.controllers.SessionController.upsert
+DELETE        /session/:id                                   uk.gov.hmrc.economiccrimelevyregistration.controllers.SessionController.delete(id)
 
 GET           /registrations/:id/validation-errors           uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationValidationController.getValidationErrors(id)
 
