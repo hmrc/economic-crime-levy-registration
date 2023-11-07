@@ -33,7 +33,6 @@ object OtherEntityJourneyData {
   implicit val format: OFormat[OtherEntityJourneyData] = Json.format[OtherEntityJourneyData]
 
   def empty(): OtherEntityJourneyData = OtherEntityJourneyData(
-    entityType = None,
     businessName = None,
     charityRegistrationNumber = None,
     companyRegistrationNumber = None,
