@@ -24,7 +24,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, NonUKEstablishment, Trust, UnincorporatedAssociation}
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
-import uk.gov.hmrc.economiccrimelevyregistration.models._
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EntityType, _}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
@@ -46,7 +46,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     registrationAdditionalInfo: RegistrationAdditionalInfo
   ): ValidationResult[Either[EclSubscription, Registration]] =
     (registration.entityType) match {
-      case Some(Other) => validateOtherEntity(registration)
+      case Some(value) && EntityType.isOther(value) => validateOtherEntity(registration)
       case _           =>
         registration.registrationType match {
           case Some(Amendment) => transformToAmendedEclSubscription(registration)
