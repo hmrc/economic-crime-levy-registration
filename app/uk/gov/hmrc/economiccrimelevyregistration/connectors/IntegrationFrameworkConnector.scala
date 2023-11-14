@@ -16,13 +16,16 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
+import akka.actor.ActorSystem
+import com.typesafe.config.Config
 import play.api.http.HeaderNames
+import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdGenerator
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, Retries, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,12 +33,16 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class IntegrationFrameworkConnector @Inject() (
   appConfig: AppConfig,
-  httpClient: HttpClient,
-  correlationIdGenerator: CorrelationIdGenerator
-)(implicit ec: ExecutionContext) {
+  httpClient: HttpClientV2,
+  correlationIdGenerator: CorrelationIdGenerator,
+  override val configuration: Config,
+  override val actorSystem: ActorSystem
+)(implicit ec: ExecutionContext)
+    extends BaseConnector
+    with Retries {
 
-  private def integrationFrameworkHeaders(bearerToken: String): Seq[(String, String)] = Seq(
-    (HeaderNames.AUTHORIZATION, s"Bearer $bearerToken"),
+  private def integrationFrameworkHeaders: Seq[(String, String)] = Seq(
+    (HeaderNames.AUTHORIZATION, s"Bearer ${appConfig.getSubscriptionStatusBearerToken}"),
     (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
     (CustomHeaderNames.CorrelationId, correlationIdGenerator.generateCorrelationId)
   )
@@ -43,18 +50,23 @@ class IntegrationFrameworkConnector @Inject() (
   def getSubscriptionStatus(
     businessPartnerId: String
   )(implicit hc: HeaderCarrier): Future[SubscriptionStatusResponse] =
-    httpClient.GET[SubscriptionStatusResponse](
-      s"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status",
-      headers = integrationFrameworkHeaders(appConfig.getSubscriptionStatusBearerToken)
-    )
+    retryFor[SubscriptionStatusResponse]("Get subscription status")(retryCondition) {
+      httpClient
+        .get(url"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status")
+        .setHeader(integrationFrameworkHeaders: _*)
+        .executeAndDeserialise[SubscriptionStatusResponse]
+    }
 
   def subscribeToEcl(eclSubscription: EclSubscription)(implicit
     hc: HeaderCarrier
-  ): Future[Either[UpstreamErrorResponse, CreateEclSubscriptionResponse]] =
-    httpClient.POST[Subscription, Either[UpstreamErrorResponse, CreateEclSubscriptionResponse]](
-      s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}",
-      eclSubscription.subscription,
-      headers = integrationFrameworkHeaders(appConfig.integrationFrameworkBearerToken)
-    )
-
+  ): Future[CreateEclSubscriptionResponse] =
+    retryFor[CreateEclSubscriptionResponse]("Subscribe to ECL")(retryCondition) {
+      httpClient
+        .post(
+          url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"
+        )
+        .withBody(Json.toJson(eclSubscription))
+        .setHeader(integrationFrameworkHeaders: _*)
+        .executeAndDeserialise
+    }
 }

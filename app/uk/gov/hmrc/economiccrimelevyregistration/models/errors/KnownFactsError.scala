@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.models.dms
+package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 
-import play.api.libs.json.{Json, OFormat}
+trait KnownFactsError
 
-case class ObjectSummary(
-  location: String,
-  contentLength: Int,
-  contentMd5: String,
-  lastModified: String
-)
+object KnownFactsError {
 
-object ObjectSummary {
-  implicit val format: OFormat[ObjectSummary] = Json.format[ObjectSummary]
+  case class UpsertKnownFactsError(message: String) extends KnownFactsError
+  case class NotFound(message: String) extends KnownFactsError
 }

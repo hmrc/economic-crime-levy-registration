@@ -23,13 +23,12 @@ import akka.util.ByteString
 import com.typesafe.config.Config
 import play.api.Logging
 import play.api.http.HeaderNames.AUTHORIZATION
+import play.api.http.Status.ACCEPTED
 import play.api.mvc.MultipartFormData
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
-import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Retries, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, Retries, StringContextOps}
 
-import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,27 +39,20 @@ class DmsConnector @Inject() (
   override val configuration: Config,
   override val actorSystem: ActorSystem
 )(implicit ec: ExecutionContext)
-    extends Retries
-    with Logging {
+    extends BaseConnector
+    with Logging
+    with Retries {
 
-  private def retryCondition: PartialFunction[Exception, Boolean] = {
-    case e: UpstreamErrorResponse if UpstreamErrorResponse.Upstream5xxResponse.unapply(e).isDefined => true
-  }
+  private val dmsHeaders = AUTHORIZATION -> appConfig.internalAuthToken
 
   def sendPdf(
     body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]] with Product with Serializable, NotUsed]
-  )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, HttpResponse]] =
-    retryFor[Either[UpstreamErrorResponse, HttpResponse]]("DMS submission")(retryCondition) {
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    retryFor[Unit]("DMS submission")(retryCondition) {
       httpClient
-        .post(new URL(appConfig.dmsSubmissionUrl))
-        .setHeader(AUTHORIZATION -> appConfig.internalAuthToken)
+        .post(url"${appConfig.dmsSubmissionUrl}")
+        .setHeader(dmsHeaders)
         .withBody(body)
-        .execute[Either[UpstreamErrorResponse, HttpResponse]]
-        .map {
-          case Right(httpResponse: HttpResponse)          => Right(httpResponse)
-          case Left(errorResponse: UpstreamErrorResponse) => throw errorResponse
-        }
-    }.recoverWith { case errorResponse: UpstreamErrorResponse =>
-      Future.successful(Left(errorResponse))
+        .executeAndExpect(ACCEPTED)
     }
 }

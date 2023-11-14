@@ -17,13 +17,16 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import akka.actor.ActorSystem
+import cats.data.EitherT
 import play.api.Logging
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.EnrolmentStoreProxyConnector
-import uk.gov.hmrc.economiccrimelevyregistration.models.KeyValue
+import uk.gov.hmrc.economiccrimelevyregistration.controllers.ErrorHandler
+import uk.gov.hmrc.economiccrimelevyregistration.models.{KeyValue, KnownFactsWorkItem}
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{EclEnrolment, UpsertKnownFactsRequest}
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{KnownFactsError, ResponseError}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
 
 import java.time.Instant
 import javax.inject.Inject
@@ -35,40 +38,53 @@ class KnownFactsQueuePullScheduler @Inject() (
   knownFactsQueueRepository: KnownFactsQueueRepository,
   enrolmentStoreProxyConnector: EnrolmentStoreProxyConnector
 )(implicit executionContext: ExecutionContext)
-    extends Logging {
+    extends Logging
+    with ErrorHandler {
 
   actorSystem.scheduler.scheduleAtFixedRate(initialDelay = 10.seconds, interval = 1.minute) { () =>
     processKnownFacts
   }
 
-  def processKnownFacts: Future[Unit] = {
+  def processKnownFacts: EitherT[Future, ResponseError, Unit] = {
     logger.info("Processing known facts for failed enrolments")
-
-    knownFactsQueueRepository
-      .pullOutstanding(
-        Instant.now(),
-        Instant.now()
-      )
-      .flatMap {
-        case None                     =>
-          logger.info("No known facts to process for failed enrolments")
-          Future.unit
-        case Some(knownFactsWorkItem) =>
-          enrolmentStoreProxyConnector
-            .upsertKnownFacts(
-              UpsertKnownFactsRequest(
-                verifiers = Seq(KeyValue(EclEnrolment.VerifierKey, knownFactsWorkItem.item.eclRegistrationDate))
-              ),
-              knownFactsWorkItem.item.eclReference
-            )(HeaderCarrier())
-            .map {
-              case Left(e)  =>
-                logger.error(s"Failed to upsert known facts for failed enrolment: ${e.message}")
-                knownFactsQueueRepository.markAs(knownFactsWorkItem.id, ProcessingStatus.Failed)
-              case Right(_) =>
-                logger.info("Successfully upserted known facts for failed enrolment")
-                knownFactsQueueRepository.completeAndDelete(knownFactsWorkItem.id)
-            }
-      }
+    for {
+      workItem <- pullOutstandingWorkItem.asResponseError
+      _        <- upsertKnownFacts(workItem).asResponseError
+    } yield ()
   }
+  private def pullOutstandingWorkItem: EitherT[Future, KnownFactsError, WorkItem[KnownFactsWorkItem]] =
+    EitherT {
+      knownFactsQueueRepository
+        .pullOutstanding(Instant.now(), Instant.now())
+        .map {
+          case None        =>
+            Left(KnownFactsError.NotFound("No known facts to process for failed enrolments"))
+          case Some(value) => Right(value)
+        }
+    }
+
+  private def upsertKnownFacts(
+    workItem: WorkItem[KnownFactsWorkItem]
+  ): EitherT[Future, KnownFactsError, Unit] =
+    EitherT {
+      enrolmentStoreProxyConnector
+        .upsertKnownFacts(
+          UpsertKnownFactsRequest(
+            verifiers = Seq(KeyValue(EclEnrolment.VerifierKey, workItem.item.eclRegistrationDate))
+          ),
+          workItem.item.eclReference
+        )(HeaderCarrier())
+        .map {
+          logger.info("Successfully upserted known facts for failed enrolment")
+          knownFactsQueueRepository.completeAndDelete(workItem.id)
+          Right(_)
+        }
+        .recover { case error =>
+          knownFactsQueueRepository.markAs(workItem.id, ProcessingStatus.Failed)
+          Left(
+            KnownFactsError
+              .UpsertKnownFactsError(s"Failed to upsert known facts for failed enrolment: ${error.getMessage}")
+          )
+        }
+    }
 }

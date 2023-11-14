@@ -18,14 +18,13 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
 import play.api.Logging
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{BadGateway, DataRetrievalError, InternalServiceError, ResponseError}
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{BadGateway, DataRetrievalError, DmsSubmissionError, InternalServiceError, KnownFactsError, ResponseError}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ErrorHandler extends Logging {
 
   implicit class ErrorConvertor[E, R](value: EitherT[Future, E, R]) {
-
     def asResponseError(implicit c: Converter[E], ec: ExecutionContext): EitherT[Future, ResponseError, R] =
       value.leftMap(c.convert).leftSemiflatTap {
         case InternalServiceError(message, _, cause) =>
@@ -65,6 +64,23 @@ trait ErrorHandler extends Logging {
         case DataRetrievalError.NotFound(id)                            => ResponseError.notFoundError(s"Unable to find record with id: $id")
         case DataRetrievalError.InternalUnexpectedError(message, cause) =>
           ResponseError.internalServiceError(message = message, cause = cause)
+      }
+    }
+
+  implicit val knownFactsErrorConverter: Converter[KnownFactsError] =
+    new Converter[KnownFactsError] {
+      override def convert(error: KnownFactsError): ResponseError = error match {
+        case KnownFactsError.UpsertKnownFactsError(message) => ResponseError.badRequestError(message)
+        case KnownFactsError.NotFound(message)              => ResponseError.badRequestError(message)
+      }
+    }
+
+  implicit val dmsSubmissionErrorConverter: Converter[DmsSubmissionError] =
+    new Converter[DmsSubmissionError] {
+      override def convert(error: DmsSubmissionError): ResponseError = error match {
+        case DmsSubmissionError.InternalUnexpectedError(message, cause) =>
+          ResponseError.internalServiceError(message = message, cause = cause)
+        case DmsSubmissionError.BadGateway(reason, code)                => ResponseError.badGateway(reason, code)
       }
     }
 
