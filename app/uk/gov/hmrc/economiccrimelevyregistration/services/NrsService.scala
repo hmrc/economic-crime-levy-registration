@@ -57,7 +57,6 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
       nrsSearchKeys                   = NrsSearchKeys(eclRegistrationReference = eclRegistrationReference)
       payloadChecksum                <- payloadSha256Checksum(base64EncodedNrsSubmissionHtml)
       nrsMetadata                     = assembleNrsMetadata(
-                                          base64EncodedNrsSubmissionHtml,
                                           request.nrsIdentityData,
                                           authToken,
                                           headerData,
@@ -66,10 +65,10 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
                                           payloadChecksum
                                         )
       nrsSubmission                   = NrsSubmission(base64EncodedNrsSubmissionHtml, nrsMetadata)
-      nrsSubmissionResponse          <- test(nrsSubmission)
+      nrsSubmissionResponse          <- submit(nrsSubmission)
     } yield nrsSubmissionResponse
 
-  def test(
+  def submit(
     nrsSubmission: NrsSubmission
   )(implicit hc: HeaderCarrier): EitherT[Future, NrsSubmissionError, NrsSubmissionResponse] =
     EitherT {
@@ -131,7 +130,6 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
     }
 
   def assembleNrsMetadata(
-    base64EncodedNrsSubmissionHtml: String,
     nrsIdentityData: NrsIdentityData,
     userAuthToken: String,
     headerData: JsObject,
