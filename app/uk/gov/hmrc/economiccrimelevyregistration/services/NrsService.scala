@@ -26,14 +26,15 @@ import uk.gov.hmrc.economiccrimelevyregistration.controllers.ErrorHandler
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.NrsSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
-import uk.gov.hmrc.http.HeaderCarrier
-
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.{Clock, Instant}
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
@@ -48,72 +49,62 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
   )(implicit
     hc: HeaderCarrier,
     request: AuthorisedRequest[_]
-  ): EitherT[Future, NrsSubmissionError, NrsSubmissionResponse] = {
-
+  ): EitherT[Future, NrsSubmissionError, NrsSubmissionResponse] =
     for {
       authToken                      <- getUserAuthToken(request.headers, HeaderNames.AUTHORIZATION)
       headerData                      = new JsObject(request.headers.toMap.map(x => x._1 -> JsString(x._2 mkString ",")))
       base64EncodedNrsSubmissionHtml <- getBase64EncodedNrsSubmissionHtml(optBase64EncodedNrsSubmissionHtml)
       nrsSearchKeys                   = NrsSearchKeys(eclRegistrationReference = eclRegistrationReference)
+      payloadChecksum                <- payloadSha256Checksum(base64EncodedNrsSubmissionHtml)
       nrsMetadata                     = assembleNrsMetadata(
                                           base64EncodedNrsSubmissionHtml,
                                           request.nrsIdentityData,
                                           authToken,
                                           headerData,
                                           nrsSearchKeys,
-                                          eventName
+                                          eventName,
+                                          payloadChecksum
                                         )
-    nrsSubmission = NrsSubmission(base64EncodedNrsSubmissionHtml,  nrsMetadata)
-    } yield NrsSubmissionResponse("")
+      nrsSubmission                   = NrsSubmission(base64EncodedNrsSubmissionHtml, nrsMetadata)
+      nrsSubmissionResponse          <- test(nrsSubmission)
+    } yield nrsSubmissionResponse
 
-    // val userAuthToken: String                  = request.headers.get(HeaderNames.AUTHORIZATION).get
-    //val headerData: JsObject                   = new JsObject(request.headers.toMap.map(x => x._1 -> JsString(x._2 mkString ",")))
-//    val base64EncodedNrsSubmissionHtml: String = optBase64EncodedNrsSubmissionHtml.getOrElse(
-//      throw new IllegalStateException("Base64 encoded NRS submission HTML not found in registration data")
-//    )
+  def test(
+    nrsSubmission: NrsSubmission
+  )(implicit hc: HeaderCarrier): EitherT[Future, NrsSubmissionError, NrsSubmissionResponse] =
+    EitherT {
+      nrsConnector
+        .submitToNrs(nrsSubmission)
+        .map(nrsSubmissionResponse => Right(nrsSubmissionResponse))
+        .recover {
+          case error @ UpstreamErrorResponse(message, code, _, _)
+              if UpstreamErrorResponse.Upstream5xxResponse
+                .unapply(error)
+                .isDefined || UpstreamErrorResponse.Upstream4xxResponse.unapply(error).isDefined =>
+            Left(NrsSubmissionError.BadGateway(reason = message, code = code))
+          case NonFatal(thr) => Left(NrsSubmissionError.InternalUnexpectedError(thr.getMessage, Some(thr)))
+        }
+    }
 
-    //val nrsSearchKeys: NrsSearchKeys = NrsSearchKeys(eclRegistrationReference = eclRegistrationReference)
-
-//    val nrsMetadata = NrsMetadata(
-//      businessId = "ecl",
-//      notableEvent = eventName,
-//      payloadContentType = MimeTypes.HTML,
-//      payloadSha256Checksum = payloadSha256Checksum(base64EncodedNrsSubmissionHtml),
-//      userSubmissionTimestamp = Instant.now(clock),
-//      identityData = request.nrsIdentityData,
-//      userAuthToken = userAuthToken,
-//      headerData = headerData,
-//      searchKeys = nrsSearchKeys
-//    )
-
-//    val nrsSubmission = NrsSubmission(
-//      payload = base64EncodedNrsSubmissionHtml,
-//      metadata = nrsMetadata
-//    )
-
-    nrsConnector
-      .submitToNrs(nrsSubmission)
-      .map { nrsSubmissionResponse =>
-        logger.info(s"Success response received from NRS with submission ID: ${nrsSubmissionResponse.nrSubmissionId}")
-        nrsSubmissionResponse
-      }
-      .recover { case e: Throwable =>
-        logger.error(
-          s"Failed to send NRS submission for ECL reference $eclRegistrationReference with notable event $eventName: ${e.getMessage}"
-        )
-        throw e
-      }
-  }
-
-  private def payloadSha256Checksum(base64EncodedNrsSubmissionHtml: String): String = {
-    val decodedHtml: String = new String(Base64.getDecoder.decode(base64EncodedNrsSubmissionHtml))
-
-    MessageDigest
-      .getInstance("SHA-256")
-      .digest(decodedHtml.getBytes(StandardCharsets.UTF_8))
-      .map("%02x".format(_))
-      .mkString
-  }
+  def payloadSha256Checksum(base64EncodedNrsSubmissionHtml: String): EitherT[Future, NrsSubmissionError, String] =
+    EitherT {
+      Future.successful(
+        Try(new String(Base64.getDecoder.decode(base64EncodedNrsSubmissionHtml))) match {
+          case Success(result) =>
+            Try(MessageDigest.getInstance("SHA-256")) match {
+              case Success(value) =>
+                Right(
+                  value
+                    .digest(result.getBytes(StandardCharsets.UTF_8))
+                    .map("%02x".format(_))
+                    .mkString
+                )
+              case Failure(e)     => Left(NrsSubmissionError.InternalUnexpectedError("Algorithm not found", Some(e)))
+            }
+          case Failure(e)      => Left(NrsSubmissionError.InternalUnexpectedError("Error decoding base64", Some(e)))
+        }
+      )
+    }
 
   def getUserAuthToken(headers: Headers, key: String): EitherT[Future, NrsSubmissionError, String] =
     EitherT {
@@ -145,17 +136,19 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
     userAuthToken: String,
     headerData: JsObject,
     nrsSearchKeys: NrsSearchKeys,
-    eventName: String
+    eventName: String,
+    payloadChecksum: String
   ): NrsMetadata =
     NrsMetadata(
       businessId = "ecl",
       notableEvent = eventName,
       payloadContentType = MimeTypes.HTML,
-      payloadSha256Checksum = payloadSha256Checksum(base64EncodedNrsSubmissionHtml),
+      payloadSha256Checksum = payloadChecksum,
       userSubmissionTimestamp = Instant.now(clock),
       identityData = nrsIdentityData,
       userAuthToken = userAuthToken,
       headerData = headerData,
       searchKeys = nrsSearchKeys
     )
+
 }
