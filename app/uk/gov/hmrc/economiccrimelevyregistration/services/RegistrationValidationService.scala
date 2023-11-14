@@ -21,15 +21,14 @@ import cats.data.ValidatedNel
 import cats.implicits._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, NonUKEstablishment, Trust, UnincorporatedAssociation}
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
-import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
+import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.StringUtils._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.{SchemaLoader, SchemaValidator}
 
@@ -46,8 +45,8 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     registrationAdditionalInfo: RegistrationAdditionalInfo
   ): ValidationResult[Either[EclSubscription, Registration]] =
     (registration.entityType) match {
-      case Some(Other) => validateOtherEntity(registration)
-      case _           =>
+      case Some(value) if EntityType.isOther(value) => validateOtherEntity(registration)
+      case _                                        =>
         registration.registrationType match {
           case Some(Amendment) => transformToAmendedEclSubscription(registration)
           case _               =>
@@ -359,7 +358,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       validateEclAddress(registration.contactAddress),
       validateOptExists(registration.optOtherEntityJourneyData, "Other entity data"),
       validateOptExists(registration.otherEntityJourneyData.businessName, "Business name"),
-      registration.otherEntityJourneyData.entityType match {
+      registration.entityType match {
         case None                            => DataValidationError(DataMissing, missingErrorMessage("Other entity type")).invalidNel
         case Some(Charity)                   => validateCharity(registration)
         case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)

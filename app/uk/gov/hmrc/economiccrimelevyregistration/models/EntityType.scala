@@ -30,8 +30,18 @@ object EntityType {
   case object LimitedLiabilityPartnership extends EntityType
   case object UnlimitedCompany extends EntityType
   case object RegisteredSociety extends EntityType
+  case object Charity extends EntityType
+  case object Trust extends EntityType
+  case object NonUKEstablishment extends EntityType
+  case object UnincorporatedAssociation extends EntityType
 
-  case object Other extends EntityType
+  def isOther(entityType: EntityType) =
+    Seq(
+      Charity,
+      Trust,
+      NonUKEstablishment,
+      UnincorporatedAssociation
+    ).contains(entityType)
 
   implicit val format: Format[EntityType] = new Format[EntityType] {
     override def reads(json: JsValue): JsResult[EntityType] = json.validate[String] match {
@@ -46,7 +56,10 @@ object EntityType {
           case "LimitedLiabilityPartnership" => JsSuccess(LimitedLiabilityPartnership)
           case "UnlimitedCompany"            => JsSuccess(UnlimitedCompany)
           case "RegisteredSociety"           => JsSuccess(RegisteredSociety)
-          case "Other"                       => JsSuccess(Other)
+          case "Charity"                     => JsSuccess(Charity)
+          case "Trust"                       => JsSuccess(Trust)
+          case "NonUKEstablishment"          => JsSuccess(NonUKEstablishment)
+          case "UnincorporatedAssociation"   => JsSuccess(UnincorporatedAssociation)
           case s                             => JsError(s"$s is not a valid EntityType")
         }
       case e: JsError          => e

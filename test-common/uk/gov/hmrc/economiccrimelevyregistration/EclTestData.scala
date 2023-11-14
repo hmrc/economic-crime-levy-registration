@@ -33,7 +33,6 @@ import uk.gov.hmrc.auth.core.syntax.retrieved.authSyntaxForRetrieved
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, NonUKEstablishment, Trust, UnincorporatedAssociation}
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
@@ -556,13 +555,12 @@ trait EclTestData {
       registrationAdditionalInfo <- Arbitrary.arbitrary[RegistrationAdditionalInfo]
     } yield ValidCharityRegistration(
       commonRegistrationData.registration.copy(
-        entityType = Some(Other),
+        entityType = Some(Charity),
         incorporatedEntityJourneyData = None,
         partnershipEntityJourneyData = None,
         soleTraderEntityJourneyData = None,
         optOtherEntityJourneyData = Some(
           commonRegistrationData.registration.otherEntityJourneyData.copy(
-            entityType = Some(Charity),
             businessName = Some(businessName),
             charityRegistrationNumber = Some(charityNumber),
             companyRegistrationNumber = Some(companyNumber)
@@ -582,13 +580,12 @@ trait EclTestData {
         commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
       } yield ValidUnincorporatedAssociationRegistration(
         commonRegistrationData.registration.copy(
-          entityType = Some(Other),
+          entityType = Some(UnincorporatedAssociation),
           incorporatedEntityJourneyData = None,
           partnershipEntityJourneyData = None,
           soleTraderEntityJourneyData = None,
           optOtherEntityJourneyData = Some(
             commonRegistrationData.registration.otherEntityJourneyData.copy(
-              entityType = Some(UnincorporatedAssociation),
               businessName = Some(businessName),
               isCtUtrPresent = Some(isCtUtrPresent),
               ctUtr = Some(ctUtr)
@@ -606,13 +603,12 @@ trait EclTestData {
         commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
       } yield ValidTrustRegistration(
         commonRegistrationData.registration.copy(
-          entityType = Some(Other),
+          entityType = Some(Trust),
           incorporatedEntityJourneyData = None,
           partnershipEntityJourneyData = None,
           soleTraderEntityJourneyData = None,
           optOtherEntityJourneyData = Some(
             commonRegistrationData.registration.otherEntityJourneyData.copy(
-              entityType = Some(Trust),
               businessName = Some(businessName),
               ctUtr = Some(ctUtr)
             )
@@ -631,13 +627,12 @@ trait EclTestData {
       commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
     } yield ValidNonUkEstablishmentRegistration(
       commonRegistrationData.registration.copy(
-        entityType = Some(Other),
+        entityType = Some(NonUKEstablishment),
         incorporatedEntityJourneyData = None,
         partnershipEntityJourneyData = None,
         soleTraderEntityJourneyData = None,
         optOtherEntityJourneyData = Some(
           commonRegistrationData.registration.otherEntityJourneyData.copy(
-            entityType = Some(NonUKEstablishment),
             businessName = Some(businessName),
             companyRegistrationNumber = Some(companyNumber),
             utrType = Some(utrType),

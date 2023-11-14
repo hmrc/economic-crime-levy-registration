@@ -25,12 +25,12 @@ import uk.gov.hmrc.economiccrimelevyregistration._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
-import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.{Charity, Trust}
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
+import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
-import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.SchemaValidator
 
 import java.time.{Clock, Instant, ZoneId}
@@ -479,24 +479,24 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidRegistration = Registration
           .empty("")
           .copy(
-            entityType = Some(Other),
+            entityType = Some(Trust),
             carriedOutAmlRegulatedActivityInCurrentFy = Some(true)
           )
         val expectedErrors      = Seq(
+          DataValidationError(DataMissing, "AML supervisor is missing"),
           DataValidationError(DataMissing, "Relevant AP 12 months choice is missing"),
           DataValidationError(DataMissing, "Relevant AP revenue is missing"),
           DataValidationError(DataMissing, "Revenue meets threshold flag is missing"),
-          DataValidationError(DataMissing, "AML supervisor is missing"),
           DataValidationError(DataMissing, "Business sector is missing"),
           DataValidationError(DataMissing, "First contact name is missing"),
           DataValidationError(DataMissing, "First contact role is missing"),
           DataValidationError(DataMissing, "First contact email is missing"),
           DataValidationError(DataMissing, "First contact number is missing"),
-          DataValidationError(DataMissing, "Contact address is missing"),
           DataValidationError(DataMissing, "Second contact choice is missing"),
-          DataValidationError(DataMissing, "Other entity type is missing"),
+          DataValidationError(DataMissing, "Contact address is missing"),
           DataValidationError(DataMissing, "Other entity data is missing"),
-          DataValidationError(DataMissing, "Business name is missing")
+          DataValidationError(DataMissing, "Business name is missing"),
+          DataValidationError(DataMissing, "Corporation Tax Unique Taxpayer Reference is missing")
         )
         val result              = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
         result.isValid shouldBe false

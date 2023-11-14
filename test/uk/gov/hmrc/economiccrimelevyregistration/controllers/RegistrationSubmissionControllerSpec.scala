@@ -27,7 +27,7 @@ import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.{Amendment, Initial}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError.DataInvalid
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError, DataValidationErrors}
@@ -66,7 +66,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
   "submitRegistration" should {
     "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid for 'Normal' entities and nrsSubmissionEnabled is enabled" in forAll(
       Arbitrary.arbitrary[Registration],
-      Arbitrary.arbitrary[EntityType].retryUntil(_ != Other),
+      Arbitrary.arbitrary[EntityType].retryUntil(!EntityType.isOther(_)),
       Arbitrary.arbitrary[EclSubscription],
       Arbitrary.arbitrary[CreateEclSubscriptionResponse],
       Arbitrary.arbitrary[RegistrationAdditionalInfo]
@@ -120,7 +120,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
     "return 200 OK with a subscription reference number in the JSON response body when the registration data is valid for 'Normal' entities and nrsSubmissionEnabled is disabled" in forAll(
       Arbitrary.arbitrary[Registration],
-      Arbitrary.arbitrary[EntityType].retryUntil(_ != Other),
+      Arbitrary.arbitrary[EntityType].retryUntil(!EntityType.isOther(_)),
       Arbitrary.arbitrary[EclSubscription],
       Arbitrary.arbitrary[CreateEclSubscriptionResponse],
       Arbitrary.arbitrary[RegistrationAdditionalInfo]
@@ -185,7 +185,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         ) =>
           val html         = "<html><head></head><body></body></html>"
           val registration = aRegistration.copy(
-            entityType = Some(Other),
+            entityType = Some(Charity),
             registrationType = Some(Initial),
             base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
           )
@@ -211,7 +211,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
       "return 500 INTERNAL_SERVER_ERROR with validation errors in the JSON response body when the registration data is invalid" in forAll(
         Arbitrary.arbitrary[Registration],
-        Arbitrary.arbitrary[EntityType].retryUntil(_ != Other),
+        Arbitrary.arbitrary[EntityType].retryUntil(!EntityType.isOther(_)),
         Arbitrary.arbitrary[RegistrationAdditionalInfo]
       ) {
         (
@@ -346,7 +346,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
       "return 500 INTERNAL_SERVER_ERROR with validation errors in the JSON response body when the registration data is invalid" in forAll(
         Arbitrary.arbitrary[Registration],
-        Arbitrary.arbitrary[EntityType].retryUntil(_ != Other),
+        Arbitrary.arbitrary[EntityType].retryUntil(!EntityType.isOther(_)),
         Arbitrary.arbitrary[RegistrationAdditionalInfo]
       ) {
         (
