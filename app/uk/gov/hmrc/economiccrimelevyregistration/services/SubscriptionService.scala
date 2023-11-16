@@ -41,6 +41,17 @@ class SubscriptionService @Inject() (
   auditService: AuditService
 )(implicit ec: ExecutionContext)
     extends Logging {
+  def executeCallToKnownFactsQueueRepository(
+    knownFactsWorkItem: KnownFactsWorkItem
+  ): EitherT[Future, SubscriptionSubmissionError, Unit] =
+    EitherT {
+      knownFactsQueueRepository
+        .pushNew(knownFactsWorkItem)
+        .map(_ => Right(()))
+        .recover { case error =>
+          Left(SubscriptionSubmissionError.InternalUnexpectedError(error.getMessage, Some(error)))
+        }
+    }
 
   private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC)
 
