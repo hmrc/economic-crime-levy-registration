@@ -46,7 +46,7 @@ class DmsConnector @Inject() (
   private val dmsHeaders = AUTHORIZATION -> appConfig.internalAuthToken
 
   def sendPdf(
-    body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]] with Product with Serializable, NotUsed]
+    body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed]
   )(implicit hc: HeaderCarrier): Future[Unit] =
     retryFor[Unit]("DMS submission")(retryCondition) {
       httpClient

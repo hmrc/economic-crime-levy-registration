@@ -25,9 +25,5 @@ import javax.inject.Inject
 import scala.concurrent.Future
 
 class StubTaxEnrolmentsConnector @Inject() extends TaxEnrolmentsConnector {
-  override def enrol(createEnrolmentRequest: CreateEnrolmentRequest)(implicit
-    hc: HeaderCarrier
-  ): Future[Either[UpstreamErrorResponse, HttpResponse]] =
-    Future.successful(Left(UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR)))
-
+  override def enrol(createEnrolmentRequest: CreateEnrolmentRequest)(implicit hc: HeaderCarrier): Future[Unit] = ???
 }

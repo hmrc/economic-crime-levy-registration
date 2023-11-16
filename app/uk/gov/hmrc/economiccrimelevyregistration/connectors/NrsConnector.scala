@@ -55,6 +55,6 @@ class NrsConnector @Inject() (
         .post(url"$nrsSubmissionUrl")
         .withBody(Json.toJson(nrsSubmission))
         .setHeader(nrsHeaders: _*)
-        .executeAndDeserialise
+        .executeAndDeserialise[NrsSubmissionResponse]
     }
 }

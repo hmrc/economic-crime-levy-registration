@@ -19,9 +19,9 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 import cats.data.EitherT
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import play.api.mvc.Results.{Ok, Status}
-import uk.gov.hmrc.economiccrimelevyregistration.models.{RegistrationAdditionalInfo, SessionData}
+import play.api.mvc.Results.Status
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
+import uk.gov.hmrc.economiccrimelevyregistration.models.{RegistrationAdditionalInfo, SessionData}
 
 import scala.concurrent.{ExecutionContext, Future}
 

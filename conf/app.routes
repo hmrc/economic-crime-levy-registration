@@ -14,7 +14,7 @@ DELETE        /session/:id                                   uk.gov.hmrc.economi
 
 GET           /registrations/:id/validation-errors           uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationValidationController.getValidationErrors(id)
 
-POST          /submit-registration/:id                       uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationSubmissionController.submitRegistration(id)
+#POST          /submit-registration/:id                       uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationSubmissionController.submitRegistration(id)
 
 GET           /subscription-status/:businessPartnerId        uk.gov.hmrc.economiccrimelevyregistration.controllers.SubscriptionStatusController.getSubscriptionStatus(businessPartnerId)
 

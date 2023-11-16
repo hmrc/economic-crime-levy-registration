@@ -67,6 +67,6 @@ class IntegrationFrameworkConnector @Inject() (
         )
         .withBody(Json.toJson(eclSubscription))
         .setHeader(integrationFrameworkHeaders: _*)
-        .executeAndDeserialise
+        .executeAndDeserialise[CreateEclSubscriptionResponse]
     }
 }

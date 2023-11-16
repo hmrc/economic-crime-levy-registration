@@ -27,7 +27,5 @@ import scala.concurrent.Future
 class StubEnrolmentStoreProxyConnector @Inject() extends EnrolmentStoreProxyConnector {
   override def upsertKnownFacts(upsertKnownFactsRequest: UpsertKnownFactsRequest, eclReference: String)(implicit
     hc: HeaderCarrier
-  ): Future[Either[UpstreamErrorResponse, HttpResponse]] =
-    Future.successful(Right(HttpResponse(NO_CONTENT, "", Map.empty)))
-
+  ): Future[Unit] = ???
 }

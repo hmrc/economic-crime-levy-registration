@@ -73,7 +73,9 @@ class DmsService @Inject() (
 
   def createBody(
     pdf: ByteArrayOutputStream
-  ): EitherT[Future, DmsSubmissionError, Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed]] =
+  ): EitherT[Future, DmsSubmissionError.InternalUnexpectedError, Source[MultipartFormData.Part[
+    Source[ByteString, NotUsed]
+  ], NotUsed]] =
     EitherT {
       Future.successful(
         Try(
@@ -87,7 +89,10 @@ class DmsService @Inject() (
       )
     }
 
-  def assembleBodySource(pdf: ByteArrayOutputStream, dateOfReceipt: String) =
+  def assembleBodySource(
+    pdf: ByteArrayOutputStream,
+    dateOfReceipt: String
+  ): Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed] =
     Source(
       Seq(
         DataPart("callbackUrl", appConfig.dmsSubmissionCallbackUrl),
@@ -110,18 +115,16 @@ class DmsService @Inject() (
     body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed]
   )(implicit hc: HeaderCarrier): EitherT[Future, DmsSubmissionError, CreateEclSubscriptionResponsePayload] =
     EitherT {
-      Future.successful(
-        dmsConnector
-          .sendPdf(body)
-          .map(Right(CreateEclSubscriptionResponsePayload(Instant.now(), "")))
-          .recover {
-            case error @ UpstreamErrorResponse(message, code, _, _)
-                if UpstreamErrorResponse.Upstream5xxResponse
-                  .unapply(error)
-                  .isDefined || UpstreamErrorResponse.Upstream4xxResponse.unapply(error).isDefined =>
-              Left(DmsSubmissionError.BadGateway(reason = message, code = code))
-            case NonFatal(thr) => Left(DmsSubmissionError.InternalUnexpectedError(thr.getMessage, Some(thr)))
-          }
-      )
+      dmsConnector
+        .sendPdf(body)
+        .map(_ => Right(CreateEclSubscriptionResponsePayload(Instant.now(), "")))
+        .recover {
+          case error @ UpstreamErrorResponse(message, code, _, _)
+              if UpstreamErrorResponse.Upstream5xxResponse
+                .unapply(error)
+                .isDefined || UpstreamErrorResponse.Upstream4xxResponse.unapply(error).isDefined =>
+            Left(DmsSubmissionError.BadGateway(reason = message, code = code))
+          case NonFatal(thr) => Left(DmsSubmissionError.InternalUnexpectedError(thr.getMessage, Some(thr)))
+        }
     }
 }
