@@ -18,7 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
 import play.api.Logging
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{BadGateway, DataRetrievalError, DmsSubmissionError, InternalServiceError, KnownFactsError, ResponseError}
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{BadGateway, DataRetrievalError, DmsSubmissionError, InternalServiceError, KnownFactsError, RegistrationError, ResponseError}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -81,6 +81,15 @@ trait ErrorHandler extends Logging {
         case DmsSubmissionError.InternalUnexpectedError(message, cause) =>
           ResponseError.internalServiceError(message = message, cause = cause)
         case DmsSubmissionError.BadGateway(reason, code)                => ResponseError.badGateway(reason, code)
+      }
+    }
+
+  implicit val registrationErrorConverter: Converter[RegistrationError] =
+    new Converter[RegistrationError] {
+      override def convert(error: RegistrationError): ResponseError = error match {
+        case RegistrationError.InternalUnexpectedError(message, cause) =>
+          ResponseError.internalServiceError(message = message, cause = cause)
+        case RegistrationError.NotFound(id) => ResponseError.notFoundError(s"Unable to find record with id: $id")
       }
     }
 
