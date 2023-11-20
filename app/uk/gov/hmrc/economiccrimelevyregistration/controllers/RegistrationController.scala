@@ -32,11 +32,13 @@ class RegistrationController @Inject() (
   registrationService: RegistrationService,
   authorise: AuthorisedAction
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) with BaseController with ErrorHandler {
+    extends BackendController(cc)
+    with BaseController
+    with ErrorHandler {
 
   def upsertRegistration: Action[JsValue] = authorise(parse.json).async { implicit request =>
     withJsonBody[Registration] { registration =>
-    (for {
+      (for {
         updatedRegistration <- registrationService.upsertRegistration(registration).asResponseError
       } yield updatedRegistration).convertToResult(OK)
     }
@@ -44,12 +46,12 @@ class RegistrationController @Inject() (
 
   def getRegistration(id: String): Action[AnyContent] = authorise.async { _ =>
     (for {
-        registration <- registrationService.getRegistration(id).asResponseError
-      } yield registration).convertToResult(OK)
+      registration <- registrationService.getRegistration(id).asResponseError
+    } yield registration).convertToResult(OK)
   }
 
   def deleteRegistration(id: String): Action[AnyContent] = authorise.async { _ =>
-    (for{
+    (for {
       _ <- registrationService.deleteRegistration(id).asResponseError
     } yield ()).convertToResult(OK)
   }

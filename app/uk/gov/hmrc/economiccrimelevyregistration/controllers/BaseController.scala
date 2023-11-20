@@ -21,7 +21,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.mvc.Results.Status
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
-import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo, SessionData}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, Registration, RegistrationAdditionalInfo, SessionData}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -70,6 +70,12 @@ trait BaseController {
   implicit val registrationResponse: Converter[Registration] =
     new Converter[Registration] {
       override def getResponse(response: Registration, responseCode: Int): Result =
+        Status(responseCode)(Json.toJson(response))
+    }
+
+  implicit val eclSubscriptionStatusResponse: Converter[EclSubscriptionStatus] =
+    new Converter[EclSubscriptionStatus] {
+      override def getResponse(response: EclSubscriptionStatus, responseCode: Int): Result =
         Status(responseCode)(Json.toJson(response))
     }
 }

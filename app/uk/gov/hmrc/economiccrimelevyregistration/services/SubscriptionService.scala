@@ -18,13 +18,15 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import cats.data.EitherT
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.{IntegrationFrameworkConnector, TaxEnrolmentsConnector}
+import uk.gov.hmrc.economiccrimelevyregistration.models.audit.{AuditSubscriptionStatus, SubscriptionStatusRetrievedAuditEvent}
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.SubscriptionSubmissionError
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
-import uk.gov.hmrc.economiccrimelevyregistration.models.{KeyValue, KnownFactsWorkItem, Registration}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, SubscriptionStatusResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, KeyValue, KnownFactsWorkItem, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneOffset}
@@ -36,7 +38,8 @@ class SubscriptionService @Inject() (
   integrationFrameworkConnector: IntegrationFrameworkConnector,
   taxEnrolmentsConnector: TaxEnrolmentsConnector,
   knownFactsQueueRepository: KnownFactsQueueRepository,
-  auditService: AuditService
+  auditService: AuditService,
+  auditConnector: AuditConnector
 )(implicit ec: ExecutionContext) {
 
   private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC)
@@ -61,9 +64,38 @@ class SubscriptionService @Inject() (
 
     } yield integrationFrameworkResult
 
+  def getSubscriptionStatus(businessPartnerId: String, internalId: String)(implicit
+    hc: HeaderCarrier
+  ): EitherT[Future, SubscriptionSubmissionError, EclSubscriptionStatus] =
+    for {
+      eclSubscriptionStatus <- executeCallToIntegrationFrameworkForSubscriptionStatus(businessPartnerId, internalId)
+    } yield eclSubscriptionStatus.toEclSubscriptionStatus
+
+  private def executeCallToIntegrationFrameworkForSubscriptionStatus(businessPartnerId: String, internalId: String)(
+    implicit hc: HeaderCarrier
+  ): EitherT[Future, SubscriptionSubmissionError, SubscriptionStatusResponse] =
+    EitherT {
+      integrationFrameworkConnector
+        .getSubscriptionStatus(businessPartnerId)
+        .map { response =>
+          executeExtendedAuditEvent(businessPartnerId, response, internalId)
+          Right(response)
+        }
+        .recover {
+          case error @ UpstreamErrorResponse(message, code, _, _)
+              if UpstreamErrorResponse.Upstream5xxResponse
+                .unapply(error)
+                .isDefined || UpstreamErrorResponse.Upstream4xxResponse
+                .unapply(error)
+                .isDefined =>
+            Left(SubscriptionSubmissionError.BadGateway(message, code))
+          case NonFatal(thr) => Left(SubscriptionSubmissionError.InternalUnexpectedError(thr.getMessage, Some(thr)))
+
+        }
+    }
   def executeCallToKnownFactsQueueRepository(
     knownFactsWorkItem: KnownFactsWorkItem
-  ): EitherT[Future, SubscriptionSubmissionError, Unit] =
+  ): EitherT[Future, SubscriptionSubmissionError, Unit]                       =
     EitherT {
       knownFactsQueueRepository
         .pushNew(knownFactsWorkItem)
@@ -136,5 +168,22 @@ class SubscriptionService @Inject() (
     CreateEnrolmentRequest(
       identifiers = Seq(KeyValue(IdentifierKey, subscriptionResponse.success.eclReference)),
       verifiers = Seq(KeyValue(VerifierKey, dateFormatter.format(subscriptionResponse.success.processingDate)))
+    )
+
+  private def executeExtendedAuditEvent(
+    businessPartnerId: String,
+    subscriptionStatusResponse: SubscriptionStatusResponse,
+    internalId: String
+  ): Unit =
+    auditConnector.sendExtendedEvent(
+      SubscriptionStatusRetrievedAuditEvent(
+        internalId,
+        businessPartnerId,
+        AuditSubscriptionStatus(
+          subscriptionStatusResponse.subscriptionStatus,
+          subscriptionStatusResponse.idValue,
+          subscriptionStatusResponse.channel
+        )
+      ).extendedDataEvent
     )
 }
