@@ -625,10 +625,12 @@ class RegistrationValidationServiceSpec extends SpecBase {
       (
         validNonUkEstablishmentRegistration: ValidNonUkEstablishmentRegistration,
         none: Boolean,
+        hasUkCrn: Boolean,
         utrType: UtrType,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
         val otherEntityJourneyData     = validNonUkEstablishmentRegistration.registration.otherEntityJourneyData.copy(
+          hasUkCrn = if (none) None else Some(hasUkCrn),
           companyRegistrationNumber = None,
           utrType = if (none) None else Some(utrType),
           ctUtr = None,
@@ -646,13 +648,20 @@ class RegistrationValidationServiceSpec extends SpecBase {
               case CtUtr => "Corporation Tax Unique Taxpayer Reference"
             }
           }
-        val expectedErrors             = Seq(
-          DataValidationError(DataMissing, "Company registration number is missing"),
-          DataValidationError(DataMissing, message + " is missing")
-        )
+        val expectedErrors             =
+          if (none) {
+            Seq(DataValidationError(DataMissing, "Has uk crn is missing"))
+          } else if (hasUkCrn) {
+            Seq(DataValidationError(DataMissing, "Company registration number is missing"))
+          } else {
+            Seq()
+          }
         val result                     = service.validateRegistration(invalidCharityRegistration, registrationAdditionalInfo)
         result.isValid shouldBe false
-        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+        result.leftMap(nec =>
+          nec.toList should contain theSameElementsAs expectedErrors ++
+            Seq(DataValidationError(DataMissing, message + " is missing"))
+        )
     }
   }
 }
