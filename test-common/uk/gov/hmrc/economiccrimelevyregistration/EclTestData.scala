@@ -620,7 +620,7 @@ trait EclTestData {
   implicit val arbValidNonUkEstablishmentRegistration: Arbitrary[ValidNonUkEstablishmentRegistration] = Arbitrary {
     for {
       businessName           <- Arbitrary.arbitrary[String]
-      isUkCrnPresent               <- Arbitrary.arbitrary[Boolean]
+      isUkCrnPresent         <- Arbitrary.arbitrary[Boolean]
       companyNumber          <- Arbitrary.arbitrary[String]
       utrType                <- Arbitrary.arbitrary[UtrType]
       utrNumber              <- Arbitrary.arbitrary[String]
