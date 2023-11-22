@@ -625,12 +625,12 @@ class RegistrationValidationServiceSpec extends SpecBase {
       (
         validNonUkEstablishmentRegistration: ValidNonUkEstablishmentRegistration,
         none: Boolean,
-        hasUkCrn: Boolean,
+        isUkCrnPresent: Boolean,
         utrType: UtrType,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
         val otherEntityJourneyData     = validNonUkEstablishmentRegistration.registration.otherEntityJourneyData.copy(
-          isUkCrnPresent = if (none) None else Some(hasUkCrn),
+          isUkCrnPresent = if (none) None else Some(isUkCrnPresent),
           companyRegistrationNumber = None,
           utrType = if (none) None else Some(utrType),
           ctUtr = None,
@@ -651,7 +651,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val expectedErrors             =
           if (none) {
             Seq(DataValidationError(DataMissing, "Has uk crn is missing"))
-          } else if (hasUkCrn) {
+          } else if (isUkCrnPresent) {
             Seq(DataValidationError(DataMissing, "Company registration number is missing"))
           } else {
             Seq()
