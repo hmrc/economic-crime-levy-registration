@@ -620,7 +620,7 @@ trait EclTestData {
   implicit val arbValidNonUkEstablishmentRegistration: Arbitrary[ValidNonUkEstablishmentRegistration] = Arbitrary {
     for {
       businessName           <- Arbitrary.arbitrary[String]
-      hasUkCrn               <- Arbitrary.arbitrary[Boolean]
+      isUkCrnPresent               <- Arbitrary.arbitrary[Boolean]
       companyNumber          <- Arbitrary.arbitrary[String]
       utrType                <- Arbitrary.arbitrary[UtrType]
       utrNumber              <- Arbitrary.arbitrary[String]
@@ -635,7 +635,7 @@ trait EclTestData {
         optOtherEntityJourneyData = Some(
           commonRegistrationData.registration.otherEntityJourneyData.copy(
             businessName = Some(businessName),
-            isUkCrnPresent = Some(hasUkCrn),
+            isUkCrnPresent = Some(isUkCrnPresent),
             companyRegistrationNumber = Some(companyNumber),
             utrType = Some(utrType),
             ctUtr = if (utrType == CtUtr) Some(utrNumber) else None,
