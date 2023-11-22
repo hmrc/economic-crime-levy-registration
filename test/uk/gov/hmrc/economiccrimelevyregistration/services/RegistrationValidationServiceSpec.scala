@@ -630,7 +630,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
         val otherEntityJourneyData     = validNonUkEstablishmentRegistration.registration.otherEntityJourneyData.copy(
-          hasUkCrn = if (none) None else Some(hasUkCrn),
+          isUkCrnPresent = if (none) None else Some(hasUkCrn),
           companyRegistrationNumber = None,
           utrType = if (none) None else Some(utrType),
           ctUtr = None,

@@ -444,10 +444,10 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
   ): ValidationResult[Either[EclSubscription, Registration]] = {
     val data = registration.otherEntityJourneyData
     (
-      validateOptExists(data.hasUkCrn, "Has uk crn"),
+      validateOptExists(data.isUkCrnPresent, "Has uk crn"),
       validateConditionalOptExists(
         data.companyRegistrationNumber,
-        data.hasUkCrn.contains(true),
+        data.isUkCrnPresent.contains(true),
         "Company registration number"
       ),
       validateOptExists(data.utrType, "Utr type"),
