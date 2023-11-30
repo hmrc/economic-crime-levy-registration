@@ -27,7 +27,7 @@ final case class Registration(
   amlSupervisor: Option[AmlSupervisor],
   relevantAp12Months: Option[Boolean],
   relevantApLength: Option[Int],
-  relevantApRevenue: Option[Double],
+  relevantApRevenue: Option[BigDecimal],
   revenueMeetsThreshold: Option[Boolean],
   entityType: Option[EntityType],
   incorporatedEntityJourneyData: Option[IncorporatedEntityJourneyData],

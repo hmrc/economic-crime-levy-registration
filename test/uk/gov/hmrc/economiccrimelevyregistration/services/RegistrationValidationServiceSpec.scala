@@ -25,7 +25,7 @@ import uk.gov.hmrc.economiccrimelevyregistration._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
-import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.{Charity, Trust}
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Trust
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
