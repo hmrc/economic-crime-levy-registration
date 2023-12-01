@@ -19,22 +19,13 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 import cats.data.EitherT
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import play.api.mvc.Results.{Ok, Status}
+import play.api.mvc.Results.Status
 import uk.gov.hmrc.economiccrimelevyregistration.models.{RegistrationAdditionalInfo, SessionData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait BaseController {
-
-  def checkOptionalValueExists[T](value: Option[T]): EitherT[Future, ResponseError, T] = EitherT(
-    Future.successful(
-      value match {
-        case Some(value) => Right(value)
-        case None        => Left(ResponseError.internalServiceError())
-      }
-    )
-  )
 
   implicit class ResponseHandler[R](value: EitherT[Future, ResponseError, R]) {
 

@@ -45,6 +45,7 @@ import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import wolfendale.scalacheck.regexp.RegexpGen
 
 import java.time.{Clock, Instant, LocalDate}
+import scala.math.BigDecimal.RoundingMode
 
 final case class ValidIncorporatedEntityRegistration(
   registration: Registration,
@@ -116,11 +117,17 @@ trait EclTestData {
     Gen.oneOf(Organisation, Individual, Agent)
   }
 
+  implicit def arbRevenue: Arbitrary[BigDecimal] =
+    Arbitrary {
+      Gen.chooseNum[Double](0, 99999999999.99).map(BigDecimal.apply(_).setScale(2, RoundingMode.DOWN))
+    }
+
   implicit val arbRegistration: Arbitrary[Registration] = Arbitrary {
     for {
       registration <- MkArbitrary[Registration].arbitrary.arbitrary
       internalId   <- Gen.nonEmptyListOf(Arbitrary.arbitrary[Char]).map(_.mkString)
-    } yield registration.copy(internalId = internalId)
+      revenue      <- arbRevenue.arbitrary
+    } yield registration.copy(internalId = internalId, relevantApRevenue = Some(revenue))
   }
 
   implicit val arbRegistrationAdditionalInfo: Arbitrary[RegistrationAdditionalInfo] = Arbitrary {
@@ -168,7 +175,7 @@ trait EclTestData {
                             )
       relevantAp12Months <- Arbitrary.arbitrary[Boolean]
       relevantApLength   <- Arbitrary.arbitrary[Int]
-      relevantApRevenue  <- Arbitrary.arbitrary[Long]
+      relevantApRevenue  <- Arbitrary.arbitrary[BigDecimal]
       firstContactName   <- stringsWithMaxLength(160)
       firstContactRole   <- stringsWithMaxLength(160)
       firstContactEmail  <- emailAddress(132)
