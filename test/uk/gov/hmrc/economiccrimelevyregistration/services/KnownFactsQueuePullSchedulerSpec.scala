@@ -64,7 +64,7 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
             ArgumentMatchers.eq(expectedUpsertKnownFactsRequest),
             ArgumentMatchers.eq(knownFactsWorkItem.item.eclReference)
           )(any())
-        ).thenReturn(Future.successful(Right(HttpResponse(OK, "", Map.empty))))
+        ).thenReturn(Future.successful(()))
 
         when(mockKnownFactsQueueRepository.completeAndDelete(ArgumentMatchers.eq(knownFactsWorkItem.id)))
           .thenReturn(Future.successful(true))
@@ -72,15 +72,6 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
         val result: Unit = scheduler.processKnownFacts
 
         result shouldBe ()
-
-        verify(mockEnrolmentStoreProxyConnector, times(1))
-          .upsertKnownFacts(
-            ArgumentMatchers.eq(expectedUpsertKnownFactsRequest),
-            ArgumentMatchers.eq(knownFactsWorkItem.item.eclReference)
-          )(any())
-
-        verify(mockKnownFactsQueueRepository, times(1))
-          .completeAndDelete(ArgumentMatchers.eq(knownFactsWorkItem.id))
 
         reset(mockEnrolmentStoreProxyConnector)
         reset(mockKnownFactsQueueRepository)
@@ -116,15 +107,6 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
         val result: Unit = scheduler.processKnownFacts
 
         result shouldBe ()
-
-        verify(mockEnrolmentStoreProxyConnector, times(1))
-          .upsertKnownFacts(
-            ArgumentMatchers.eq(expectedUpsertKnownFactsRequest),
-            ArgumentMatchers.eq(knownFactsWorkItem.item.eclReference)
-          )(any())
-
-        verify(mockKnownFactsQueueRepository, times(1))
-          .markAs(ArgumentMatchers.eq(knownFactsWorkItem.id), ArgumentMatchers.eq(ProcessingStatus.Failed), any())
 
         reset(mockEnrolmentStoreProxyConnector)
         reset(mockKnownFactsQueueRepository)

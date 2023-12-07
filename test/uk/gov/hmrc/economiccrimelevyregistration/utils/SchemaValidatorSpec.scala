@@ -62,7 +62,10 @@ class SchemaValidatorSpec extends SpecBase {
       val result = schemaValidator.validateAgainstJsonSchema(TestObject("foo", "123"), testJsonSchema)
 
       result shouldBe Left(
-        DataValidationError.SchemaValidationError("Schema validation error for field: #/bar (pattern)")
+        DataValidationError.SchemaValidationError(
+          "Schema validation error: " +
+            "io.circe.schema.ValidationError$$anon$1: #/bar: string [123] does not match pattern ^[a-z]*$"
+        )
       )
     }
   }

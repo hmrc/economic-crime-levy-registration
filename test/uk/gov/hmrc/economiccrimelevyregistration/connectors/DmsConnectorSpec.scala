@@ -51,12 +51,12 @@ class DmsConnectorSpec extends SpecBase {
       when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
-        .thenReturn(Future.successful(Right(expectedResponse)))
+      when(mockRequestBuilder.execute[HttpResponse](any(), any()))
+        .thenReturn(Future.successful(expectedResponse))
 
       val result = await(connector.sendPdf(Source(Seq.empty)))
 
-      result shouldBe Right(expectedResponse)
+      result shouldBe ()
 
       verify(mockRequestBuilder, times(1))
         .execute(any(), any())
@@ -66,19 +66,21 @@ class DmsConnectorSpec extends SpecBase {
 
     "return UpstreamErrorResponse if post to DMS queue fails" in {
 
-      val upstream5xxResponse = UpstreamErrorResponse.apply("", INTERNAL_SERVER_ERROR)
+      val expectedResponse = HttpResponse.apply(BAD_REQUEST, "")
+
+      val upstream5xxResponse = UpstreamErrorResponse.apply("", BAD_REQUEST)
 
       when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
-        .thenReturn(Future.successful(Left(upstream5xxResponse)))
+      when(mockRequestBuilder.execute[HttpResponse](any(), any()))
+        .thenReturn(Future.successful(expectedResponse))
 
-      val result = await(connector.sendPdf(Source(Seq.empty)))
+      val result = intercept[UpstreamErrorResponse](await(connector.sendPdf(Source(Seq.empty))))
 
-      result shouldBe Left(upstream5xxResponse)
+      result shouldBe upstream5xxResponse
 
-      verify(mockRequestBuilder, times(2))
+      verify(mockRequestBuilder, times(1))
         .execute(any(), any())
 
       reset(mockRequestBuilder)

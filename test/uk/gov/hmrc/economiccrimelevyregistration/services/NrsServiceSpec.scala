@@ -91,7 +91,7 @@ class NrsServiceSpec extends SpecBase {
             .value
         )
 
-      result shouldBe nrsSubmissionResponse
+      result shouldBe Right(nrsSubmissionResponse)
     }
 
     "throw an IllegalStateException when there is no base64 encoded NRS submission HTML" in forAll(

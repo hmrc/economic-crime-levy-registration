@@ -265,7 +265,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
   private def validateAmlSupervisor(registration: Registration): ValidationResult[Unit] =
     registration.amlSupervisor match {
       case Some(AmlSupervisor(GamblingCommission | FinancialConductAuthority, _)) =>
-        Left(DataValidationError.DataMissing("AML supervisor cannot be GC or FCA"))
+        Left(DataValidationError.DataInvalid("AML supervisor cannot be GC or FCA"))
       case Some(AmlSupervisor(Hmrc, _))                                           => Right(())
       case Some(AmlSupervisor(_, Some(_)))                                        => Right(())
       case _                                                                      =>

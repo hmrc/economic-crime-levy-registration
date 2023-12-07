@@ -22,7 +22,9 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
 import play.api.mvc.Result
+import uk.gov.hmrc.economiccrimelevyregistration.ValidScottishOrGeneralPartnershipRegistration
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError, ResponseError}
 import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
 import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditionalInfoService, RegistrationService, RegistrationValidationService}
@@ -46,38 +48,47 @@ class RegistrationValidationControllerSpec extends SpecBase {
   "getValidationErrors" should {
     "return 200 OK when the registration data is valid" in forAll {
       (
-        registration: Registration,
+        registration: ValidScottishOrGeneralPartnershipRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
-        when(mockRegistrationService.getRegistration(any())).thenReturn(EitherT.rightT(registration))
+        when(mockRegistrationService.getRegistration(any())(any()))
+          .thenReturn(EitherT.rightT(registration.registration))
 
-        when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
+        when(
+          mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.registration.internalId))(any())
+        )
           .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
-        when(mockRegistrationValidationService.validateRegistration(any()))
-          .thenReturn(Right(registration))
+        when(mockRegistrationValidationService.validateSubscription(any(), any()))
+          .thenReturn(Right(registration.expectedEclSubscription))
 
         val result: Future[Result] =
-          controller.checkForValidationErrors(registration.internalId)(fakeRequest)
+          controller.checkForValidationErrors(registration.registration.internalId)(fakeRequest)
 
         status(result) shouldBe OK
     }
 
     "return 200 OK with DataValidationError in the JSON response body when the registration data is invalid" in forAll {
-      (registration: Registration, registrationAdditionalInfo: RegistrationAdditionalInfo) =>
-        when(mockRegistrationService.getRegistration(any())).thenReturn(EitherT.rightT(registration))
+      (
+        registration: ValidScottishOrGeneralPartnershipRegistration,
+        registrationAdditionalInfo: RegistrationAdditionalInfo
+      ) =>
+        when(mockRegistrationService.getRegistration(any())(any()))
+          .thenReturn(EitherT.rightT(registration.registration))
 
-        when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
+        when(
+          mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.registration.internalId))(any())
+        )
           .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
-        when(mockRegistrationValidationService.validateRegistration(any()))
+        when(mockRegistrationValidationService.validateSubscription(any(), any()))
           .thenReturn(Left(DataValidationError.DataInvalid("Invalid data")))
 
         val result: Future[Result] =
-          controller.checkForValidationErrors(registration.internalId)(fakeRequest)
+          controller.checkForValidationErrors(registration.registration.internalId)(fakeRequest)
 
         status(result)        shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(ResponseError.notFoundError(""))
+        contentAsJson(result) shouldBe Json.toJson(true)
     }
   }
 

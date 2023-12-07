@@ -22,7 +22,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.RegistrationError
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{RegistrationError, ResponseError}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.RegistrationService
 import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
@@ -41,7 +41,7 @@ class RegistrationControllerSpec extends SpecBase {
 
   "upsertRegistration" should {
     "return 200 OK with the registration that was upserted" in forAll { registration: Registration =>
-      when(mockRegistrationService.upsertRegistration(any())).thenReturn(EitherT.rightT(registration))
+      when(mockRegistrationService.upsertRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
 
       val result: Future[Result] =
         controller.upsertRegistration()(
@@ -55,7 +55,7 @@ class RegistrationControllerSpec extends SpecBase {
 
   "getRegistration" should {
     "return 200 OK with an existing registration when there is one for the id" in forAll { registration: Registration =>
-      when(mockRegistrationService.getRegistration(any())).thenReturn(EitherT.rightT(registration))
+      when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
 
       val result: Future[Result] =
         controller.getRegistration(registration.internalId)(fakeRequest)
@@ -65,24 +65,29 @@ class RegistrationControllerSpec extends SpecBase {
     }
 
     "return 404 NOT_FOUND when there is no registration for the id" in {
-      when(mockRegistrationService.getRegistration(any())).thenReturn(EitherT.leftT(RegistrationError.NotFound("")))
+      val eclReference: String = "XMECL001"
+
+      when(mockRegistrationService.getRegistration(any())(any()))
+        .thenReturn(EitherT.leftT(RegistrationError.NotFound(eclReference)))
 
       val result: Future[Result] =
         controller.getRegistration("id")(fakeRequest)
 
       status(result)        shouldBe NOT_FOUND
-      contentAsJson(result) shouldBe Json.toJson(ErrorResponse(NOT_FOUND, "Registration not found"))
+      contentAsJson(result) shouldBe Json.toJson(
+        ResponseError.notFoundError(s"Unable to find record with id: $eclReference")
+      )
     }
   }
 
   "deleteRegistration" should {
-    "return 204 NO_CONTENT when a registration is deleted" in {
-      when(mockRegistrationService.deleteRegistration(any())).thenReturn(EitherT.rightT(()))
+    "return 200 OK when a registration is deleted" in {
+      when(mockRegistrationService.deleteRegistration(any())(any())).thenReturn(EitherT.rightT(()))
 
       val result: Future[Result] =
         controller.deleteRegistration("id")(fakeRequest)
 
-      status(result) shouldBe NO_CONTENT
+      status(result) shouldBe OK
     }
   }
 

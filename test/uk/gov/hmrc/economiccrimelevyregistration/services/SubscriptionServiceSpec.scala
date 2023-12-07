@@ -145,13 +145,20 @@ class SubscriptionServiceSpec extends SpecBase {
         registration: Registration,
         eclReference: String,
         liabilityYear: Int,
-        dateProcessed: Instant
+        dateProcessed: Instant,
+        workItem: WorkItem[KnownFactsWorkItem]
       ) =>
         reset(mockTaxEnrolmentsConnector)
         reset(mockAuditService)
+        reset(mockKnownFactsQueueRepository)
+
+        val knownFactsWorkItem = KnownFactsWorkItem(eclReference, dateFormatter.format(dateProcessed))
 
         when(mockTaxEnrolmentsConnector.enrol(any())(any()))
           .thenReturn(Future.failed(UpstreamErrorResponse(errorMessage, INTERNAL_SERVER_ERROR)))
+
+        when(mockKnownFactsQueueRepository.pushNew(ArgumentMatchers.eq(knownFactsWorkItem), any(), any()))
+          .thenReturn(Future.successful(workItem))
 
         when(mockAuditService.successfulSubscriptionFailedEnrolment(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(AuditResult.Success))
