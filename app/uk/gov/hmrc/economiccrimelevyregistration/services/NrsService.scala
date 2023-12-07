@@ -81,7 +81,7 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
                 .unapply(error)
                 .isDefined || UpstreamErrorResponse.Upstream4xxResponse.unapply(error).isDefined =>
             Left(NrsSubmissionError.BadGateway(reason = message, code = code))
-          case NonFatal(thr) => Left(NrsSubmissionError.InternalUnexpectedError(thr.getMessage, Some(thr)))
+          case NonFatal(thr) => Left(NrsSubmissionError.InternalUnexpectedError(Some(thr)))
         }
     }
 
@@ -98,9 +98,9 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
                     .map("%02x".format(_))
                     .mkString
                 )
-              case Failure(e)     => Left(NrsSubmissionError.InternalUnexpectedError("Algorithm not found", Some(e)))
+              case Failure(e)     => Left(NrsSubmissionError.InternalUnexpectedError(Some(e)))
             }
-          case Failure(e)      => Left(NrsSubmissionError.InternalUnexpectedError("Error decoding base64", Some(e)))
+          case Failure(e)      => Left(NrsSubmissionError.InternalUnexpectedError(Some(e)))
         }
       )
     }
@@ -110,7 +110,7 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
       Future.successful(
         headers.get(key) match {
           case Some(value) => Right(value)
-          case None        => Left(NrsSubmissionError.InternalUnexpectedError("User auth token not present in header", None))
+          case None        => Left(NrsSubmissionError.InternalUnexpectedError(None))
         }
       )
     }
@@ -123,7 +123,7 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
           case None        =>
             Left(
               NrsSubmissionError
-                .InternalUnexpectedError("Base64 encoded NRS submission HTML not found in registration data", None)
+                .InternalUnexpectedError(None)
             )
         }
       )

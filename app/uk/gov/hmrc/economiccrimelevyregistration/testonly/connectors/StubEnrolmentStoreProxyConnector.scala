@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors
 
-import play.api.http.Status.NO_CONTENT
+import play.api.http.Status
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.EnrolmentStoreProxyConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.UpsertKnownFactsRequest
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 import javax.inject.Inject
 import scala.concurrent.Future
@@ -27,5 +27,5 @@ import scala.concurrent.Future
 class StubEnrolmentStoreProxyConnector @Inject() extends EnrolmentStoreProxyConnector {
   override def upsertKnownFacts(upsertKnownFactsRequest: UpsertKnownFactsRequest, eclReference: String)(implicit
     hc: HeaderCarrier
-  ): Future[Unit] = ???
+  ): Future[Unit] = Future.successful((HttpResponse(Status.NO_CONTENT, "", Map.empty)))
 }

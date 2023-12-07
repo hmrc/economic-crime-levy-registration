@@ -28,7 +28,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.{KnownFactsWorkItem, Reg
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.WorkItem
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneOffset}
@@ -41,15 +41,17 @@ class SubscriptionServiceSpec extends SpecBase {
   val mockTaxEnrolmentsConnector: TaxEnrolmentsConnector               = mock[TaxEnrolmentsConnector]
   val mockKnownFactsQueueRepository: KnownFactsQueueRepository         = mock[KnownFactsQueueRepository]
   val mockAuditService: AuditService                                   = mock[AuditService]
+  val mockAuditConnector: AuditConnector                               = mock[AuditConnector]
   val errorMessage                                                     = "Error message"
-  val upstreamErrorResponse                                            = UpstreamErrorResponse(errorMessage, INTERNAL_SERVER_ERROR)
+  val upstreamErrorResponse: UpstreamErrorResponse                     = UpstreamErrorResponse(errorMessage, INTERNAL_SERVER_ERROR)
   private val dateFormatter                                            = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC)
 
   val service = new SubscriptionService(
     mockIntegrationFrameworkConnector,
     mockTaxEnrolmentsConnector,
     mockKnownFactsQueueRepository,
-    mockAuditService
+    mockAuditService,
+    mockAuditConnector
   )
 
   "subscribe to ECL" should {
@@ -81,7 +83,6 @@ class SubscriptionServiceSpec extends SpecBase {
     "return successful Future with SubscriptionSubmissionError if Integration framework call failed" in forAll {
       (
         eclSubscription: EclSubscription,
-        subscriptionResponse: CreateEclSubscriptionResponse,
         registration: Registration,
         liabilityYear: Int
       ) =>

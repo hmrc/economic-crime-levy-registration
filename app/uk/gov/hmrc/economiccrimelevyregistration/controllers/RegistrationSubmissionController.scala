@@ -16,129 +16,110 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
-import cats.data.Validated.{Invalid, Valid}
-import play.api.Logging
-import play.api.libs.json.Json
-import play.api.mvc.ControllerComponents
+import cats.data.EitherT
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
-import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
-import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.{AuditService, DmsService, NrsService, RegistrationAdditionalInfoService, RegistrationValidationService, SubscriptionService}
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, ResponseError}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponsePayload, EclSubscription}
+import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
+import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
+import uk.gov.hmrc.economiccrimelevyregistration.services._
+import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdHelper
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RegistrationSubmissionController @Inject() (
   cc: ControllerComponents,
-  registrationRepository: RegistrationRepository,
+  registrationService: RegistrationService,
   authorise: AuthorisedAction,
   registrationValidationService: RegistrationValidationService,
-  subscriptionService: SubscriptionService,
+  registrationAdditionalInfoService: RegistrationAdditionalInfoService,
   nrsService: NrsService,
   dmsService: DmsService,
   auditService: AuditService,
-  registrationAdditionalInfoService: RegistrationAdditionalInfoService,
+  subscriptionService: SubscriptionService,
   appConfig: AppConfig
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
-    with Logging {
+    with BaseController
+    with ErrorHandler {
+  def submitRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
+    implicit val hc: HeaderCarrier = CorrelationIdHelper.headerCarrierWithCorrelationId(request)
 
-//  def submitRegistration(id: String) = authorise.async { implicit request =>
-//    registrationRepository.get(id).flatMap {
-//      case Some(registration) =>
-//        registrationAdditionalInfoService
-//          .get(registration.internalId)
-//          .foldF(
-//            error => {
-//              logger.error(
-//                s"Failed to find additional information for amendment with internal id: ${registration.internalId}"
-//              )
-//              Future.successful(InternalServerError("Failed to find additional information for amendment"))
-//            },
-//            additionalInfo =>
-//              registrationValidationService.validateRegistration(registration, additionalInfo) match {
-//                case Valid(Left(eclSubscription)) =>
-//                  subscriptionService.subscribeToEcl(eclSubscription, registration, additionalInfo.liabilityYear).map {
-//                    response =>
-//                      if (appConfig.nrsSubmissionEnabled) {
-//                        nrsService.submitToNrs(
-//                          registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-//                          response.success.eclReference,
-//                          appConfig.eclFirstTimeRegistrationNotableEvent
-//                        )
-//                      }
-//                      Ok(Json.toJson(response.success))
-//                  }
-//
-//                case Valid(Right(registration)) if registration.registrationType.contains(Amendment) =>
-//                  additionalInfo.eclReference match {
-//                    case Some(eclRef) =>
-//                      dmsService
-//                        .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
-//                        .flatMap {
-//                          case Right(response) =>
-//                            if (appConfig.amendRegistrationNrsEnabled) {
-//                              nrsService.submitToNrs(
-//                                registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-//                                eclRef,
-//                                appConfig.eclAmendRegistrationNotableEvent
-//                              )
-//                            }
-//                            auditService
-//                              .successfulSubscriptionAndEnrolment(
-//                                registration,
-//                                eclRef,
-//                                additionalInfo.liabilityYear
-//                              )
-//                            Future.successful(Ok(Json.toJson(response)))
-//                          case Left(e)         =>
-//                            logger.error(
-//                              s"Failed to submit PDF to DMS: ${e.getMessage()}"
-//                            )
-//                            Future.successful(InternalServerError("Could not send PDF to DMS queue"))
-//                        }
-//                    case None         =>
-//                      logger.error(
-//                        s"Expected eclReference to be present in additional information for amendment with internal id: ${registration.internalId}"
-//                      )
-//
-//                      Future.successful(
-//                        InternalServerError("Expected eclReference to be present in additional information")
-//                      )
-//                  }
-//
-//                case Valid(Right(registration)) =>
-//                  dmsService
-//                    .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), Instant.now())
-//                    .flatMap {
-//                      case Right(response) =>
-//                        auditService
-//                          .successfulSubscriptionAndEnrolment(
-//                            registration,
-//                            response.eclReference,
-//                            additionalInfo.liabilityYear
-//                          )
-//                        Future.successful(Ok(Json.toJson(response)))
-//                      case Left(e)         =>
-//                        logger.error(
-//                          s"Failed to submit PDF to DMS: ${e.getMessage()}"
-//                        )
-//                        Future.successful(InternalServerError("Could not send PDF to DMS queue"))
-//                    }
-//                case Invalid(e)                 =>
-//                  logger.error(
-//                    s"Invalid registration: ${e.toList.mkString(",")}"
-//                  )
-//                  Future.successful(InternalServerError(Json.toJson(DataValidationErrors(e.toList))))
-//              }
-//          )
-//      case None               => Future.successful(NotFound)
-//    }
-//  }
+    (for {
+      registration   <- registrationService.getRegistration(id).asResponseError
+      additionalInfo <- registrationAdditionalInfoService.get(registration.internalId).asResponseError
+      _              <- (if (registration.isRegistration()) {
+                           registrationValidation(registration)
+                         } else {
+                           subscriptionValidation(registration, additionalInfo)
+                         }).asResponseError
+      response       <- if (registration.isRegistration()) {
+                          registerForEcl(registration, additionalInfo.liabilityYear)
+                        } else {
+                          subscribeToEcl(registration, additionalInfo)
+                        }
+    } yield response).convertToResult(OK)
+  }
 
+  private def registrationValidation(registration: Registration): EitherT[Future, DataValidationError, Registration] =
+    EitherT {
+      Future.successful(
+        registrationValidationService.validateRegistration(registration) match {
+          case Left(error)   => Left(error)
+          case Right(result) => Right(result)
+        }
+      )
+    }
+
+  private def registerForEcl(registration: Registration, liabilityYear: Option[Int])(implicit
+    hc: HeaderCarrier
+  ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
+    for {
+      _        <- registrationValidation(registration).asResponseError
+      response <- dmsService
+                    .submitToDms(
+                      registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml),
+                      Instant.now().truncatedTo(ChronoUnit.SECONDS)
+                    )
+                    .asResponseError
+      _         = auditService.successfulSubscriptionAndEnrolment(registration, response.eclReference, liabilityYear)
+    } yield response
+
+  def subscribeToEcl(registration: Registration, additionalInfo: RegistrationAdditionalInfo)(implicit
+    hc: HeaderCarrier,
+    request: AuthorisedRequest[_]
+  ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
+    for {
+      sub      <- subscriptionValidation(registration, additionalInfo).asResponseError
+      response <- subscriptionService.subscribeToEcl(sub, registration, None).asResponseError
+      _         = if (appConfig.nrsSubmissionEnabled) {
+                    nrsService
+                      .submitToNrs(
+                        registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                        response.success.eclReference,
+                        appConfig.eclAmendRegistrationNotableEvent
+                      )
+                      .asResponseError
+                  }
+    } yield response.success
+  private def subscriptionValidation(
+    registration: Registration,
+    additionalInfo: RegistrationAdditionalInfo
+  ): EitherT[Future, DataValidationError, EclSubscription]                =
+    EitherT {
+      Future.successful(
+        registrationValidationService.validateSubscription(registration, additionalInfo) match {
+          case Left(error)   => Left(error)
+          case Right(result) => Right(result)
+        }
+      )
+    }
 }

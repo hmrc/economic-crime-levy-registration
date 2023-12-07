@@ -18,7 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
 import play.api.Logging
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{BadGateway, DataRetrievalError, DmsSubmissionError, InternalServiceError, KnownFactsError, RegistrationError, ResponseError, SubscriptionSubmissionError}
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{BadGateway, DataRetrievalError, DataValidationError, DmsSubmissionError, InternalServiceError, KnownFactsError, NrsSubmissionError, RegistrationError, ResponseError, SubscriptionSubmissionError}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -61,9 +61,9 @@ trait ErrorHandler extends Logging {
   implicit val dataRetrievalErrorConverter: Converter[DataRetrievalError] =
     new Converter[DataRetrievalError] {
       override def convert(error: DataRetrievalError): ResponseError = error match {
-        case DataRetrievalError.NotFound(id)                            => ResponseError.notFoundError(s"Unable to find record with id: $id")
-        case DataRetrievalError.InternalUnexpectedError(message, cause) =>
-          ResponseError.internalServiceError(message = message, cause = cause)
+        case DataRetrievalError.NotFound(id)                      => ResponseError.notFoundError(s"Unable to find record with id: $id")
+        case DataRetrievalError.InternalUnexpectedError(_, cause) =>
+          ResponseError.internalServiceError(cause = cause)
       }
     }
 
@@ -78,27 +78,46 @@ trait ErrorHandler extends Logging {
   implicit val dmsSubmissionErrorConverter: Converter[DmsSubmissionError] =
     new Converter[DmsSubmissionError] {
       override def convert(error: DmsSubmissionError): ResponseError = error match {
-        case DmsSubmissionError.InternalUnexpectedError(message, cause) =>
-          ResponseError.internalServiceError(message = message, cause = cause)
-        case DmsSubmissionError.BadGateway(reason, code)                => ResponseError.badGateway(reason, code)
+        case DmsSubmissionError.InternalUnexpectedError(cause) =>
+          ResponseError.internalServiceError(cause = cause)
+        case DmsSubmissionError.BadGateway(reason, code)       => ResponseError.badGateway(reason, code)
       }
     }
 
   implicit val registrationErrorConverter: Converter[RegistrationError] =
     new Converter[RegistrationError] {
       override def convert(error: RegistrationError): ResponseError = error match {
-        case RegistrationError.InternalUnexpectedError(message, cause) =>
-          ResponseError.internalServiceError(message = message, cause = cause)
-        case RegistrationError.NotFound(id)                            => ResponseError.notFoundError(s"Unable to find record with id: $id")
+        case RegistrationError.InternalUnexpectedError(cause) =>
+          ResponseError.internalServiceError(cause = cause)
+        case RegistrationError.NotFound(id)                   => ResponseError.notFoundError(s"Unable to find record with id: $id")
       }
     }
 
   implicit val subscriptionSubmissionErrorConverter: Converter[SubscriptionSubmissionError] =
     new Converter[SubscriptionSubmissionError] {
       override def convert(error: SubscriptionSubmissionError): ResponseError = error match {
-        case SubscriptionSubmissionError.InternalUnexpectedError(message, cause) =>
-          ResponseError.internalServiceError(message = message, cause = cause)
-        case SubscriptionSubmissionError.BadGateway(reason, code)                => ResponseError.badGateway(reason, code)
+        case SubscriptionSubmissionError.InternalUnexpectedError(_, cause) =>
+          ResponseError.internalServiceError(cause = cause)
+        case SubscriptionSubmissionError.BadGateway(reason, code)          => ResponseError.badGateway(reason, code)
+      }
+    }
+
+  implicit val dataValidationErrorConverter: Converter[DataValidationError] =
+    new Converter[DataValidationError] {
+      override def convert(error: DataValidationError): ResponseError = error match {
+        case DataValidationError.DataInvalid(message, code)           => ResponseError.badRequestError(s"$code : $message")
+        case DataValidationError.SchemaValidationError(message, code) =>
+          ResponseError.badRequestError(s"$code : $message")
+        case DataValidationError.DataMissing(message, code)           => ResponseError.badRequestError(s"$code : $message")
+      }
+    }
+
+  implicit val nrsSubmissionErrorConverter: Converter[NrsSubmissionError] =
+    new Converter[NrsSubmissionError] {
+      override def convert(error: NrsSubmissionError): ResponseError = error match {
+        case NrsSubmissionError.InternalUnexpectedError(cause) =>
+          ResponseError.internalServiceError(cause = cause)
+        case NrsSubmissionError.BadGateway(reason, code)       => ResponseError.badGateway(reason, code)
       }
     }
 }

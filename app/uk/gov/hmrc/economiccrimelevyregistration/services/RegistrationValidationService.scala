@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
-import cats.data.Validated.Valid
-import cats.data.ValidatedNel
 import cats.implicits._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
@@ -39,116 +37,96 @@ import javax.inject.Inject
 
 class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: SchemaValidator) {
 
-  type ValidationResult[A] = ValidatedNel[DataValidationError, A]
+  type ValidationResult[T] = Either[DataValidationError, T]
 
-  def validateRegistration(
+  def validateRegistration(registration: Registration): Either[DataValidationError, Registration] =
+    registration.entityType match {
+      case Some(Other) => validateOtherEntity(registration)
+      case Some(_)     =>
+        registration.registrationType match {
+          case Some(Amendment) => transformToAmendedEclRegistration(registration)
+          case _               => Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
+        }
+      case _           => Left(DataValidationError.DataInvalid("Entity type missing"))
+    }
+
+  def validateSubscription(
     registration: Registration,
     registrationAdditionalInfo: RegistrationAdditionalInfo
-  ): ValidationResult[Either[EclSubscription, Registration]] =
-    (registration.entityType) match {
-      case Some(Other) => validateOtherEntity(registration)
-      case _           =>
-        registration.registrationType match {
-          case Some(Amendment) => transformToAmendedEclSubscription(registration)
-          case _               =>
-            transformToEclSubscription(registration, registrationAdditionalInfo) match {
-              case Valid(Left(eclSubscription)) =>
-                schemaValidator
-                  .validateAgainstJsonSchema(
-                    eclSubscription.subscription,
-                    SchemaLoader.loadSchema("create-ecl-subscription-request.json")
-                  )
-                  .map(_ => Left(eclSubscription))
-              case Valid(Right(_))              =>
-                DataValidationError(DataInvalid, "Data was not transformed into a valid ECL subscription").invalidNel
-              case invalid                      => invalid
-            }
+  ): Either[DataValidationError, EclSubscription] =
+    transformToEclSubscription(registration, registrationAdditionalInfo) match {
+      case Right(eclSubscription) =>
+        schemaValidator.validateAgainstJsonSchema(
+          eclSubscription,
+          SchemaLoader.loadSchema("create-ecl-subscription-request.json")
+        ) match {
+          case Right(_)    => Right(eclSubscription)
+          case Left(error) => Left(error)
         }
-
+      case Left(error)            => Left(error)
     }
 
   private def transformToEclSubscription(
     registration: Registration,
     registrationAdditionalInfo: RegistrationAdditionalInfo
-  ): ValidationResult[Either[EclSubscription, Registration]] =
-    (
-      validateAmlRegulatedActivityCommonFields(registration),
-      validateLegalEntityDetails(registration, registrationAdditionalInfo),
-      validateBusinessPartnerId(registration),
-      validateOptExists(registration.businessSector, "Business sector"),
-      validateContactDetails("First", registration.contacts.firstContactDetails),
-      validateSecondContactDetails(registration.contacts),
-      validateEclAddress(registration.contactAddress)
-    ).mapN {
-      (
-        _,
-        legalEntityDetails,
-        businessPartnerId,
-        businessSector,
-        firstContactDetails,
-        secondContactDetails,
-        contactAddress
-      ) =>
-        Left(
-          EclSubscription(
-            businessPartnerId = businessPartnerId,
-            subscription = Subscription(
-              legalEntityDetails = legalEntityDetails(
-                registration.amlSupervisor
-                  .map(_.professionalBody)
-                  .getOrElse("Unknown"),
-                businessSector.toString
-              ),
-              correspondenceAddressDetails = contactAddress,
-              primaryContactDetails = firstContactDetails,
-              secondaryContactDetails = secondContactDetails
-            )
-          )
-        )
-    }
+  ): ValidationResult[EclSubscription] =
+    for {
+      _                    <- validateAmlRegulatedActivityCommonFields(registration)
+      legalEntityDetails   <- validateLegalEntityDetails(registration, registrationAdditionalInfo)
+      businessPartnerId    <- validateBusinessPartnerId(registration)
+      businessSector       <- validateOptExists(registration.businessSector, "Business sector")
+      firstContactDetails  <- validateContactDetails("First", registration.contacts.firstContactDetails)
+      secondContactDetails <- validateSecondContactDetails(registration.contacts)
+      contactAddress       <- validateEclAddress(registration.contactAddress)
+    } yield EclSubscription(
+      businessPartnerId = businessPartnerId,
+      subscription = Subscription(
+        legalEntityDetails = legalEntityDetails(
+          registration.amlSupervisor
+            .map(_.professionalBody)
+            .getOrElse("Unknown"),
+          businessSector.toString
+        ),
+        correspondenceAddressDetails = contactAddress,
+        primaryContactDetails = firstContactDetails,
+        secondaryContactDetails = secondContactDetails
+      )
+    )
 
-  private def transformToAmendedEclSubscription(
+  private def transformToAmendedEclRegistration(
     registration: Registration
-  ): ValidationResult[Either[EclSubscription, Registration]] =
-    (
-      validateAmlSupervisor(registration),
-      validateOptExists(registration.businessSector, "Business sector"),
-      validateContactDetails("First", registration.contacts.firstContactDetails),
-      validateSecondContactDetails(registration.contacts),
-      validateEclAddress(registration.contactAddress)
-    ).mapN((_, _, _, _, _) => Right(registration))
+  ): ValidationResult[Registration] =
+    for {
+      _ <- validateAmlSupervisor(registration)
+      _ <- validateOptExists(registration.businessSector, "Business sector")
+      _ <- validateContactDetails("First", registration.contacts.firstContactDetails)
+      _ <- validateSecondContactDetails(registration.contacts)
+      _ <- validateEclAddress(registration.contactAddress)
+    } yield registration
 
   private def validateContactDetails(
     firstOrSecond: String,
     details: ContactDetails
   ): ValidationResult[SubscriptionContactDetails] =
-    (
-      validateOptExists(details.name, s"$firstOrSecond contact name"),
-      validateOptExists(details.role, s"$firstOrSecond contact role"),
-      validateOptExists(
-        details.emailAddress,
-        s"$firstOrSecond contact email"
-      ),
-      validateOptExists(
-        details.telephoneNumber,
-        s"$firstOrSecond contact number"
-      )
-    ).mapN { (name, role, email, number) =>
-      SubscriptionContactDetails(
-        name = name,
-        positionInCompany = role,
-        telephone = number.removeWhitespace,
-        emailAddress = email
-      )
-    }
+    for {
+      name   <- validateOptExists(details.name, s"$firstOrSecond contact name")
+      role   <- validateOptExists(details.role, s"$firstOrSecond contact role")
+      email  <- validateOptExists(details.emailAddress, s"$firstOrSecond contact email")
+      number <- validateOptExists(details.telephoneNumber, s"$firstOrSecond contact number")
+    } yield SubscriptionContactDetails(
+      name = name,
+      positionInCompany = role,
+      telephone = number.removeWhitespace,
+      emailAddress = email
+    )
 
   private def validateSecondContactDetails(
     contacts: Contacts
   ): ValidationResult[Option[SubscriptionContactDetails]] =
     contacts.secondContact match {
       case Some(true)  => validateContactDetails("Second", contacts.secondContactDetails).map(Some(_))
-      case Some(false) => None.validNel
-      case _           => DataValidationError(DataMissing, missingErrorMessage("Second contact choice")).invalidNel
+      case Some(false) => Right(None)
+      case _           => Left(DataValidationError.DataMissing(missingErrorMessage("Second contact choice")))
     }
 
   private def validateBusinessPartnerId(registration: Registration): ValidationResult[String] = {
@@ -181,7 +159,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       case Some(UkLimitedCompany | UnlimitedCompany | RegisteredSociety)                       =>
         grsJourneyData match {
           case (Some(i), None, None) =>
-            (
+            Right(
               LegalEntityDetails(
                 customerIdentification1 = i.ctutr,
                 customerIdentification2 = Some(i.companyProfile.companyNumber),
@@ -194,8 +172,8 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 _,
                 _
               )
-            ).validNel
-          case _                     => DataValidationError(DataMissing, missingErrorMessage("Incorporated entity data")).invalidNel
+            )
+          case _                     => Left(DataValidationError.DataMissing(missingErrorMessage("Incorporated entity data")))
         }
       case Some(LimitedLiabilityPartnership | LimitedPartnership | ScottishLimitedPartnership) =>
         grsJourneyData match {
@@ -217,7 +195,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 _
               )
             }
-          case _                      => DataValidationError(DataMissing, missingErrorMessage("Partnership data")).invalidNel
+          case _                      => Left(DataValidationError.DataMissing(missingErrorMessage("Partnership data")))
         }
       case Some(GeneralPartnership | ScottishPartnership)                                      =>
         grsJourneyData match {
@@ -240,7 +218,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 _
               )
             }
-          case _                     => DataValidationError(DataMissing, missingErrorMessage("Partnership data")).invalidNel
+          case _                     => Left(DataValidationError.DataMissing(missingErrorMessage("Partnership data")))
         }
       case Some(SoleTrader)                                                                    =>
         grsJourneyData match {
@@ -259,10 +237,10 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
                 _
               )
             }
-          case _                     => DataValidationError(DataMissing, missingErrorMessage("Sole trader data")).invalidNel
+          case _                     => Left(DataValidationError.DataMissing(missingErrorMessage("Sole trader data")))
         }
       case _                                                                                   =>
-        DataValidationError(DataMissing, missingErrorMessage("Entity type")).invalidNel
+        Left(DataValidationError.DataMissing(missingErrorMessage("Entity type")))
     }
 
   }
@@ -271,33 +249,33 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     s: SoleTraderEntityJourneyData
   ): ValidationResult[(String, Option[String])] =
     (s.sautr, s.nino) match {
-      case (Some(sautr), Some(nino)) => (sautr, Some(nino)).validNel
-      case (Some(sautr), _)          => (sautr, None).validNel
-      case (_, Some(nino))           => (nino, None).validNel
-      case _                         => DataValidationError(DataMissing, missingErrorMessage("Sole trader SA UTR or NINO")).invalidNel
+      case (Some(sautr), Some(nino)) => Right((sautr, Some(nino)))
+      case (Some(sautr), _)          => Right((sautr, None))
+      case (_, Some(nino))           => Right((nino, None))
+      case _                         => Left(DataValidationError.DataMissing(missingErrorMessage("Sole trader SA UTR or NINO")))
     }
 
   private def validateAmlRegulatedActivity(registration: Registration): ValidationResult[Registration] =
     registration.carriedOutAmlRegulatedActivityInCurrentFy match {
-      case Some(_) => registration.validNel
+      case Some(_) => Right(registration)
       case _       =>
-        DataValidationError(DataMissing, missingErrorMessage("Carried out AML regulated activity choice")).invalidNel
+        Left(DataValidationError.DataMissing(missingErrorMessage("Carried out AML regulated activity choice")))
     }
 
-  private def validateAmlSupervisor(registration: Registration): ValidationResult[String] =
+  private def validateAmlSupervisor(registration: Registration): ValidationResult[Unit] =
     registration.amlSupervisor match {
       case Some(AmlSupervisor(GamblingCommission | FinancialConductAuthority, _)) =>
-        DataValidationError(DataInvalid, "AML supervisor cannot be GC or FCA").invalidNel
-      case Some(AmlSupervisor(Hmrc, _))                                           => Hmrc.toString.validNel
-      case Some(AmlSupervisor(_, Some(otherProfessionalBody)))                    => otherProfessionalBody.validNel
+        Left(DataValidationError.DataMissing("AML supervisor cannot be GC or FCA"))
+      case Some(AmlSupervisor(Hmrc, _))                                           => Right(())
+      case Some(AmlSupervisor(_, Some(_)))                                        => Right(())
       case _                                                                      =>
-        DataValidationError(DataMissing, missingErrorMessage("AML supervisor")).invalidNel
+        Left(DataValidationError.DataMissing(missingErrorMessage("AML supervisor")))
     }
 
   private def validateRevenueMeetsThreshold(registration: Registration): ValidationResult[Registration] =
     registration.revenueMeetsThreshold match {
-      case Some(_) => registration.validNel
-      case _       => DataValidationError(DataMissing, missingErrorMessage("Revenue meets threshold flag")).invalidNel
+      case Some(_) => Right(registration)
+      case _       => Left(DataValidationError.DataMissing(missingErrorMessage("Revenue meets threshold flag")))
     }
 
   private def validateEclAddress(eclAddress: Option[EclAddress]): ValidationResult[CorrespondenceAddressDetails] =
@@ -315,21 +293,23 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
 
         addressLines match {
           case line1 :: otherLines =>
-            CorrespondenceAddressDetails(
-              line1,
-              otherLines,
-              address.postCode,
-              address.countryCode
-            ).validNel
-          case _                   => DataValidationError(DataInvalid, "Contact address has no address lines").invalidNel
+            Right(
+              CorrespondenceAddressDetails(
+                line1,
+                otherLines,
+                address.postCode,
+                address.countryCode
+              )
+            )
+          case _                   => Left(DataValidationError.DataMissing("Contact address has no address lines"))
         }
-      case _             => DataValidationError(DataMissing, missingErrorMessage("Contact address")).invalidNel
+      case _             => Left(DataValidationError.DataMissing(missingErrorMessage("Contact address")))
     }
 
   private def validateOptExists[T](optData: Option[T], description: String): ValidationResult[T] =
     optData match {
-      case Some(value) => value.validNel
-      case _           => DataValidationError(DataMissing, missingErrorMessage(description)).invalidNel
+      case Some(value) => Right(value)
+      case _           => Left(DataValidationError.DataMissing(missingErrorMessage(description)))
     }
 
   private def validateConditionalOptExists[T](
@@ -339,132 +319,99 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
   ): ValidationResult[Option[T]] =
     if (condition) {
       optData match {
-        case Some(value) => Some(value).validNel
-        case _           => DataValidationError(DataMissing, missingErrorMessage(description)).invalidNel
+        case Some(value) => Right(Some(value))
+        case _           => Left(DataValidationError.DataMissing(missingErrorMessage(description)))
       }
     } else {
-      None.validNel
+      Right(None)
     }
 
   private def missingErrorMessage(missingDataDescription: String): String = s"$missingDataDescription is missing"
 
   private def validateOtherEntity(
     registration: Registration
-  ): ValidationResult[Either[EclSubscription, Registration]] =
-    (
-      validateAmlRegulatedActivityCommonFields(registration),
-      validateOptExists(registration.businessSector, "Business sector"),
-      validateContactDetails("First", registration.contacts.firstContactDetails),
-      validateSecondContactDetails(registration.contacts),
-      validateEclAddress(registration.contactAddress),
-      validateOptExists(registration.optOtherEntityJourneyData, "Other entity data"),
-      validateOptExists(registration.otherEntityJourneyData.businessName, "Business name"),
-      registration.otherEntityJourneyData.entityType match {
-        case None                            => DataValidationError(DataMissing, missingErrorMessage("Other entity type")).invalidNel
-        case Some(Charity)                   => validateCharity(registration)
-        case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)
-        case Some(Trust)                     => validateTrust(registration)
-        case Some(NonUKEstablishment)        => validateNonUkEstablishment(registration)
-      }
-    ).mapN {
-      (
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _
-      ) =>
-        Right(registration)
-    }
+  ): ValidationResult[Registration] =
+    for {
+      _ <- validateAmlRegulatedActivityCommonFields(registration)
+      _ <- validateOptExists(registration.businessSector, "Business sector")
+      _ <- validateContactDetails("First", registration.contacts.firstContactDetails)
+      _ <- validateSecondContactDetails(registration.contacts)
+      _ <- validateEclAddress(registration.contactAddress)
+      _ <- validateOptExists(registration.optOtherEntityJourneyData, "Other entity data")
+      _ <- validateOptExists(registration.otherEntityJourneyData.businessName, "Business name")
+      _ <- registration.otherEntityJourneyData.entityType match {
+             case None                            => Left(DataValidationError.DataMissing(missingErrorMessage("Other entity type")))
+             case Some(Charity)                   => validateCharity(registration)
+             case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)
+             case Some(Trust)                     => validateTrust(registration)
+             case Some(NonUKEstablishment)        => validateNonUkEstablishment(registration)
+           }
+    } yield registration
 
   private def validateAmlRegulatedActivityCommonFields(
     registration: Registration
-  ): ValidationResult[Either[EclSubscription, Registration]] =
+  ): ValidationResult[Registration] =
     if (registration.carriedOutAmlRegulatedActivityInCurrentFy.contains(true)) {
-      (
-        validateAmlSupervisor(registration),
-        validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice"),
-        validateOptExists(registration.relevantApRevenue, "Relevant AP revenue"),
-        validateConditionalOptExists(
-          registration.relevantApLength,
-          registration.relevantAp12Months.contains(false),
-          "Relevant AP length"
-        ),
-        validateRevenueMeetsThreshold(registration)
-      ).mapN {
-        (
-          _,
-          _,
-          _,
-          _,
-          _
-        ) =>
-          Right(registration)
-      }
-    } else { validateAmlRegulatedActivity(registration).map(_ => Right(registration)) }
+      for {
+        _ <- validateAmlSupervisor(registration)
+        _ <- validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice")
+        _ <- validateOptExists(registration.relevantApRevenue, "Relevant AP revenue")
+        _ <- validateConditionalOptExists(
+               registration.relevantApLength,
+               registration.relevantAp12Months.contains(false),
+               "Relevant AP length"
+             )
+        _ <- validateRevenueMeetsThreshold(registration)
+      } yield registration
+    } else { validateAmlRegulatedActivity(registration).map(_ => registration) }
 
   private def validateCharity(
     registration: Registration
-  ): ValidationResult[Either[EclSubscription, Registration]] = {
+  ): ValidationResult[Unit] = {
     val otherEntityJourneyData = registration.otherEntityJourneyData
-    (
-      validateOptExists(otherEntityJourneyData.charityRegistrationNumber, "Charity registration number"),
-      validateOptExists(otherEntityJourneyData.companyRegistrationNumber, "Company registration number")
-    ).mapN {
-      (
-        _,
-        _
-      ) =>
-        Right(registration)
-    }
+
+    for {
+      _ <- validateOptExists(otherEntityJourneyData.charityRegistrationNumber, "Charity registration number")
+      _ <- validateOptExists(otherEntityJourneyData.companyRegistrationNumber, "Company registration number")
+    } yield Right(())
   }
 
   private def validateUnincorporatedAssociation(
     registration: Registration
-  ): ValidationResult[Either[EclSubscription, Registration]] = {
+  ): ValidationResult[Unit] = {
     val otherEntityJourneyData = registration.otherEntityJourneyData
-    (
-      validateOptExists(otherEntityJourneyData.isCtUtrPresent, "Corporation Tax Unique Taxpayer Reference choice"),
-      validateConditionalOptExists(
-        otherEntityJourneyData.ctUtr,
-        otherEntityJourneyData.isCtUtrPresent.contains(true),
-        "Corporation Tax Unique Taxpayer Reference"
-      )
-    ).mapN((_, _) => Right(registration))
+
+    for {
+      _ <- validateOptExists(otherEntityJourneyData.isCtUtrPresent, "Corporation Tax Unique Taxpayer Reference choice")
+      _ <- validateConditionalOptExists(
+             otherEntityJourneyData.ctUtr,
+             otherEntityJourneyData.isCtUtrPresent.contains(true),
+             "Corporation Tax Unique Taxpayer Reference"
+           )
+    } yield Right(())
   }
 
-  private def validateTrust(registration: Registration): ValidationResult[Either[EclSubscription, Registration]] =
+  private def validateTrust(registration: Registration): ValidationResult[Unit] =
     validateOptExists(registration.otherEntityJourneyData.ctUtr, "Corporation Tax Unique Taxpayer Reference")
-      .map(_ => Right(registration))
+      .map(_ => Right(()))
 
   private def validateNonUkEstablishment(
     registration: Registration
-  ): ValidationResult[Either[EclSubscription, Registration]] = {
+  ): ValidationResult[Unit] = {
     val data = registration.otherEntityJourneyData
-    (
-      validateOptExists(data.companyRegistrationNumber, "Company registration number"),
-      validateOptExists(data.utrType, "Utr type"),
-      validateConditionalOptExists(
-        data.ctUtr,
-        data.utrType.contains(CtUtr),
-        "Corporation Tax Unique Taxpayer Reference"
-      ),
-      validateConditionalOptExists(
-        data.saUtr,
-        data.utrType.contains(SaUtr),
-        "Self Assessment Unique Taxpayer Reference"
-      )
-    ).mapN {
-      (
-        _,
-        _,
-        _,
-        _
-      ) =>
-        Right(registration)
-    }
+    for {
+      _ <- validateOptExists(data.companyRegistrationNumber, "Company registration number")
+      _ <- validateOptExists(data.utrType, "Utr type")
+      _ <- validateConditionalOptExists(
+             data.ctUtr,
+             data.utrType.contains(CtUtr),
+             "Corporation Tax Unique Taxpayer Reference"
+           )
+      _ <- validateConditionalOptExists(
+             data.saUtr,
+             data.utrType.contains(SaUtr),
+             "Self Assessment Unique Taxpayer Reference"
+           )
+    } yield Right(())
   }
 }

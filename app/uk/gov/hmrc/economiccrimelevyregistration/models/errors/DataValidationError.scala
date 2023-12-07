@@ -16,20 +16,11 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 
-import play.api.libs.json.{Json, OFormat}
-
-final case class DataValidationError(code: String, message: String)
+trait DataValidationError
 
 object DataValidationError {
-  val SchemaValidationError = "SCHEMA_VALIDATION_ERROR"
-  val DataInvalid           = "DATA_INVALID"
-  val DataMissing           = "DATA_MISSING"
-
-  implicit val format: OFormat[DataValidationError] = Json.format[DataValidationError]
-}
-
-final case class DataValidationErrors(errors: Seq[DataValidationError])
-
-object DataValidationErrors {
-  implicit val format: OFormat[DataValidationErrors] = Json.format[DataValidationErrors]
+  case class SchemaValidationError(message: String, code: String = "SCHEMA_VALIDATION_ERROR")
+      extends DataValidationError
+  case class DataInvalid(message: String, code: String = "DATA_INVALID") extends DataValidationError
+  case class DataMissing(message: String, code: String = "DATA_MISSING") extends DataValidationError
 }

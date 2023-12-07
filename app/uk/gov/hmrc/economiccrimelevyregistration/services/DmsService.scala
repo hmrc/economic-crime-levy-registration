@@ -20,6 +20,7 @@ import akka.NotUsed
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import cats.data.EitherT
+import play.api.http.Status.BAD_GATEWAY
 import play.api.mvc.MultipartFormData
 import play.api.mvc.MultipartFormData.{DataPart, FilePart}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
@@ -48,31 +49,39 @@ class DmsService @Inject() (
   ec: ExecutionContext
 ) extends ErrorHandler {
 
-  def submitToDms(base64EncodedDmsSubmissionHtml: String)(implicit
+  def submitToDms(base64EncodedDmsSubmissionHtml: Option[String], now: Instant)(implicit
     hc: HeaderCarrier
   ): EitherT[Future, DmsSubmissionError, CreateEclSubscriptionResponsePayload] =
     for {
       pdf      <- createPdf(base64EncodedDmsSubmissionHtml)
-      body     <- createBody(pdf)
-      response <- sendPdf(body)(hc)
+      body     <- createBody(pdf, now)
+      response <- sendPdf(body, now)(hc)
     } yield response
 
-  def createPdf(base64EncodedDmsSubmissionHtml: String): EitherT[Future, DmsSubmissionError, ByteArrayOutputStream] =
+  private def createPdf(
+    base64EncodedDmsSubmissionHtml: Option[String]
+  ): EitherT[Future, DmsSubmissionError, ByteArrayOutputStream] =
     EitherT {
       Future.successful(
-        Try(new String(Base64.getDecoder.decode(base64EncodedDmsSubmissionHtml))) match {
-          case Success(result) =>
-            Try(buildPdf(result)) match {
-              case Success(pdfResult) => Right(pdfResult)
-              case Failure(e)         => Left(DmsSubmissionError.InternalUnexpectedError(e.getMessage, Some(e.getCause)))
+        base64EncodedDmsSubmissionHtml match {
+          case Some(value) =>
+            Try(new String(Base64.getDecoder.decode(value))) match {
+              case Success(result) =>
+                Try(buildPdf(result)) match {
+                  case Success(pdfResult) => Right(pdfResult)
+                  case Failure(e)         => Left(DmsSubmissionError.InternalUnexpectedError(Some(e.getCause)))
+                }
+              case Failure(e)      => Left(DmsSubmissionError.InternalUnexpectedError(Some(e.getCause)))
             }
-          case Failure(e)      => Left(DmsSubmissionError.InternalUnexpectedError(e.getMessage, Some(e.getCause)))
+          case None        =>
+            Left(DmsSubmissionError.BadGateway("base64EncodedDmsSubmissionHtml field not provided", BAD_GATEWAY))
         }
       )
     }
 
-  def createBody(
-    pdf: ByteArrayOutputStream
+  private def createBody(
+    pdf: ByteArrayOutputStream,
+    now: Instant
   ): EitherT[Future, DmsSubmissionError.InternalUnexpectedError, Source[MultipartFormData.Part[
     Source[ByteString, NotUsed]
   ], NotUsed]] =
@@ -80,16 +89,16 @@ class DmsService @Inject() (
       Future.successful(
         Try(
           DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
-            LocalDateTime.ofInstant(Instant.now().truncatedTo(ChronoUnit.SECONDS), ZoneOffset.UTC)
+            LocalDateTime.ofInstant(now, ZoneOffset.UTC)
           )
         ) match {
           case Success(result) => Right(assembleBodySource(pdf, result))
-          case Failure(e)      => Left(DmsSubmissionError.InternalUnexpectedError(e.getMessage, Some(e.getCause)))
+          case Failure(e)      => Left(DmsSubmissionError.InternalUnexpectedError(Some(e.getCause)))
         }
       )
     }
 
-  def assembleBodySource(
+  private def assembleBodySource(
     pdf: ByteArrayOutputStream,
     dateOfReceipt: String
   ): Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed] =
@@ -112,19 +121,20 @@ class DmsService @Inject() (
     )
 
   def sendPdf(
-    body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed]
+    body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed],
+    now: Instant
   )(implicit hc: HeaderCarrier): EitherT[Future, DmsSubmissionError, CreateEclSubscriptionResponsePayload] =
     EitherT {
       dmsConnector
         .sendPdf(body)
-        .map(_ => Right(CreateEclSubscriptionResponsePayload(Instant.now(), "")))
+        .map(_ => Right(CreateEclSubscriptionResponsePayload(now, "")))
         .recover {
           case error @ UpstreamErrorResponse(message, code, _, _)
               if UpstreamErrorResponse.Upstream5xxResponse
                 .unapply(error)
                 .isDefined || UpstreamErrorResponse.Upstream4xxResponse.unapply(error).isDefined =>
             Left(DmsSubmissionError.BadGateway(reason = message, code = code))
-          case NonFatal(thr) => Left(DmsSubmissionError.InternalUnexpectedError(thr.getMessage, Some(thr)))
+          case NonFatal(thr) => Left(DmsSubmissionError.InternalUnexpectedError(Some(thr)))
         }
     }
 }

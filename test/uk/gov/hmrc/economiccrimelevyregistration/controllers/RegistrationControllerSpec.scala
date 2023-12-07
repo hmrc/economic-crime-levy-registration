@@ -16,29 +16,32 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
+import cats.data.EitherT
 import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.RegistrationError
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
+import uk.gov.hmrc.economiccrimelevyregistration.services.RegistrationService
 import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
 import scala.concurrent.Future
 
 class RegistrationControllerSpec extends SpecBase {
 
-  val mockRegistrationRepository: RegistrationRepository = mock[RegistrationRepository]
+  val mockRegistrationService: RegistrationService = mock[RegistrationService]
 
   val controller = new RegistrationController(
     cc,
-    mockRegistrationRepository,
+    mockRegistrationService,
     fakeAuthorisedAction
   )
 
   "upsertRegistration" should {
     "return 200 OK with the registration that was upserted" in forAll { registration: Registration =>
-      when(mockRegistrationRepository.upsert(any())).thenReturn(Future.successful(true))
+      when(mockRegistrationService.upsertRegistration(any())).thenReturn(EitherT.rightT(registration))
 
       val result: Future[Result] =
         controller.upsertRegistration()(
@@ -52,7 +55,7 @@ class RegistrationControllerSpec extends SpecBase {
 
   "getRegistration" should {
     "return 200 OK with an existing registration when there is one for the id" in forAll { registration: Registration =>
-      when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
+      when(mockRegistrationService.getRegistration(any())).thenReturn(EitherT.rightT(registration))
 
       val result: Future[Result] =
         controller.getRegistration(registration.internalId)(fakeRequest)
@@ -62,7 +65,7 @@ class RegistrationControllerSpec extends SpecBase {
     }
 
     "return 404 NOT_FOUND when there is no registration for the id" in {
-      when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(None))
+      when(mockRegistrationService.getRegistration(any())).thenReturn(EitherT.leftT(RegistrationError.NotFound("")))
 
       val result: Future[Result] =
         controller.getRegistration("id")(fakeRequest)
@@ -74,7 +77,7 @@ class RegistrationControllerSpec extends SpecBase {
 
   "deleteRegistration" should {
     "return 204 NO_CONTENT when a registration is deleted" in {
-      when(mockRegistrationRepository.clear(any())).thenReturn(Future.successful(true))
+      when(mockRegistrationService.deleteRegistration(any())).thenReturn(EitherT.rightT(()))
 
       val result: Future[Result] =
         controller.deleteRegistration("id")(fakeRequest)

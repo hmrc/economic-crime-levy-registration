@@ -17,40 +17,44 @@
 package uk.gov.hmrc.economiccrimelevyregistration.utils
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.ValidatedNel
 import io.circe.parser.{parse => circeParse}
 import io.circe.schema.Schema
+import io.circe.{Json => circeJson}
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError.SchemaValidationError
 
 import javax.inject.Inject
 
 class SchemaValidator @Inject() () {
 
-  type ValidationResult[A] = ValidatedNel[DataValidationError, A]
-
-  def validateAgainstJsonSchema[T](o: T, schema: Schema)(implicit
+  def validateAgainstJsonSchema[T](validationObject: T, schema: Schema)(implicit
     format: OFormat[T]
-  ): ValidationResult[T] = {
-    val jsonString = Json.toJson(o).toString()
-    val json       = circeParse(jsonString).getOrElse(
-      throw new Exception("Could not transform play JSON into circe JSON for schema validation")
-    )
-
-    schema
-      .validate(json) match {
-      case Valid(_)   => Valid(o)
-      case Invalid(e) =>
-        Invalid(
-          e.map(e =>
-            DataValidationError(
-              code = SchemaValidationError,
-              message = s"Schema validation error for field: ${e.location} (${Option(e.keyword).getOrElse("unknown")})"
-            )
-          )
-        )
-    }
+  ): Either[DataValidationError, Unit] = {
+    val jsonString = Json.stringify(Json.toJson(validationObject))
+    for {
+      parsedValue   <- parseJson(jsonString)
+      validatedJson <- validateJson(parsedValue, schema)
+    } yield validatedJson
   }
 
+  private def parseJson(jsonString: String): Either[DataValidationError, circeJson] =
+    circeParse(jsonString) match {
+      case Left(error)  =>
+        Left(
+          DataValidationError.DataInvalid(message =
+            "Could not transform play JSON into circe JSON for schema validation." +
+              s" Error returned: ${error.getMessage()}"
+          )
+        )
+      case Right(value) => Right(value)
+    }
+
+  private def validateJson(json: circeJson, schema: Schema): Either[DataValidationError, Unit] =
+    schema.validate(json) match {
+      case Valid(_)   => Right(())
+      case Invalid(e) =>
+        Left(
+          DataValidationError.SchemaValidationError(message = s"Schema validation error: ${e.toList.mkString(", ")}")
+        )
+    }
 }

@@ -33,7 +33,7 @@ class RegistrationService @Inject() (
   )(implicit ec: ExecutionContext): EitherT[Future, RegistrationError, Registration] =
     EitherT {
       registrationRepository.upsert(registration).map(_ => Right(registration)).recover { case e =>
-        Left(RegistrationError.InternalUnexpectedError(e.getMessage, Some(e.getCause)))
+        Left(RegistrationError.InternalUnexpectedError(Some(e.getCause)))
       }
     }
 
@@ -48,7 +48,7 @@ class RegistrationService @Inject() (
   def deleteRegistration(id: String)(implicit ec: ExecutionContext): EitherT[Future, RegistrationError, Unit] =
     EitherT {
       registrationRepository.clear(id).map(response => Right(())).recover { case e =>
-        Left(RegistrationError.InternalUnexpectedError(e.getMessage, Some(e)))
+        Left(RegistrationError.InternalUnexpectedError(Some(e)))
       }
     }
 }

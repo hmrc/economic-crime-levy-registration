@@ -19,11 +19,12 @@ package uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors
 import play.api.http.Status.INTERNAL_SERVER_ERROR
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.TaxEnrolmentsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import javax.inject.Inject
 import scala.concurrent.Future
 
 class StubTaxEnrolmentsConnector @Inject() extends TaxEnrolmentsConnector {
-  override def enrol(createEnrolmentRequest: CreateEnrolmentRequest)(implicit hc: HeaderCarrier): Future[Unit] = ???
+  override def enrol(createEnrolmentRequest: CreateEnrolmentRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+    Future.successful(UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR))
 }

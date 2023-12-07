@@ -16,45 +16,39 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
+import cats.data.EitherT
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.connectors.IntegrationFrameworkConnector
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.SubscriptionStatusResponse
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
+import uk.gov.hmrc.economiccrimelevyregistration.services.SubscriptionService
 
 import scala.concurrent.Future
 
 class SubscriptionStatusControllerSpec extends SpecBase {
 
-  val mockIntegrationFrameworkConnector: IntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
-  val mockAuditConnector: AuditConnector                               = mock[AuditConnector]
+  val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
 
   val controller = new SubscriptionStatusController(
     cc,
-    mockIntegrationFrameworkConnector,
-    mockAuditConnector,
+    mockSubscriptionService,
     fakeAuthorisedAction
   )
 
   "getSubscriptionStatus" should {
     "return 200 OK with the subscription status for a given business partner ID" in forAll {
-      (businessPartnerId: String, subscriptionStatusResponse: SubscriptionStatusResponse) =>
-        when(mockIntegrationFrameworkConnector.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId))(any()))
-          .thenReturn(Future.successful(subscriptionStatusResponse))
+      (businessPartnerId: String, subscriptionStatus: EclSubscriptionStatus) =>
+        when(mockSubscriptionService.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId), any())(any()))
+          .thenReturn(EitherT.rightT(subscriptionStatus))
 
         val result: Future[Result] =
           controller.getSubscriptionStatus(businessPartnerId)(fakeRequest)
 
         status(result)        shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(subscriptionStatusResponse.toEclSubscriptionStatus)
-
-        verify(mockAuditConnector, times(1)).sendExtendedEvent(any())(any(), any())
-
-        reset(mockAuditConnector)
+        contentAsJson(result) shouldBe Json.toJson(subscriptionStatus)
     }
   }
 

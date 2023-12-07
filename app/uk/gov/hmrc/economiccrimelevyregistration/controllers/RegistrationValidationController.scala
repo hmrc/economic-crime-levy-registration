@@ -16,50 +16,61 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
-import cats.data.Validated.{Invalid, Valid}
 import play.api.Logging
-import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationErrors
-import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditionalInfoService, RegistrationValidationService}
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EclSubscription
+import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
+import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditionalInfoService, RegistrationService, RegistrationValidationService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 @Singleton()
 class RegistrationValidationController @Inject() (
   cc: ControllerComponents,
-  registrationRepository: RegistrationRepository,
+  registrationService: RegistrationService,
   authorise: AuthorisedAction,
   registrationValidationService: RegistrationValidationService,
   registrationAdditionalInfoService: RegistrationAdditionalInfoService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
-    with Logging {
+    with Logging
+    with BaseController
+    with ErrorHandler {
 
-  def getValidationErrors(id: String): Action[AnyContent] = authorise.async { _ =>
-    registrationRepository.get(id).flatMap {
-      case Some(registration) =>
-        registrationAdditionalInfoService
-          .get(registration.internalId)
-          .fold(
-            error => {
-              logger.error(
-                s"Failed to find additional information for amendment with internal id: ${registration.internalId}"
-              )
-              NotFound
-            },
-            additionalInfo =>
-              registrationValidationService.validateRegistration(registration, additionalInfo) match {
-                case Valid(_)   => NoContent
-                case Invalid(e) => Ok(Json.toJson(DataValidationErrors(e.toList)))
-              }
-          )
-      case None               => Future.successful(NotFound)
-    }
+  def checkForValidationErrors(id: String): Action[AnyContent] = authorise.async { _ =>
+    (for {
+      registration   <- registrationService.getRegistration(id).asResponseError
+      additionalInfo <- registrationAdditionalInfoService.get(registration.internalId).asResponseError
+      result          = resolveRegistrationValidationExecutionPath(registration, additionalInfo)
+    } yield result).convertToResult(OK)
   }
 
+  private def resolveRegistrationValidationExecutionPath(
+    registration: Registration,
+    additionalInfo: RegistrationAdditionalInfo
+  ): Boolean                                                                                                           =
+    if (registration.isRegistration()) {
+      checkForErrorsInRegistrationValidation(registrationValidationService.validateRegistration(registration))
+    } else {
+      checkForErrorsInSubscriptionValidation(
+        registrationValidationService.validateSubscription(registration, additionalInfo)
+      )
+    }
+  private def checkForErrorsInRegistrationValidation(registration: Either[DataValidationError, Registration]): Boolean =
+    registration match {
+      case Left(_)  => true
+      case Right(_) => false
+    }
+
+  private def checkForErrorsInSubscriptionValidation(
+    eclSubscription: Either[DataValidationError, EclSubscription]
+  ): Boolean =
+    eclSubscription match {
+      case Left(_)  => true
+      case Right(_) => false
+    }
 }

@@ -19,6 +19,8 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.services.SubscriptionService
+import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdHelper
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
@@ -35,6 +37,8 @@ class SubscriptionStatusController @Inject() (
     with ErrorHandler {
 
   def getSubscriptionStatus(businessPartnerId: String): Action[AnyContent] = authorise.async { implicit request =>
+    implicit val hc: HeaderCarrier = CorrelationIdHelper.headerCarrierWithCorrelationId(request)
+
     (for {
       response <- subscriptionService.getSubscriptionStatus(businessPartnerId, request.internalId).asResponseError
     } yield response).convertToResult(OK)
