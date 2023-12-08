@@ -22,6 +22,7 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
 class RegistrationISpec extends ISpecBase {
@@ -66,12 +67,15 @@ class RegistrationISpec extends ISpecBase {
     "return 404 NOT_FOUND when trying to get a registration that doesn't exist" in {
       stubAuthorised()
 
-      val registration = random[Registration]
+      val registration      = random[Registration]
+      val validRegistration = registration.copy(internalId = "internalId")
 
-      val result = callRoute(FakeRequest(routes.RegistrationController.getRegistration(registration.internalId)))
+      val result = callRoute(FakeRequest(routes.RegistrationController.getRegistration(validRegistration.internalId)))
 
       status(result)        shouldBe NOT_FOUND
-      contentAsJson(result) shouldBe Json.toJson(ErrorResponse(NOT_FOUND, "Registration not found"))
+      contentAsJson(result) shouldBe Json.toJson(
+        ResponseError.notFoundError(s"Unable to find record with id: ${validRegistration.internalId}")
+      )
     }
   }
 
@@ -95,7 +99,7 @@ class RegistrationISpec extends ISpecBase {
         callRoute(FakeRequest(routes.RegistrationController.getRegistration(registration.internalId)))
 
       status(getResultBeforeDelete) shouldBe OK
-      status(deleteResult)          shouldBe NO_CONTENT
+      status(deleteResult)          shouldBe OK
       status(getResultAfterDelete)  shouldBe NOT_FOUND
     }
   }
