@@ -80,7 +80,7 @@ class RegistrationISpec extends ISpecBase {
   }
 
   s"DELETE ${routes.RegistrationController.deleteRegistration(":id").url}" should {
-    "delete a registration and return 204 NO_CONTENT" in {
+    "delete a registration and return 200 OK" in {
       stubAuthorised()
 
       val registration = random[Registration]

@@ -64,7 +64,7 @@ class RegistrationSubmissionISpec extends ISpecBase {
       verify(1, postRequestedFor(urlEqualTo("/dms-submission/submit")))
     }
 
-    "return INTERNAL_SERVER_ERROR if call to DMS fails after three retries" in {
+    "return BAD_GATEWAY if call to DMS fails after three retries" in {
       stubAuthorised()
 
       val html                = "<html><head></head><body></body></html>"

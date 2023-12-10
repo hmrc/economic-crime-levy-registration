@@ -16,12 +16,10 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.utils
 
-import cats.data.Validated.Valid
 import io.circe.schema.Schema
 import play.api.libs.json._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError.SchemaValidationError
 
 class SchemaValidatorSpec extends SpecBase {
   case class TestObject(foo: String, bar: String)

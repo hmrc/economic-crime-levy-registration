@@ -45,7 +45,6 @@ class DmsConnectorSpec extends SpecBase {
 
   "sendPdf" should {
     "return HttpResponse if post to DMS queue succeeds" in {
-
       val expectedResponse = HttpResponse.apply(ACCEPTED, "")
 
       when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
@@ -54,7 +53,7 @@ class DmsConnectorSpec extends SpecBase {
       when(mockRequestBuilder.execute[HttpResponse](any(), any()))
         .thenReturn(Future.successful(expectedResponse))
 
-      val result = await(connector.sendPdf(Source(Seq.empty)))
+      val result: Unit = await(connector.sendPdf(Source(Seq.empty)))
 
       result shouldBe ()
 

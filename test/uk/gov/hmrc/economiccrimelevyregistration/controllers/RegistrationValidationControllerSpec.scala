@@ -24,9 +24,8 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.ValidScottishOrGeneralPartnershipRegistration
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError, ResponseError}
-import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError}
 import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditionalInfoService, RegistrationService, RegistrationValidationService}
 
 import scala.concurrent.Future

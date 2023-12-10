@@ -103,5 +103,9 @@ final case class SubscriptionStatusResponse(
 }
 
 object SubscriptionStatusResponse {
-  implicit val reads: Reads[SubscriptionStatusResponse] = Json.reads[SubscriptionStatusResponse]
+  implicit val reads: Reads[SubscriptionStatusResponse]   = Json.reads[SubscriptionStatusResponse]
+  implicit val writes: Writes[SubscriptionStatusResponse] = (o: SubscriptionStatusResponse) => JsString(o.toString)
+
+  implicit val format: OFormat[SubscriptionStatusResponse] = Json.format
+
 }

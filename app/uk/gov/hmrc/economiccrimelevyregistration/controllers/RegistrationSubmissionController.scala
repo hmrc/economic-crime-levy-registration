@@ -80,7 +80,8 @@ class RegistrationSubmissionController @Inject() (
     }
 
   private def registerForEcl(registration: Registration, liabilityYear: Option[Int])(implicit
-    hc: HeaderCarrier
+    hc: HeaderCarrier,
+    request: AuthorisedRequest[_]
   ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
     for {
       _        <- registrationValidation(registration).asResponseError
@@ -90,6 +91,13 @@ class RegistrationSubmissionController @Inject() (
                       Instant.now().truncatedTo(ChronoUnit.SECONDS)
                     )
                     .asResponseError
+      _         = if (appConfig.amendRegistrationNrsEnabled) {
+                    nrsService.submitToNrs(
+                      registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                      response.eclReference,
+                      appConfig.eclAmendRegistrationNotableEvent
+                    )
+                  }
       _         = auditService.successfulSubscriptionAndEnrolment(registration, response.eclReference, liabilityYear)
     } yield response
 

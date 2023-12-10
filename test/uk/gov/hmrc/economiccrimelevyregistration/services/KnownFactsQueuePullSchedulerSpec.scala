@@ -25,7 +25,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{EclEnrolment, UpsertKnownFactsRequest}
 import uk.gov.hmrc.economiccrimelevyregistration.models.{KeyValue, KnownFactsWorkItem}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
-import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
 
 import scala.concurrent.Future

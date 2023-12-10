@@ -26,7 +26,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, Registrat
 class RegistrationValidationISpec extends ISpecBase {
 
   s"GET ${routes.RegistrationValidationController.checkForValidationErrors(":id").url}" should {
-    "return 204 NO_CONTENT when the registration data is valid" in {
+    "return 200 OK when the registration data is valid" in {
       stubAuthorised()
 
       val validRegistration = random[ValidIncorporatedEntityRegistration]
@@ -57,7 +57,7 @@ class RegistrationValidationISpec extends ISpecBase {
 
     }
 
-    "return 200 OK with validation errors in the JSON response body when the registration data is invalid" in {
+    "return 200 OK with true in the JSON response body when the registration data is invalid" in {
       stubAuthorised()
 
       val internalId                 = random[String]
@@ -85,7 +85,7 @@ class RegistrationValidationISpec extends ISpecBase {
       lazy val validationResult =
         callRoute(FakeRequest(routes.RegistrationValidationController.checkForValidationErrors(internalId)))
 
-      status(validationResult)                                      shouldBe OK
+      status(validationResult)        shouldBe OK
       contentAsJson(validationResult) shouldBe Json.toJson(true)
     }
 

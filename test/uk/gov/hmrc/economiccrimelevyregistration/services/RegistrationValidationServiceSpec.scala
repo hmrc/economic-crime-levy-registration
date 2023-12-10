@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
-import cats.data.Validated.Valid
-import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.scalacheck.{Arbitrary, Gen}
 import uk.gov.hmrc.economiccrimelevyregistration._

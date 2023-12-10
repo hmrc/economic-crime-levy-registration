@@ -23,9 +23,7 @@ import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{RegistrationError, ResponseError}
-import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.RegistrationService
-import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
 import scala.concurrent.Future
 
