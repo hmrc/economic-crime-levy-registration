@@ -78,11 +78,9 @@ class IntegrationFrameworkConnector @Inject() (
     }
   }
 
-  private def createCorrelationId(hc: HeaderCarrier) = {
-    val correlationId = hc.headers(Seq(CorrelationIdHelper.HEADER_X_CORRELATION_ID)) match {
+  private def createCorrelationId(hc: HeaderCarrier): String =
+    hc.headers(Seq(CorrelationIdHelper.HEADER_X_CORRELATION_ID)) match {
       case Nil                     => UUID.randomUUID().toString
       case Seq((_, correlationId)) => correlationId
     }
-    correlationId
-  }
 }
