@@ -26,7 +26,7 @@ import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.{Amendment, Initial}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError, RegistrationError, ResponseError}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
@@ -65,7 +65,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
     "return 200 OK with a subscription reference number in the JSON response body when the registration data is " +
       "valid for 'Normal' entities and nrsSubmissionEnabled is enabled" in forAll(
         Arbitrary.arbitrary[Registration],
-        Arbitrary.arbitrary[EntityType].retryUntil(_ != Other),
+        Arbitrary.arbitrary[EntityType].retryUntil(!EntityType.isOther(_)),
         Arbitrary.arbitrary[EclSubscription],
         Arbitrary.arbitrary[CreateEclSubscriptionResponse],
         Arbitrary.arbitrary[RegistrationAdditionalInfo],
@@ -126,7 +126,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
     "return 200 OK with a subscription reference number in the JSON response body when the registration data " +
       "is valid for 'Normal' entities and nrsSubmissionEnabled is disabled" in forAll(
         Arbitrary.arbitrary[Registration],
-        Arbitrary.arbitrary[EntityType].retryUntil(_ != Other),
+        Arbitrary.arbitrary[EntityType].retryUntil(!EntityType.isOther(_)),
         Arbitrary.arbitrary[EclSubscription],
         Arbitrary.arbitrary[CreateEclSubscriptionResponse],
         Arbitrary.arbitrary[RegistrationAdditionalInfo]
@@ -192,7 +192,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         ) =>
           val html         = "<html><head></head><body></body></html>"
           val registration = aRegistration.copy(
-            entityType = Some(Other),
+            entityType = Some(Charity),
             registrationType = Some(Initial),
             base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
           )
@@ -225,7 +225,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         ) =>
           val registration = aRegistration.copy(
             registrationType = Some(Amendment),
-            entityType = Some(Other)
+            entityType = Some(Charity)
           )
 
           when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
@@ -251,7 +251,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         "and amend NRS is enabled" in forAll(
           Arbitrary.arbitrary[Registration],
           Arbitrary.arbitrary[CreateEclSubscriptionResponse],
-          Arbitrary.arbitrary[EntityType].retryUntil(_ != Other)
+          Arbitrary.arbitrary[EntityType].retryUntil(!EntityType.isOther(_))
         ) {
           (
             aRegistration: Registration,
@@ -316,7 +316,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             val html         = "<html><head></head><body></body></html>"
             val registration = aRegistration.copy(
               registrationType = Some(Amendment),
-              entityType = Some(Other),
+              entityType = Some(Charity),
               base64EncodedFields =
                 Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
             )
@@ -359,7 +359,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         ) =>
           val registration = aRegistration.copy(
             registrationType = Some(Amendment),
-            entityType = Some(Other)
+            entityType = Some(Charity)
           )
 
           when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))

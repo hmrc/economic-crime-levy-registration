@@ -17,7 +17,6 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
 
@@ -29,7 +28,7 @@ final case class Registration(
   amlSupervisor: Option[AmlSupervisor],
   relevantAp12Months: Option[Boolean],
   relevantApLength: Option[Int],
-  relevantApRevenue: Option[Long],
+  relevantApRevenue: Option[BigDecimal],
   revenueMeetsThreshold: Option[Boolean],
   entityType: Option[EntityType],
   incorporatedEntityJourneyData: Option[IncorporatedEntityJourneyData],
@@ -50,12 +49,12 @@ final case class Registration(
   def otherEntityJourneyData: OtherEntityJourneyData =
     optOtherEntityJourneyData.getOrElse(OtherEntityJourneyData.empty())
 
-  def isRegistration(): Boolean =
+  def isRegistration: Boolean =
     (entityType, registrationType) match {
-      case (Some(Other), Some(_))     => true
-      case (Some(_), Some(Amendment)) => true
-      case (Some(_), Some(_))         => false
-      case (_, _)                     => false
+      case (Some(value), Some(_)) if EntityType.isOther(value) => true
+      case (Some(_), Some(Amendment))                          => true
+      case (Some(_), Some(_))                                  => false
+      case (_, _)                                              => false
     }
 }
 

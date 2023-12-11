@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
 import play.api.mvc.Result
@@ -39,7 +40,8 @@ class RegistrationControllerSpec extends SpecBase {
 
   "upsertRegistration" should {
     "return 200 OK with the registration that was upserted" in forAll { registration: Registration =>
-      when(mockRegistrationService.upsertRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
+      when(mockRegistrationService.upsertRegistration(ArgumentMatchers.eq(registration))(any()))
+        .thenReturn(EitherT.rightT(registration))
 
       val result: Future[Result] =
         controller.upsertRegistration()(

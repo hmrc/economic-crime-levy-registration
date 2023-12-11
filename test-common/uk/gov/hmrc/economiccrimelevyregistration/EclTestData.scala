@@ -33,7 +33,6 @@ import uk.gov.hmrc.auth.core.syntax.retrieved.authSyntaxForRetrieved
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Hmrc
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, NonUKEstablishment, Trust, UnincorporatedAssociation}
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
@@ -46,6 +45,7 @@ import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import wolfendale.scalacheck.regexp.RegexpGen
 
 import java.time.{Clock, Instant, LocalDate}
+import scala.math.BigDecimal.RoundingMode
 
 final case class ValidIncorporatedEntityRegistration(
   registration: Registration,
@@ -117,11 +117,17 @@ trait EclTestData {
     Gen.oneOf(Organisation, Individual, Agent)
   }
 
+  implicit def arbRevenue: Arbitrary[BigDecimal] =
+    Arbitrary {
+      Gen.chooseNum[Double](0, 99999999999.99).map(BigDecimal.apply(_).setScale(2, RoundingMode.DOWN))
+    }
+
   implicit val arbRegistration: Arbitrary[Registration] = Arbitrary {
     for {
       registration <- MkArbitrary[Registration].arbitrary.arbitrary
       internalId   <- Gen.nonEmptyListOf(Arbitrary.arbitrary[Char]).map(_.mkString)
-    } yield registration.copy(internalId = internalId)
+      revenue      <- arbRevenue.arbitrary
+    } yield registration.copy(internalId = internalId, relevantApRevenue = Some(revenue))
   }
 
   implicit val arbRegistrationAdditionalInfo: Arbitrary[RegistrationAdditionalInfo] = Arbitrary {
@@ -169,7 +175,7 @@ trait EclTestData {
                             )
       relevantAp12Months <- Arbitrary.arbitrary[Boolean]
       relevantApLength   <- Arbitrary.arbitrary[Int]
-      relevantApRevenue  <- Arbitrary.arbitrary[Long]
+      relevantApRevenue  <- Arbitrary.arbitrary[BigDecimal]
       firstContactName   <- stringsWithMaxLength(160)
       firstContactRole   <- stringsWithMaxLength(160)
       firstContactEmail  <- emailAddress(132)
@@ -556,13 +562,12 @@ trait EclTestData {
       registrationAdditionalInfo <- Arbitrary.arbitrary[RegistrationAdditionalInfo]
     } yield ValidCharityRegistration(
       commonRegistrationData.registration.copy(
-        entityType = Some(Other),
+        entityType = Some(Charity),
         incorporatedEntityJourneyData = None,
         partnershipEntityJourneyData = None,
         soleTraderEntityJourneyData = None,
         optOtherEntityJourneyData = Some(
           commonRegistrationData.registration.otherEntityJourneyData.copy(
-            entityType = Some(Charity),
             businessName = Some(businessName),
             charityRegistrationNumber = Some(charityNumber),
             companyRegistrationNumber = Some(companyNumber)
@@ -582,13 +587,12 @@ trait EclTestData {
         commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
       } yield ValidUnincorporatedAssociationRegistration(
         commonRegistrationData.registration.copy(
-          entityType = Some(Other),
+          entityType = Some(UnincorporatedAssociation),
           incorporatedEntityJourneyData = None,
           partnershipEntityJourneyData = None,
           soleTraderEntityJourneyData = None,
           optOtherEntityJourneyData = Some(
             commonRegistrationData.registration.otherEntityJourneyData.copy(
-              entityType = Some(UnincorporatedAssociation),
               businessName = Some(businessName),
               isCtUtrPresent = Some(isCtUtrPresent),
               ctUtr = Some(ctUtr)
@@ -606,13 +610,12 @@ trait EclTestData {
         commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
       } yield ValidTrustRegistration(
         commonRegistrationData.registration.copy(
-          entityType = Some(Other),
+          entityType = Some(Trust),
           incorporatedEntityJourneyData = None,
           partnershipEntityJourneyData = None,
           soleTraderEntityJourneyData = None,
           optOtherEntityJourneyData = Some(
             commonRegistrationData.registration.otherEntityJourneyData.copy(
-              entityType = Some(Trust),
               businessName = Some(businessName),
               ctUtr = Some(ctUtr)
             )
@@ -624,22 +627,22 @@ trait EclTestData {
   implicit val arbValidNonUkEstablishmentRegistration: Arbitrary[ValidNonUkEstablishmentRegistration] = Arbitrary {
     for {
       businessName           <- Arbitrary.arbitrary[String]
+      isUkCrnPresent         <- Arbitrary.arbitrary[Boolean]
       companyNumber          <- Arbitrary.arbitrary[String]
       utrType                <- Arbitrary.arbitrary[UtrType]
       utrNumber              <- Arbitrary.arbitrary[String]
-      taxIdentifier          <- Arbitrary.arbitrary[String]
       commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
     } yield ValidNonUkEstablishmentRegistration(
       commonRegistrationData.registration.copy(
-        entityType = Some(Other),
+        entityType = Some(NonUKEstablishment),
         incorporatedEntityJourneyData = None,
         partnershipEntityJourneyData = None,
         soleTraderEntityJourneyData = None,
         optOtherEntityJourneyData = Some(
           commonRegistrationData.registration.otherEntityJourneyData.copy(
-            entityType = Some(NonUKEstablishment),
             businessName = Some(businessName),
             companyRegistrationNumber = Some(companyNumber),
+            isUkCrnPresent = Some(isUkCrnPresent),
             utrType = Some(utrType),
             ctUtr = if (utrType == CtUtr) Some(utrNumber) else None,
             saUtr = if (utrType == SaUtr) Some(utrNumber) else None

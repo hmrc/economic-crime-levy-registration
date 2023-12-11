@@ -19,7 +19,6 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 import cats.implicits._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.OtherEntityType.{Charity, NonUKEstablishment, Trust, UnincorporatedAssociation}
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
@@ -37,17 +36,17 @@ import javax.inject.Inject
 
 class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: SchemaValidator) {
 
-  type ValidationResult[T] = Either[DataValidationError, T]
+  private type ValidationResult[T] = Either[DataValidationError, T]
 
   def validateRegistration(registration: Registration): Either[DataValidationError, Registration] =
     registration.entityType match {
-      case Some(Other) => validateOtherEntity(registration)
-      case Some(_)     =>
+      case Some(value) if EntityType.isOther(value) => validateOtherEntity(registration)
+      case Some(_)                                  =>
         registration.registrationType match {
           case Some(Amendment) => transformToAmendedEclRegistration(registration)
           case _               => Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
         }
-      case _           => Left(DataValidationError.DataInvalid("Entity type missing"))
+      case _                                        => Left(DataValidationError.DataInvalid("Entity type missing"))
     }
 
   def validateSubscription(
@@ -339,7 +338,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       _ <- validateEclAddress(registration.contactAddress)
       _ <- validateOptExists(registration.optOtherEntityJourneyData, "Other entity data")
       _ <- validateOptExists(registration.otherEntityJourneyData.businessName, "Business name")
-      _ <- registration.otherEntityJourneyData.entityType match {
+      _ <- registration.entityType match {
              case None                            => Left(DataValidationError.DataMissing(missingErrorMessage("Other entity type")))
              case Some(Charity)                   => validateCharity(registration)
              case Some(UnincorporatedAssociation) => validateUnincorporatedAssociation(registration)
@@ -400,7 +399,12 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
   ): ValidationResult[Unit] = {
     val data = registration.otherEntityJourneyData
     for {
-      _ <- validateOptExists(data.companyRegistrationNumber, "Company registration number")
+      _ <- validateOptExists(data.isUkCrnPresent, "Has uk crn")
+      _ <- validateConditionalOptExists(
+             data.companyRegistrationNumber,
+             data.isUkCrnPresent.contains(true),
+             "Company registration number"
+           )
       _ <- validateOptExists(data.utrType, "Utr type")
       _ <- validateConditionalOptExists(
              data.ctUtr,

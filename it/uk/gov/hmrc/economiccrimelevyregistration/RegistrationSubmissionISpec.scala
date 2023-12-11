@@ -2,21 +2,13 @@ package uk.gov.hmrc.economiccrimelevyregistration
 
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
 import com.github.tomakehurst.wiremock.client.WireMock.{postRequestedFor, urlEqualTo, verify}
-import org.scalatest.concurrent.Eventually.eventually
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
-import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.{Amendment, Initial}
-import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, KeyValue, RegistrationAdditionalInfo}
-import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{CreateEnrolmentRequest, EclEnrolment}
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponse
-import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
+import uk.gov.hmrc.economiccrimelevyregistration.models.Base64EncodedFields
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Initial
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDate}
 import java.util.Base64
 
 class RegistrationSubmissionISpec extends ISpecBase {

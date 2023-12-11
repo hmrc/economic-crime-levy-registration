@@ -22,7 +22,7 @@ import uk.gov.hmrc.economiccrimelevyregistration._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
-import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Other
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
@@ -370,7 +370,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
       val invalidRegistration = Registration
         .empty("")
         .copy(
-          entityType = Some(Other),
+          entityType = Some(Charity),
           carriedOutAmlRegulatedActivityInCurrentFy = Some(true)
         )
       val result              = service.validateRegistration(invalidRegistration)
@@ -483,12 +483,12 @@ class RegistrationValidationServiceSpec extends SpecBase {
     "return errors if the registration for a non-UK establishment is invalid" in forAll {
       (
         validNonUkEstablishmentRegistration: ValidNonUkEstablishmentRegistration,
-        none: Boolean,
         utrType: UtrType
       ) =>
         val otherEntityJourneyData     = validNonUkEstablishmentRegistration.registration.otherEntityJourneyData.copy(
           companyRegistrationNumber = None,
-          utrType = if (none) None else Some(utrType),
+          isUkCrnPresent = Some(true),
+          utrType = Some(utrType),
           ctUtr = None,
           saUtr = None
         )

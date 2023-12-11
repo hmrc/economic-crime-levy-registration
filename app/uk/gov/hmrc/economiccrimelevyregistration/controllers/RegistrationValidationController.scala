@@ -53,7 +53,7 @@ class RegistrationValidationController @Inject() (
     registration: Registration,
     additionalInfo: RegistrationAdditionalInfo
   ): Boolean                                                                                                           =
-    if (registration.isRegistration()) {
+    if (registration.isRegistration) {
       checkForErrorsInRegistrationValidation(registrationValidationService.validateRegistration(registration))
     } else {
       checkForErrorsInSubscriptionValidation(

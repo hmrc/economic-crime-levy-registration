@@ -28,15 +28,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait BaseController {
 
-  def checkOptionalValueExists[T](value: Option[T]): EitherT[Future, ResponseError, T] = EitherT(
-    Future.successful(
-      value match {
-        case Some(value) => Right(value)
-        case None        => Left(ResponseError.internalServiceError())
-      }
-    )
-  )
-
   implicit class ResponseHandler[R](value: EitherT[Future, ResponseError, R]) {
 
     def convertToResult(responseCode: Int)(implicit c: Converter[R], ec: ExecutionContext): Future[Result] =

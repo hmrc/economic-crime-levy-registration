@@ -69,7 +69,8 @@ class TestOnlyController @Inject() (
                   case Right(_) =>
                     s"Enrolment ${EclEnrolment.ServiceName} successfully de-allocated from group ID $groupId with ECL reference $reference."
                   case Left(e)  =>
-                    s"Failed to de-allocate enrolment ${EclEnrolment.ServiceName} from group ID $groupId with ECL reference $reference. Error: ${e.getMessage()}"
+                    s"Failed to de-allocate enrolment ${EclEnrolment.ServiceName} from group " +
+                      s"ID $groupId with ECL reference $reference. Error: ${e.getMessage()}"
                 }
               )
             })
