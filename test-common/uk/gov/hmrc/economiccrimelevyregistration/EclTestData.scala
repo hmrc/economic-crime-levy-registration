@@ -641,8 +641,8 @@ trait EclTestData {
         optOtherEntityJourneyData = Some(
           commonRegistrationData.registration.otherEntityJourneyData.copy(
             businessName = Some(businessName),
-            companyRegistrationNumber = Some(companyNumber),
             isUkCrnPresent = Some(isUkCrnPresent),
+            companyRegistrationNumber = Some(companyNumber),
             utrType = Some(utrType),
             ctUtr = if (utrType == CtUtr) Some(utrNumber) else None,
             saUtr = if (utrType == SaUtr) Some(utrNumber) else None

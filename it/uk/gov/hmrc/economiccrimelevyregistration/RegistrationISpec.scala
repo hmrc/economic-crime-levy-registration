@@ -23,7 +23,6 @@ import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
-import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
 class RegistrationISpec extends ISpecBase {
 

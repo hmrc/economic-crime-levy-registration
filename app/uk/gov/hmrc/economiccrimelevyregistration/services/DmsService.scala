@@ -33,7 +33,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import java.io.ByteArrayOutputStream
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
