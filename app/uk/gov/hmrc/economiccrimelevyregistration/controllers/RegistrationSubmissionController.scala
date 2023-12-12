@@ -75,11 +75,9 @@ class RegistrationSubmissionController @Inject() (
   ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
     for {
       _        <- registrationValidationService.validateRegistration(registration).asResponseError
+      now       = Instant.now().truncatedTo(ChronoUnit.SECONDS)
       response <- dmsService
-                    .submitToDms(
-                      registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml),
-                      Instant.now().truncatedTo(ChronoUnit.SECONDS)
-                    )
+                    .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), now)
                     .asResponseError
       _         = if (appConfig.amendRegistrationNrsEnabled) {
                     nrsService.submitToNrs(

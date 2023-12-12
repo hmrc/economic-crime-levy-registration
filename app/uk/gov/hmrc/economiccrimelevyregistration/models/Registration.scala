@@ -51,10 +51,8 @@ final case class Registration(
 
   def isRegistration: Boolean =
     (entityType, registrationType) match {
-      case (Some(value), Some(_)) if EntityType.isOther(value) => true
-      case (Some(_), Some(Amendment))                          => true
-      case (Some(_), Some(_))                                  => false
-      case (_, _)                                              => false
+      case (Some(value), Some(regType)) if EntityType.isOther(value) || regType == Amendment => true
+      case _                                                                                 => false
     }
 }
 

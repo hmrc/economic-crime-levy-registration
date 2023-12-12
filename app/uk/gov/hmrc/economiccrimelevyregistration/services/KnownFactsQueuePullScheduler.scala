@@ -52,26 +52,30 @@ class KnownFactsQueuePullScheduler @Inject() (
       _        <- upsertKnownFacts(workItem).asResponseError
     } yield ()
   }
-  private def pullOutstandingWorkItem: EitherT[Future, KnownFactsError, WorkItem[KnownFactsWorkItem]] =
+  private def pullOutstandingWorkItem: EitherT[Future, KnownFactsError, WorkItem[KnownFactsWorkItem]] = {
+    val now: Instant = Instant.now()
     EitherT {
       knownFactsQueueRepository
-        .pullOutstanding(Instant.now(), Instant.now())
+        .pullOutstanding(now, now)
         .map {
           case None        =>
             Left(KnownFactsError.NotFound("No known facts to process for failed enrolments"))
           case Some(value) => Right(value)
         }
     }
+  }
 
   private def upsertKnownFacts(
     workItem: WorkItem[KnownFactsWorkItem]
   ): EitherT[Future, KnownFactsError, Unit] =
     EitherT {
+      val upsertKnownFactsRequest = UpsertKnownFactsRequest(
+        verifiers = Seq(KeyValue(EclEnrolment.VerifierKey, workItem.item.eclRegistrationDate))
+      )
+
       enrolmentStoreProxyConnector
         .upsertKnownFacts(
-          UpsertKnownFactsRequest(
-            verifiers = Seq(KeyValue(EclEnrolment.VerifierKey, workItem.item.eclRegistrationDate))
-          ),
+          upsertKnownFactsRequest,
           workItem.item.eclReference
         )(HeaderCarrier())
         .map {
