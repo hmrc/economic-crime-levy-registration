@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
+import cats.data.EitherT
 import play.api.Logging
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
@@ -26,7 +27,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditiona
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
 class RegistrationValidationController @Inject() (
@@ -45,14 +46,14 @@ class RegistrationValidationController @Inject() (
     (for {
       registration   <- registrationService.getRegistration(id).asResponseError
       additionalInfo <- registrationAdditionalInfoService.get(registration.internalId).asResponseError
-      result          = resolveRegistrationValidationExecutionPath(registration, additionalInfo)
+      result         <- resolveRegistrationValidationExecutionPath(registration, additionalInfo).asResponseError
     } yield result).convertToResult(OK)
   }
 
   private def resolveRegistrationValidationExecutionPath(
     registration: Registration,
     additionalInfo: RegistrationAdditionalInfo
-  ): Boolean                                                                                                           =
+  ): EitherT[Future, DataValidationError, Unit] =
     if (registration.isRegistration) {
       checkForErrorsInRegistrationValidation(registrationValidationService.validateRegistration(registration))
     } else {
@@ -60,17 +61,24 @@ class RegistrationValidationController @Inject() (
         registrationValidationService.validateSubscription(registration, additionalInfo)
       )
     }
-  private def checkForErrorsInRegistrationValidation(registration: Either[DataValidationError, Registration]): Boolean =
-    registration match {
-      case Left(_)  => true
-      case Right(_) => false
-    }
+
+  private def checkForErrorsInRegistrationValidation(
+    registration: EitherT[Future, DataValidationError, Registration]
+  ): EitherT[Future, DataValidationError, Unit] =
+    EitherT(
+      registration.fold(
+        error => Left(error),
+        success => Right(())
+      )
+    )
 
   private def checkForErrorsInSubscriptionValidation(
-    eclSubscription: Either[DataValidationError, EclSubscription]
-  ): Boolean =
-    eclSubscription match {
-      case Left(_)  => true
-      case Right(_) => false
-    }
+    eclSubscription: EitherT[Future, DataValidationError, EclSubscription]
+  ): EitherT[Future, DataValidationError, Unit] =
+    EitherT(
+      eclSubscription.fold(
+        error => Left(error),
+        success => Right(())
+      )
+    )
 }

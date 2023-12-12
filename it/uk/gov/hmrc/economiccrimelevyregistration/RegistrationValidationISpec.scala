@@ -21,7 +21,10 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Charity
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EntityType, Registration, RegistrationAdditionalInfo}
 
 class RegistrationValidationISpec extends ISpecBase {
 
@@ -29,10 +32,10 @@ class RegistrationValidationISpec extends ISpecBase {
     "return 200 OK when the registration data is valid" in {
       stubAuthorised()
 
-      val validRegistration = random[ValidIncorporatedEntityRegistration]
-
+      val validRegistration   = random[ValidCharityRegistration]
       val updatedRegistration =
-        validRegistration.registration.copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true))
+        validRegistration.registration
+          .copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true), registrationType = Some(Amendment))
 
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(
@@ -85,8 +88,10 @@ class RegistrationValidationISpec extends ISpecBase {
       lazy val validationResult =
         callRoute(FakeRequest(routes.RegistrationValidationController.checkForValidationErrors(internalId)))
 
-      status(validationResult)        shouldBe OK
-      contentAsJson(validationResult) shouldBe Json.toJson(true)
+      status(validationResult)        shouldBe BAD_REQUEST
+      contentAsJson(validationResult) shouldBe Json.toJson(
+        ResponseError.badRequestError("DATA_MISSING : Entity type is missing")
+      )
     }
 
     "return 404 NOT_FOUND when there is no registration data to validate" in {

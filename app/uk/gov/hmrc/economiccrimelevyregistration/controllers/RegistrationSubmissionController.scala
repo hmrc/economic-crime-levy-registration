@@ -20,8 +20,8 @@ import cats.data.EitherT
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, ResponseError}
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponsePayload, EclSubscription}
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
 import uk.gov.hmrc.economiccrimelevyregistration.services._
@@ -57,9 +57,9 @@ class RegistrationSubmissionController @Inject() (
       registration   <- registrationService.getRegistration(id).asResponseError
       additionalInfo <- registrationAdditionalInfoService.get(registration.internalId).asResponseError
       _              <- (if (registration.isRegistration) {
-                           registrationValidation(registration)
+                           registrationValidationService.validateRegistration(registration)
                          } else {
-                           subscriptionValidation(registration, additionalInfo)
+                           registrationValidationService.validateSubscription(registration, additionalInfo)
                          }).asResponseError
       response       <- if (registration.isRegistration) {
                           registerForEcl(registration, additionalInfo.liabilityYear)
@@ -69,22 +69,12 @@ class RegistrationSubmissionController @Inject() (
     } yield response).convertToResult(OK)
   }
 
-  private def registrationValidation(registration: Registration): EitherT[Future, DataValidationError, Registration] =
-    EitherT {
-      Future.successful(
-        registrationValidationService.validateRegistration(registration) match {
-          case Left(error)   => Left(error)
-          case Right(result) => Right(result)
-        }
-      )
-    }
-
   private def registerForEcl(registration: Registration, liabilityYear: Option[Int])(implicit
     hc: HeaderCarrier,
     request: AuthorisedRequest[_]
   ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
     for {
-      _        <- registrationValidation(registration).asResponseError
+      _        <- registrationValidationService.validateRegistration(registration).asResponseError
       response <- dmsService
                     .submitToDms(
                       registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml),
@@ -106,7 +96,7 @@ class RegistrationSubmissionController @Inject() (
     request: AuthorisedRequest[_]
   ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
     for {
-      sub      <- subscriptionValidation(registration, additionalInfo).asResponseError
+      sub      <- registrationValidationService.validateSubscription(registration, additionalInfo).asResponseError
       response <- subscriptionService.subscribeToEcl(sub, registration, None).asResponseError
       _         = if (appConfig.nrsSubmissionEnabled) {
                     nrsService
@@ -118,16 +108,4 @@ class RegistrationSubmissionController @Inject() (
                       .asResponseError
                   }
     } yield response.success
-  private def subscriptionValidation(
-    registration: Registration,
-    additionalInfo: RegistrationAdditionalInfo
-  ): EitherT[Future, DataValidationError, EclSubscription]                =
-    EitherT {
-      Future.successful(
-        registrationValidationService.validateSubscription(registration, additionalInfo) match {
-          case Left(error)   => Left(error)
-          case Right(result) => Right(result)
-        }
-      )
-    }
 }

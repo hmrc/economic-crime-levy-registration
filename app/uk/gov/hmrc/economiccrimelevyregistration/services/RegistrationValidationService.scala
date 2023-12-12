@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
+import cats.data.EitherT
 import cats.implicits._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
@@ -32,36 +33,45 @@ import uk.gov.hmrc.economiccrimelevyregistration.utils.{SchemaLoader, SchemaVali
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant, ZoneOffset}
 import javax.inject.Inject
+import scala.concurrent.Future
 
 class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: SchemaValidator) {
 
   private type ValidationResult[T] = Either[DataValidationError, T]
 
-  def validateRegistration(registration: Registration): Either[DataValidationError, Registration] =
-    registration.entityType match {
-      case Some(value) if EntityType.isOther(value) => validateOtherEntity(registration)
-      case Some(_)                                  =>
-        registration.registrationType match {
-          case Some(Amendment) => transformToAmendedEclRegistration(registration)
-          case _               => Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
+  def validateRegistration(registration: Registration): EitherT[Future, DataValidationError, Registration] =
+    EitherT {
+      Future.successful(
+        registration.entityType match {
+          case Some(value) if EntityType.isOther(value) => validateOtherEntity(registration)
+          case Some(_)                                  =>
+            registration.registrationType match {
+              case Some(Amendment) => transformToAmendedEclRegistration(registration)
+              case _               => Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
+            }
+          case _                                        => Left(DataValidationError.DataInvalid("Entity type missing"))
         }
-      case _                                        => Left(DataValidationError.DataInvalid("Entity type missing"))
+      )
     }
 
   def validateSubscription(
     registration: Registration,
     registrationAdditionalInfo: RegistrationAdditionalInfo
-  ): Either[DataValidationError, EclSubscription] =
-    transformToEclSubscription(registration, registrationAdditionalInfo) match {
-      case Right(eclSubscription) =>
-        schemaValidator.validateAgainstJsonSchema(
-          eclSubscription,
-          SchemaLoader.loadSchema("create-ecl-subscription-request.json")
-        ) match {
-          case Right(_)    => Right(eclSubscription)
-          case Left(error) => Left(error)
+  ): EitherT[Future, DataValidationError, EclSubscription] =
+    EitherT {
+      Future.successful(
+        transformToEclSubscription(registration, registrationAdditionalInfo) match {
+          case Right(eclSubscription) =>
+            schemaValidator.validateAgainstJsonSchema(
+              eclSubscription,
+              SchemaLoader.loadSchema("create-ecl-subscription-request.json")
+            ) match {
+              case Right(_)    => Right(eclSubscription)
+              case Left(error) => Left(error)
+            }
+          case Left(error)            => Left(error)
         }
-      case Left(error)            => Left(error)
+      )
     }
 
   private def transformToEclSubscription(

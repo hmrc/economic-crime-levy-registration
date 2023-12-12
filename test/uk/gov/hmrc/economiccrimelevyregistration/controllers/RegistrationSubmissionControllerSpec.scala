@@ -92,7 +92,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
           when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
 
           when(mockRegistrationValidationService.validateSubscription(any(), any()))
-            .thenReturn(Right(eclSubscription))
+            .thenReturn(EitherT.rightT(eclSubscription))
 
           when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
@@ -151,7 +151,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
           when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
 
           when(mockRegistrationValidationService.validateSubscription(any(), any()))
-            .thenReturn(Right(eclSubscription))
+            .thenReturn(EitherT.rightT(eclSubscription))
 
           when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
@@ -203,7 +203,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
           when(mockRegistrationValidationService.validateRegistration(any()))
-            .thenReturn(Right(registration))
+            .thenReturn(EitherT.rightT(registration))
 
           when(mockDmsService.submitToDms(any(), any())(any()))
             .thenReturn(EitherT.rightT(subscriptionResponse.success))
@@ -234,7 +234,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
           when(mockRegistrationValidationService.validateRegistration(any()))
-            .thenReturn(Left(DataValidationError.DataInvalid("Invalid data")))
+            .thenReturn(EitherT.leftT(DataValidationError.DataInvalid("Invalid data")))
 
           val result: Future[Result] =
             controller.submitRegistration(registration.internalId)(fakeRequest)
@@ -281,7 +281,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
               .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
             when(mockRegistrationValidationService.validateRegistration(any()))
-              .thenReturn(Right(registration))
+              .thenReturn(EitherT.rightT(registration))
 
             when(mockDmsService.submitToDms(any(), any())(any()))
               .thenReturn(EitherT.rightT(subscriptionResponse.success))
@@ -331,7 +331,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
               .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
             when(mockRegistrationValidationService.validateRegistration(any()))
-              .thenReturn(Right(registration))
+              .thenReturn(EitherT.rightT(registration))
 
             when(mockDmsService.submitToDms(any(), any())(any()))
               .thenReturn(EitherT.rightT(subscriptionResponse.success))
@@ -365,7 +365,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
           when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
 
           when(mockRegistrationValidationService.validateRegistration(any()))
-            .thenReturn(Left(DataValidationError.DataInvalid("Invalid data")))
+            .thenReturn(EitherT.leftT(DataValidationError.DataInvalid("Invalid data")))
 
           when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))

@@ -25,7 +25,7 @@ import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.ValidScottishOrGeneralPartnershipRegistration
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError}
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError, ResponseError}
 import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditionalInfoService, RegistrationService, RegistrationValidationService}
 
 import scala.concurrent.Future
@@ -59,7 +59,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
           .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
         when(mockRegistrationValidationService.validateSubscription(any(), any()))
-          .thenReturn(Right(registration.expectedEclSubscription))
+          .thenReturn(EitherT.rightT(registration.expectedEclSubscription))
 
         val result: Future[Result] =
           controller.checkForValidationErrors(registration.registration.internalId)(fakeRequest)
@@ -81,13 +81,13 @@ class RegistrationValidationControllerSpec extends SpecBase {
           .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
         when(mockRegistrationValidationService.validateSubscription(any(), any()))
-          .thenReturn(Left(DataValidationError.DataInvalid("Invalid data")))
+          .thenReturn(EitherT.leftT(DataValidationError.DataInvalid("Invalid data")))
 
         val result: Future[Result] =
           controller.checkForValidationErrors(registration.registration.internalId)(fakeRequest)
 
-        status(result)        shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(true)
+        status(result)        shouldBe BAD_REQUEST
+        contentAsJson(result) shouldBe Json.toJson(ResponseError.badRequestError("DATA_INVALID : Invalid data"))
     }
   }
 
