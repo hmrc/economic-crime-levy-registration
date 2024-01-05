@@ -411,9 +411,17 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     val otherEntityJourneyData = registration.otherEntityJourneyData
     (
       validateOptExists(otherEntityJourneyData.charityRegistrationNumber, "Charity registration number"),
-      validateOptExists(otherEntityJourneyData.companyRegistrationNumber, "Company registration number")
+      validateOptExists(otherEntityJourneyData.companyRegistrationNumber, "Company registration number"),
+      validateOptExists(otherEntityJourneyData.isCtUtrPresent, "Unique Taxpayer Reference choice"),
+      validateConditionalOptExists(
+        otherEntityJourneyData.ctUtr,
+        otherEntityJourneyData.isCtUtrPresent.contains(true),
+        "Unique Taxpayer Reference"
+      )
     ).mapN {
       (
+        _,
+        _,
         _,
         _
       ) =>
