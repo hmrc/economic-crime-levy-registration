@@ -560,7 +560,7 @@ trait EclTestData {
       companyNumber              <- Arbitrary.arbitrary[String]
       commonRegistrationData     <- Arbitrary.arbitrary[CommonRegistrationData]
       registrationAdditionalInfo <- Arbitrary.arbitrary[RegistrationAdditionalInfo]
-      isUtrPresent               <- Arbitrary.arbitrary[Boolean]
+      isCtUtrPresent             <- Arbitrary.arbitrary[Boolean]
       utr                        <- Arbitrary.arbitrary[String]
     } yield ValidCharityRegistration(
       commonRegistrationData.registration.copy(
@@ -573,8 +573,8 @@ trait EclTestData {
             businessName = Some(businessName),
             charityRegistrationNumber = Some(charityNumber),
             companyRegistrationNumber = Some(companyNumber),
-            isCtUtrPresent = Some(isUtrPresent),
-            ctUtr = isUtrPresent match {
+            isCtUtrPresent = Some(isCtUtrPresent),
+            ctUtr = isCtUtrPresent match {
               case true  => Some(utr)
               case false => None
             }
@@ -638,6 +638,7 @@ trait EclTestData {
       companyNumber          <- Arbitrary.arbitrary[String]
       utrType                <- Arbitrary.arbitrary[UtrType]
       utrNumber              <- Arbitrary.arbitrary[String]
+      taxIdentifier          <- Arbitrary.arbitrary[String]
       commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
     } yield ValidNonUkEstablishmentRegistration(
       commonRegistrationData.registration.copy(
