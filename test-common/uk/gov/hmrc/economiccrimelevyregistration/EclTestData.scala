@@ -560,6 +560,8 @@ trait EclTestData {
       companyNumber              <- Arbitrary.arbitrary[String]
       commonRegistrationData     <- Arbitrary.arbitrary[CommonRegistrationData]
       registrationAdditionalInfo <- Arbitrary.arbitrary[RegistrationAdditionalInfo]
+      isUtrPresent               <- Arbitrary.arbitrary[Boolean]
+      utr                        <- Arbitrary.arbitrary[String]
     } yield ValidCharityRegistration(
       commonRegistrationData.registration.copy(
         entityType = Some(Charity),
@@ -570,7 +572,12 @@ trait EclTestData {
           commonRegistrationData.registration.otherEntityJourneyData.copy(
             businessName = Some(businessName),
             charityRegistrationNumber = Some(charityNumber),
-            companyRegistrationNumber = Some(companyNumber)
+            companyRegistrationNumber = Some(companyNumber),
+            isCtUtrPresent = Some(isUtrPresent),
+            ctUtr = isUtrPresent match {
+              case true  => Some(utr)
+              case false => None
+            }
           )
         )
       ),

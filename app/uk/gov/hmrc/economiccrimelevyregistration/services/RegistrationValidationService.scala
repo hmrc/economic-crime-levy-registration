@@ -381,6 +381,12 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     for {
       _ <- validateOptExists(otherEntityJourneyData.charityRegistrationNumber, "Charity registration number")
       _ <- validateOptExists(otherEntityJourneyData.companyRegistrationNumber, "Company registration number")
+      _ <- validateOptExists(otherEntityJourneyData.isCtUtrPresent, "Corporation Tax Unique Taxpayer Reference choice")
+      _ <- validateConditionalOptExists(
+             otherEntityJourneyData.ctUtr,
+             otherEntityJourneyData.isCtUtrPresent.contains(true),
+             "Unique Taxpayer Reference"
+           )
     } yield Right(())
   }
 
