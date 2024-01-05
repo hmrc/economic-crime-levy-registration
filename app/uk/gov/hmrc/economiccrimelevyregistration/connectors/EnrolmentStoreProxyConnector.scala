@@ -22,7 +22,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{EclEnrolment, UpsertKnownFactsRequest}
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, Retries, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,8 +42,7 @@ class EnrolmentStoreProxyConnectorImpl @Inject() (
 )(implicit
   ec: ExecutionContext
 ) extends BaseConnector
-    with EnrolmentStoreProxyConnector
-    with Retries {
+    with EnrolmentStoreProxyConnector {
 
   private val enrolmentStoreUrl: String =
     s"${appConfig.enrolmentStoreProxyBaseUrl}/enrolment-store-proxy/enrolment-store"

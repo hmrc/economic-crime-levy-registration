@@ -21,13 +21,12 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.Config
-import play.api.Logging
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status.ACCEPTED
 import play.api.mvc.MultipartFormData
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, Retries, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,9 +38,7 @@ class DmsConnector @Inject() (
   override val configuration: Config,
   override val actorSystem: ActorSystem
 )(implicit ec: ExecutionContext)
-    extends BaseConnector
-    with Logging
-    with Retries {
+    extends BaseConnector {
 
   private val dmsHeaders = AUTHORIZATION -> appConfig.internalAuthToken
 

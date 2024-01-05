@@ -26,7 +26,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdHelper
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdHelper.HEADER_X_CORRELATION_ID
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, Retries, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -39,8 +39,7 @@ class IntegrationFrameworkConnector @Inject() (
   override val configuration: Config,
   override val actorSystem: ActorSystem
 )(implicit ec: ExecutionContext)
-    extends BaseConnector
-    with Retries {
+    extends BaseConnector {
 
   private def integrationFrameworkHeaders(correlationId: String): Seq[(String, String)] = Seq(
     (HeaderNames.AUTHORIZATION, s"Bearer ${appConfig.getSubscriptionStatusBearerToken}"),

@@ -24,7 +24,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.{NrsSubmission, NrsSubmissionResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, Retries, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,8 +37,7 @@ class NrsConnector @Inject() (
   override val actorSystem: ActorSystem
 )(implicit
   ec: ExecutionContext
-) extends BaseConnector
-    with Retries {
+) extends BaseConnector {
 
   private val nrsSubmissionUrl: String = s"${appConfig.nrsBaseUrl}/submission"
 

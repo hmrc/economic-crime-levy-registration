@@ -23,7 +23,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, Retries, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,8 +43,7 @@ class TaxEnrolmentsConnectorImpl @Inject() (
 )(implicit
   ec: ExecutionContext
 ) extends BaseConnector
-    with TaxEnrolmentsConnector
-    with Retries {
+    with TaxEnrolmentsConnector {
 
   private val taxEnrolmentsUrl: String =
     s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$ServiceName/enrolment"
