@@ -39,11 +39,11 @@ final case class Registration(
   contactAddress: Option[EclAddress],
   contactAddressIsUk: Option[Boolean],
   partnershipName: Option[String],
-  privateBetaAccessCode: Option[String],
   base64EncodedFields: Option[Base64EncodedFields],
   optOtherEntityJourneyData: Option[OtherEntityJourneyData],
   lastUpdated: Option[Instant] = None,
-  registrationType: Option[RegistrationType]
+  registrationType: Option[RegistrationType],
+  amendReason: Option[String]
 ) {
   def otherEntityJourneyData: OtherEntityJourneyData =
     optOtherEntityJourneyData.getOrElse(OtherEntityJourneyData.empty())
@@ -70,9 +70,9 @@ object Registration {
     contactAddress = None,
     contactAddressIsUk = None,
     partnershipName = None,
-    privateBetaAccessCode = None,
     base64EncodedFields = None,
     optOtherEntityJourneyData = None,
-    registrationType = None
+    registrationType = None,
+    amendReason = None
   )
 }

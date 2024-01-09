@@ -26,6 +26,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Trust
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
@@ -662,6 +663,21 @@ class RegistrationValidationServiceSpec extends SpecBase {
           nec.toList should contain theSameElementsAs expectedErrors ++
             Seq(DataValidationError(DataMissing, message + " is missing"))
         )
+    }
+    "return an error if if no amend reason for an amendment" in forAll {
+      (
+        validRegistration: ValidLimitedPartnershipRegistration,
+        registrationAdditionalInfo: RegistrationAdditionalInfo
+      ) =>
+        val invalidRegistration =
+          validRegistration.registration
+            .copy(registrationType = Some(Amendment), amendReason = None)
+
+        val result  = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val message = "Reason for amendment"
+
+        result.isValid shouldBe false
+        result.leftMap(nec => nec.toList should contain(DataValidationError(DataMissing, message + " is missing")))
     }
   }
 }
