@@ -114,8 +114,9 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       validateOptExists(registration.businessSector, "Business sector"),
       validateContactDetails("First", registration.contacts.firstContactDetails),
       validateSecondContactDetails(registration.contacts),
-      validateEclAddress(registration.contactAddress)
-    ).mapN((_, _, _, _, _) => Right(registration))
+      validateEclAddress(registration.contactAddress),
+      validateAmendmentReason(registration)
+    ).mapN((_, _, _, _, _, _) => Right(registration))
 
   private def validateContactDetails(
     firstOrSecond: String,
@@ -297,6 +298,12 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     registration.revenueMeetsThreshold match {
       case Some(_) => registration.validNel
       case _       => DataValidationError(DataMissing, missingErrorMessage("Revenue meets threshold flag")).invalidNel
+    }
+
+  private def validateAmendmentReason(registration: Registration): ValidationResult[Registration] =
+    registration.amendReason match {
+      case Some(_) => registration.validNel
+      case _       => DataValidationError(DataMissing, missingErrorMessage("Reason for amendment")).invalidNel
     }
 
   private def validateEclAddress(eclAddress: Option[EclAddress]): ValidationResult[CorrespondenceAddressDetails] =
