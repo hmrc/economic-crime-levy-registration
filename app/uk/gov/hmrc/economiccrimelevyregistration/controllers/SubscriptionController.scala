@@ -28,7 +28,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton()
-class SubscriptionStatusController @Inject() (
+class SubscriptionController @Inject() (
   cc: ControllerComponents,
   integrationFrameworkConnector: IntegrationFrameworkConnector,
   auditConnector: AuditConnector,
@@ -56,4 +56,11 @@ class SubscriptionStatusController @Inject() (
       }
   }
 
+  def getSubscription(eclReference: String): Action[AnyContent] = authorise.async { implicit request =>
+    integrationFrameworkConnector
+      .getSubscription(eclReference)
+      .map { response =>
+        Ok(Json.toJson(response))
+      }
+  }
 }

@@ -9,7 +9,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
 
 class SubscriptionStatusISpec extends ISpecBase {
 
-  s"GET ${routes.SubscriptionStatusController.getSubscriptionStatus(":businessPartnerId").url}" should {
+  s"GET ${routes.SubscriptionController.getSubscriptionStatus(":businessPartnerId").url}" should {
     "return 200 OK with a subscribed ECL subscription status and the ECL registration reference" in {
       stubAuthorised()
 
@@ -20,7 +20,7 @@ class SubscriptionStatusISpec extends ISpecBase {
       stubGetSubscribedEclSubscriptionStatus()
 
       lazy val result =
-        callRoute(FakeRequest(routes.SubscriptionStatusController.getSubscriptionStatus(testBusinessPartnerId)))
+        callRoute(FakeRequest(routes.SubscriptionController.getSubscriptionStatus(testBusinessPartnerId)))
 
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(eclSubscriptionStatus)
@@ -36,7 +36,7 @@ class SubscriptionStatusISpec extends ISpecBase {
       stubGetUnsubscribedEclSubscriptionStatus()
 
       lazy val result =
-        callRoute(FakeRequest(routes.SubscriptionStatusController.getSubscriptionStatus(testBusinessPartnerId)))
+        callRoute(FakeRequest(routes.SubscriptionController.getSubscriptionStatus(testBusinessPartnerId)))
 
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(eclSubscriptionStatus)
