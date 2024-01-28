@@ -18,6 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
 import play.api.Logging
+import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
@@ -46,8 +47,14 @@ class RegistrationValidationController @Inject() (
     (for {
       registration   <- registrationService.getRegistration(id).asResponseError
       additionalInfo <- registrationAdditionalInfoService.get(registration.internalId).asResponseError
-      result         <- resolveRegistrationValidationExecutionPath(registration, additionalInfo).asResponseError
-    } yield result).convertToResult(OK)
+    } yield (registration, additionalInfo)).foldF(
+      error => Future.successful(Status(error.code.statusCode)(Json.toJson(error))),
+      registrationAndInfo =>
+        resolveRegistrationValidationExecutionPath(registrationAndInfo._1, registrationAndInfo._2).fold(
+          error => Ok(Json.toJson(error.errorMessage)),
+          _ => Ok
+        )
+    )
   }
 
   private def resolveRegistrationValidationExecutionPath(
@@ -55,30 +62,9 @@ class RegistrationValidationController @Inject() (
     additionalInfo: RegistrationAdditionalInfo
   ): EitherT[Future, DataValidationError, Unit] =
     if (registration.isRegistration) {
-      checkForErrorsInRegistrationValidation(registrationValidationService.validateRegistration(registration))
+      registrationValidationService.validateRegistration(registration).map(_ => ())
     } else {
-      checkForErrorsInSubscriptionValidation(
-        registrationValidationService.validateSubscription(registration, additionalInfo)
-      )
+      registrationValidationService.validateSubscription(registration, additionalInfo).map(_ => ())
     }
 
-  private def checkForErrorsInRegistrationValidation(
-    registration: EitherT[Future, DataValidationError, Registration]
-  ): EitherT[Future, DataValidationError, Unit] =
-    EitherT(
-      registration.fold(
-        error => Left(error),
-        success => Right(())
-      )
-    )
-
-  private def checkForErrorsInSubscriptionValidation(
-    eclSubscription: EitherT[Future, DataValidationError, EclSubscription]
-  ): EitherT[Future, DataValidationError, Unit] =
-    EitherT(
-      eclSubscription.fold(
-        error => Left(error),
-        success => Right(())
-      )
-    )
 }

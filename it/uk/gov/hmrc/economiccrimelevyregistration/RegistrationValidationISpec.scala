@@ -88,9 +88,9 @@ class RegistrationValidationISpec extends ISpecBase {
       lazy val validationResult =
         callRoute(FakeRequest(routes.RegistrationValidationController.checkForValidationErrors(internalId)))
 
-      status(validationResult)        shouldBe BAD_REQUEST
+      status(validationResult)        shouldBe OK
       contentAsJson(validationResult) shouldBe Json.toJson(
-        ResponseError.badRequestError("DATA_MISSING : Entity type is missing")
+        "Entity type is missing"
       )
     }
 

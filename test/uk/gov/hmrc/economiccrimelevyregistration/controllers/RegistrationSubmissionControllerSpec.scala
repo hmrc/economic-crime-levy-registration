@@ -215,7 +215,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
           contentAsJson(result) shouldBe Json.toJson(subscriptionResponse.success)
       }
 
-      "return 400 BAD_REQUEST with ResponseError message in the JSON response body when the registration data is invalid" in forAll(
+      "return 400 BAD_REQUEST with message in the JSON response body when the registration data is invalid" in forAll(
         Arbitrary.arbitrary[Registration],
         Arbitrary.arbitrary[RegistrationAdditionalInfo]
       ) {
@@ -241,7 +241,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
           status(result)        shouldBe BAD_REQUEST
           contentAsJson(result) shouldBe Json.toJson(
-            ResponseError.badGateway("DATA_INVALID : Invalid data", BAD_REQUEST)
+            ResponseError.badRequestError("Invalid data")
           )
       }
     }
@@ -349,7 +349,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             )(any(), any())
         }
 
-      "return 400 BAD_REQUEST with ResponseError message in the JSON response body when the registration data is invalid" in forAll(
+      "return 400 BAD_REQUEST with message in the JSON response body when the registration data is invalid" in forAll(
         Arbitrary.arbitrary[Registration],
         Arbitrary.arbitrary[RegistrationAdditionalInfo]
       ) {
@@ -375,7 +375,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
           status(result)        shouldBe BAD_REQUEST
           contentAsJson(result) shouldBe Json.toJson(
-            ResponseError.badGateway("DATA_INVALID : Invalid data", BAD_GATEWAY)
+            ResponseError.badGateway("Invalid data", BAD_GATEWAY)
           )
 
       }

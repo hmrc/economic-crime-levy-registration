@@ -86,8 +86,8 @@ class RegistrationValidationControllerSpec extends SpecBase {
         val result: Future[Result] =
           controller.checkForValidationErrors(registration.registration.internalId)(fakeRequest)
 
-        status(result)        shouldBe BAD_REQUEST
-        contentAsJson(result) shouldBe Json.toJson(ResponseError.badRequestError("DATA_INVALID : Invalid data"))
+        status(result)        shouldBe OK
+        contentAsJson(result) shouldBe Json.toJson("Invalid data")
     }
   }
 

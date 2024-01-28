@@ -41,7 +41,7 @@ class SchemaValidator @Inject() () {
     circeParse(jsonString) match {
       case Left(error)  =>
         Left(
-          DataValidationError.DataInvalid(message =
+          DataValidationError.DataInvalid(
             "Could not transform play JSON into circe JSON for schema validation." +
               s" Error returned: ${error.getMessage()}"
           )
@@ -54,7 +54,7 @@ class SchemaValidator @Inject() () {
       case Valid(_)   => Right(())
       case Invalid(e) =>
         Left(
-          DataValidationError.SchemaValidationError(message = s"Schema validation error: ${e.toList.mkString(", ")}")
+          DataValidationError.SchemaValidationError(s"Schema validation error: ${e.toList.mkString(", ")}")
         )
     }
 }

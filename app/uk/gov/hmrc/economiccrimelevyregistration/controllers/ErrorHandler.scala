@@ -105,10 +105,10 @@ trait ErrorHandler extends Logging {
   implicit val dataValidationErrorConverter: Converter[DataValidationError] =
     new Converter[DataValidationError] {
       override def convert(error: DataValidationError): ResponseError = error match {
-        case DataValidationError.DataInvalid(message, code)           => ResponseError.badRequestError(s"$code : $message")
-        case DataValidationError.SchemaValidationError(message, code) =>
-          ResponseError.badRequestError(s"$code : $message")
-        case DataValidationError.DataMissing(message, code)           => ResponseError.badRequestError(s"$code : $message")
+        case DataValidationError.DataInvalid(message)           => ResponseError.badRequestError(message)
+        case DataValidationError.SchemaValidationError(message) =>
+          ResponseError.badRequestError(message)
+        case DataValidationError.DataMissing(message)           => ResponseError.badRequestError(message)
       }
     }
 
