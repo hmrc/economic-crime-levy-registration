@@ -40,7 +40,6 @@ class RegistrationISpec extends ISpecBase {
         callRoute(FakeRequest(routes.RegistrationController.getRegistration(registration.internalId)))
 
       status(putResult)        shouldBe OK
-      contentAsJson(putResult) shouldBe Json.toJson(registration)
       status(getResult)        shouldBe OK
       contentAsJson(getResult) shouldBe Json.toJson(registration.copy(lastUpdated = Some(now)))
     }

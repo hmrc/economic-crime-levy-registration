@@ -30,9 +30,9 @@ class RegistrationService @Inject() (
 ) {
   def upsertRegistration(
     registration: Registration
-  )(implicit ec: ExecutionContext): EitherT[Future, RegistrationError, Registration] =
+  )(implicit ec: ExecutionContext): EitherT[Future, RegistrationError, Unit] =
     EitherT {
-      registrationRepository.upsert(registration).map(_ => Right(registration)).recover { case e =>
+      registrationRepository.upsert(registration).map(_ => Right(())).recover { case e =>
         Left(RegistrationError.InternalUnexpectedError(Some(e.getCause)))
       }
     }

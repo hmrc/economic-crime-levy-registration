@@ -48,8 +48,7 @@ class RegistrationControllerSpec extends SpecBase {
           fakeRequestWithJsonBody(Json.toJson(registration))
         )
 
-      status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(registration)
+      status(result) shouldBe OK
     }
   }
 

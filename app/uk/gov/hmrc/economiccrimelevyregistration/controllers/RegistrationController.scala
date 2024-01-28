@@ -39,8 +39,8 @@ class RegistrationController @Inject() (
   def upsertRegistration: Action[JsValue] = authorise(parse.json).async { implicit request =>
     withJsonBody[Registration] { registration =>
       (for {
-        updatedRegistration <- registrationService.upsertRegistration(registration).asResponseError
-      } yield updatedRegistration).convertToResult(OK)
+        unit <- registrationService.upsertRegistration(registration).asResponseError
+      } yield unit).convertToResult(OK)
     }
   }
 
