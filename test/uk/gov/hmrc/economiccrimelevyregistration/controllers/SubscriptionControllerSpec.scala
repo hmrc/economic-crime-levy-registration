@@ -85,16 +85,15 @@ class SubscriptionControllerSpec extends SpecBase {
       when(mockSubscriptionService.getSubscription(ArgumentMatchers.eq(eclReference))(any()))
         .thenReturn(Future.failed(new IllegalStateException("Error")))
 
-      val result = await(
-        controller
-          .getSubscription(eclReference)(fakeRequest)
-          .map(_ => None)
-          .recover { case e =>
-            Some(e)
-          }
-      )
+      val result = intercept[IllegalStateException] {
+        await(
+          controller
+            .getSubscription(eclReference)(fakeRequest)
+        )
+      }
 
-      result.value shouldBe a[IllegalStateException]
+      result.getMessage shouldBe "Error"
+      result            shouldBe a[IllegalStateException]
 
       reset(mockAuditConnector)
       reset(mockIntegrationFrameworkConnector)
