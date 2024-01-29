@@ -23,19 +23,22 @@ import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.IntegrationFrameworkConnector
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.SubscriptionStatusResponse
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{GetSubscriptionResponse, SubscriptionStatusResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.services.SubscriptionService
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 import scala.concurrent.Future
 
-class SubscriptionStatusControllerSpec extends SpecBase {
+class SubscriptionControllerSpec extends SpecBase {
 
   val mockIntegrationFrameworkConnector: IntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
+  val mockSubscriptionService: SubscriptionService                     = mock[SubscriptionService]
   val mockAuditConnector: AuditConnector                               = mock[AuditConnector]
 
-  val controller = new SubscriptionStatusController(
+  val controller = new SubscriptionController(
     cc,
     mockIntegrationFrameworkConnector,
+    mockSubscriptionService,
     mockAuditConnector,
     fakeAuthorisedAction
   )
@@ -55,6 +58,46 @@ class SubscriptionStatusControllerSpec extends SpecBase {
         verify(mockAuditConnector, times(1)).sendExtendedEvent(any())(any(), any())
 
         reset(mockAuditConnector)
+        reset(mockIntegrationFrameworkConnector)
+    }
+  }
+
+  "getSubscription" should {
+    "return 200 OK with subscription data for given ecl reference" in forAll {
+      (eclReference: String, getSubscriptionResponse: GetSubscriptionResponse) =>
+        when(mockSubscriptionService.getSubscription(any())(any()))
+          .thenReturn(Future.successful(getSubscriptionResponse))
+
+        val result: Future[Result] = controller.getSubscription(eclReference)(fakeRequest)
+
+        status(result) shouldBe OK
+
+        contentAsJson(result) shouldBe Json.toJson(getSubscriptionResponse)
+
+        verify(mockSubscriptionService, times(1)).getSubscription(ArgumentMatchers.eq(eclReference))(any())
+
+        reset(mockAuditConnector)
+        reset(mockIntegrationFrameworkConnector)
+        reset(mockSubscriptionService)
+    }
+
+    "return 500 InternalServerError when call to IF fails" in forAll { (eclReference: String) =>
+      when(mockSubscriptionService.getSubscription(ArgumentMatchers.eq(eclReference))(any()))
+        .thenReturn(Future.failed(new IllegalStateException("Error")))
+
+      val result = intercept[IllegalStateException] {
+        await(
+          controller
+            .getSubscription(eclReference)(fakeRequest)
+        )
+      }
+
+      result.getMessage shouldBe "Error"
+      result            shouldBe a[IllegalStateException]
+
+      reset(mockAuditConnector)
+      reset(mockIntegrationFrameworkConnector)
+      reset(mockSubscriptionService)
     }
   }
 

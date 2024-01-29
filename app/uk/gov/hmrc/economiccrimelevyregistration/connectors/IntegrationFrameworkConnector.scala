@@ -57,4 +57,12 @@ class IntegrationFrameworkConnector @Inject() (
       headers = integrationFrameworkHeaders(appConfig.integrationFrameworkBearerToken)
     )
 
+  def getSubscription(
+    eclReference: String
+  )(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] =
+    httpClient.GET[GetSubscriptionResponse](
+      s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/$eclReference",
+      headers = integrationFrameworkHeaders(appConfig.integrationFrameworkGetSubscriptionBearerToken)
+    )
+
 }

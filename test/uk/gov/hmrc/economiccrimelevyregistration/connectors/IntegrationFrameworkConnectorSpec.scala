@@ -22,7 +22,7 @@ import play.api.http.HeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, Subscription, SubscriptionStatusResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdGenerator
 import uk.gov.hmrc.http.{HttpClient, UpstreamErrorResponse}
 
@@ -70,8 +70,8 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
             any(),
             ArgumentMatchers.eq(expectedHeaders)
           )(any(), any(), any())
-
         reset(mockHttpClient)
+
     }
   }
 
@@ -112,9 +112,46 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
             ArgumentMatchers.eq(eclSubscription.subscription),
             ArgumentMatchers.eq(expectedHeaders)
           )(any(), any(), any(), any())
-
         reset(mockHttpClient)
+
     }
   }
 
+  "getSubscription" should {
+    "return a subscription for user when we get one from http client" in forAll {
+      (eclReference: String, correlationId: String, getSubscriptionResponse: GetSubscriptionResponse) =>
+        val expectedUrl =
+          s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/$eclReference"
+
+        val expectedHeaders: Seq[(String, String)] = Seq(
+          (HeaderNames.AUTHORIZATION, s"Bearer ${appConfig.getSubscriptionStatusBearerToken}"),
+          (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
+          (CustomHeaderNames.CorrelationId, correlationId)
+        )
+
+        when(mockCorrelationIdGenerator.generateCorrelationId).thenReturn(correlationId)
+
+        when(
+          mockHttpClient.GET[GetSubscriptionResponse](
+            ArgumentMatchers.eq(expectedUrl),
+            any(),
+            ArgumentMatchers.eq(expectedHeaders)
+          )(any(), any(), any())
+        )
+          .thenReturn(Future.successful(getSubscriptionResponse))
+
+        val result = await(connector.getSubscription(eclReference))
+
+        result shouldBe getSubscriptionResponse
+
+        verify(mockHttpClient, times(1))
+          .GET[GetSubscriptionResponse](
+            ArgumentMatchers.eq(expectedUrl),
+            any(),
+            ArgumentMatchers.eq(expectedHeaders)
+          )(any(), any(), any())
+        reset(mockHttpClient)
+    }
+
+  }
 }
