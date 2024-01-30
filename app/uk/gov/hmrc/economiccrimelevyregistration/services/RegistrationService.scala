@@ -20,6 +20,7 @@ import cats.data.EitherT
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.RegistrationError
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
+import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +38,9 @@ class RegistrationService @Inject() (
       }
     }
 
-  def getRegistration(id: String)(implicit ec: ExecutionContext): EitherT[Future, RegistrationError, Registration] =
+  def getRegistration(
+    id: String
+  )(implicit ec: ExecutionContext): EitherT[Future, RegistrationError, Registration] =
     EitherT {
       registrationRepository.get(id).map {
         case Some(value) => Right(value)

@@ -52,9 +52,11 @@ class TaxEnrolmentsConnectorImpl @Inject() (
     createEnrolmentRequest: CreateEnrolmentRequest
   )(implicit hc: HeaderCarrier): Future[Unit] =
     retryFor[Unit]("Tax enrolment")(retryCondition) {
+      val authHeader = hc.extraHeaders.find(_._1 == "Authorization")
       httpClient
         .put(url"$taxEnrolmentsUrl")
         .withBody(Json.toJson(createEnrolmentRequest))
+        .setHeader("Authorization" -> authHeader.head._2)
         .executeAndContinue
     }
 }
