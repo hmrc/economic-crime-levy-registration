@@ -56,11 +56,6 @@ class RegistrationSubmissionController @Inject() (
     (for {
       registration   <- registrationService.getRegistration(id).asResponseError
       additionalInfo <- registrationAdditionalInfoService.get(registration.internalId).asResponseError
-      _              <- (if (registration.isRegistration) {
-                           registrationValidationService.validateRegistration(registration)
-                         } else {
-                           registrationValidationService.validateSubscription(registration, additionalInfo)
-                         }).asResponseError
       response       <- if (registration.isRegistration) {
                           registerForEcl(registration, additionalInfo.liabilityYear)
                         } else {

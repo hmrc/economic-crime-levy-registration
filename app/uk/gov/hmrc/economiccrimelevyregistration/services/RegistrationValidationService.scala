@@ -63,7 +63,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         transformToEclSubscription(registration, registrationAdditionalInfo) match {
           case Right(eclSubscription) =>
             schemaValidator.validateAgainstJsonSchema(
-              eclSubscription,
+              eclSubscription.subscription,
               SchemaLoader.loadSchema("create-ecl-subscription-request.json")
             ) match {
               case Right(_)    => Right(eclSubscription)

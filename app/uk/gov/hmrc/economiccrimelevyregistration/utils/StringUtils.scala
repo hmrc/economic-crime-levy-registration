@@ -19,7 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.utils
 object StringUtils {
 
   implicit class StringOps(s: String) {
-    def removeWhitespace: String = s.replaceAll("\\s+", "")
+    def removeWhitespace: String = s.replaceAll("\\s+", "") //TODO fix this
   }
 
 }
