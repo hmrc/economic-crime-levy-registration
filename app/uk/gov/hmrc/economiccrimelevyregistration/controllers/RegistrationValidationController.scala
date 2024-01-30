@@ -52,7 +52,7 @@ class RegistrationValidationController @Inject() (
       registrationAndInfo =>
         resolveRegistrationValidationExecutionPath(registrationAndInfo._1, registrationAndInfo._2).fold(
           error => Ok(Json.toJson(error.errorMessage)),
-          _ => Ok
+          _ => Ok(Json.toJson(None))
         )
     )
   }
