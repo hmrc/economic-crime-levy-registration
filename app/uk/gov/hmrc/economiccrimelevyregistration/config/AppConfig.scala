@@ -52,7 +52,7 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
     configuration.get[String]("microservice.services.integration-framework.environment")
 
   val integrationFrameworkGetSubscriptionBearerToken: String =
-    configuration.get[String]("microservice.services.integration-framework.getSubscriptionStatusBearerToken")
+    configuration.get[String]("microservice.services.integration-framework.getSubscriptionBearerToken")
 
   val enrolmentStoreProxyBaseUrl: String = servicesConfig.baseUrl("enrolment-store-proxy")
 
