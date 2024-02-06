@@ -22,7 +22,7 @@ import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.UpsertKnownFactsRequest
-import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
 import scala.concurrent.Future
@@ -50,7 +50,7 @@ class EnrolmentStoreProxyConnectorSpec extends SpecBase {
         when(mockRequestBuilder.execute[HttpResponse](any(), any()))
           .thenReturn(Future.successful(HttpResponse.apply(ACCEPTED, "")))
 
-        val result: Unit = await(connector.upsertKnownFacts(upsertKnownFactsRequest, eclReference))
+        val result: Unit = await(connector.upsertKnownFacts(upsertKnownFactsRequest, eclReference)(hc))
 
         result shouldBe ()
 

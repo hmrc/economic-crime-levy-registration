@@ -110,6 +110,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       _ <- validateContactDetails("First", registration.contacts.firstContactDetails)
       _ <- validateSecondContactDetails(registration.contacts)
       _ <- validateEclAddress(registration.contactAddress)
+      _ <- validateAmendmentReason(registration)
     } yield registration
 
   private def validateContactDetails(
@@ -284,6 +285,12 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     registration.revenueMeetsThreshold match {
       case Some(_) => Right(registration)
       case _       => Left(DataValidationError.DataMissing(missingErrorMessage("Revenue meets threshold flag")))
+    }
+
+  private def validateAmendmentReason(registration: Registration): ValidationResult[Registration] =
+    registration.amendReason match {
+      case Some(_) => Right(registration)
+      case _       => Left(DataValidationError.DataMissing(missingErrorMessage("Reason for amendment")))
     }
 
   private def validateEclAddress(eclAddress: Option[EclAddress]): ValidationResult[CorrespondenceAddressDetails] =

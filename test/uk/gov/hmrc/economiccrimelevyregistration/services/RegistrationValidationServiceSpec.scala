@@ -23,6 +23,9 @@ import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Charity
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Trust
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
+import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
@@ -512,6 +515,20 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         val result = await(service.validateRegistration(invalidCharityRegistration).value)
         result shouldBe Left(DataValidationError.DataMissing("Company registration number is missing"))
+    }
+
+    "return an error if if no amend reason for an amendment" in forAll {
+      (
+        validRegistration: ValidLimitedPartnershipRegistration
+      ) =>
+        val invalidRegistration =
+          validRegistration.registration
+            .copy(registrationType = Some(Amendment), amendReason = None)
+
+        val result  = await(service.validateRegistration(invalidRegistration).value)
+        val message = "Reason for amendment"
+
+        result shouldBe Left(DataValidationError.DataMissing(message + " is missing"))
     }
   }
 }

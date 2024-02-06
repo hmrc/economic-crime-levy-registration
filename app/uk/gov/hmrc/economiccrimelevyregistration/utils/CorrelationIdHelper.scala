@@ -34,7 +34,7 @@ object CorrelationIdHelper {
       case _   => hcFromRequest
     }
 
-   request.headers
+    request.headers
       .get(HeaderNames.authorisation)
       .map(auth => newHc.withExtraHeaders((HeaderNames.authorisation, auth)))
       .getOrElse(newHc)

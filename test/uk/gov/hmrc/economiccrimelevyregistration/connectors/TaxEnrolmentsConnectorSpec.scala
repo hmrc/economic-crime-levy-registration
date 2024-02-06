@@ -22,7 +22,7 @@ import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
-import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
 import scala.concurrent.Future
@@ -37,13 +37,14 @@ class TaxEnrolmentsConnectorSpec extends SpecBase {
 
   "enrol" should {
     "return successful empty response" in forAll { (createEnrolmentRequest: CreateEnrolmentRequest) =>
+      val hc = HeaderCarrier(extraHeaders = Seq("Authorization" -> "123"))
       when(mockHttpClient.put(any())(any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.execute[HttpResponse](any(), any()))
         .thenReturn(Future.successful(HttpResponse.apply(ACCEPTED, "")))
 
-      val result: Unit = await(connector.enrol(createEnrolmentRequest))
+      val result: Unit = await(connector.enrol(createEnrolmentRequest)(hc))
 
       result shouldBe ()
 

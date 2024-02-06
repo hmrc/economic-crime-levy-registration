@@ -107,5 +107,4 @@ object SubscriptionStatusResponse {
   implicit val writes: Writes[SubscriptionStatusResponse] = (o: SubscriptionStatusResponse) => JsString(o.toString)
 
   implicit val format: OFormat[SubscriptionStatusResponse] = Json.format
-
 }

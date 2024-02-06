@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
+import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.services.SubscriptionService
@@ -27,7 +28,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton()
-class SubscriptionStatusController @Inject() (
+class SubscriptionController @Inject() (
   cc: ControllerComponents,
   subscriptionService: SubscriptionService,
   authorise: AuthorisedAction
@@ -44,4 +45,11 @@ class SubscriptionStatusController @Inject() (
     } yield response).convertToResult(OK)
   }
 
+  def getSubscription(eclReference: String): Action[AnyContent] = authorise.async { implicit request =>
+    subscriptionService
+      .getSubscription(eclReference)
+      .map { response =>
+        Ok(Json.toJson(response))
+      }
+  }
 }

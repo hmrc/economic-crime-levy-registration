@@ -82,4 +82,15 @@ class IntegrationFrameworkConnector @Inject() (
       case Nil                     => UUID.randomUUID().toString
       case Seq((_, correlationId)) => correlationId
     }
+
+  def getSubscription(
+    eclReference: String
+  )(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] =
+    retryFor[GetSubscriptionResponse]("Get subscription")(retryCondition) {
+      httpClient
+        .get(url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/$eclReference")
+        .setHeader(integrationFrameworkHeaders(appConfig.integrationFrameworkGetSubscriptionBearerToken): _*)
+        .executeAndDeserialise[GetSubscriptionResponse]
+    }
+
 }

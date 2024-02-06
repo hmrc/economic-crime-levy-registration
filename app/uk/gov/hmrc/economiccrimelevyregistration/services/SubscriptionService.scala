@@ -24,6 +24,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.SubscriptionSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, SubscriptionStatusResponse}
 import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, KeyValue, KnownFactsWorkItem, Registration}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.GetSubscriptionResponse
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -186,4 +187,8 @@ class SubscriptionService @Inject() (
         )
       ).extendedDataEvent
     )
+
+  def getSubscription(eclRegistrationReference: String)(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] =
+    integrationFrameworkConnector.getSubscription(eclRegistrationReference)
+
 }
