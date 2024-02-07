@@ -41,8 +41,8 @@ class IntegrationFrameworkConnector @Inject() (
 )(implicit ec: ExecutionContext)
     extends BaseConnector {
 
-  private def integrationFrameworkHeaders(correlationId: String): Seq[(String, String)] = Seq(
-    (HeaderNames.AUTHORIZATION, s"Bearer ${appConfig.getSubscriptionStatusBearerToken}"),
+  private def integrationFrameworkHeaders(correlationId: String, bearerToken: String): Seq[(String, String)] = Seq(
+    (HeaderNames.AUTHORIZATION, s"Bearer $bearerToken"),
     (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
     (CustomHeaderNames.CorrelationId, correlationId),
     (HEADER_X_CORRELATION_ID, correlationId)
@@ -56,7 +56,7 @@ class IntegrationFrameworkConnector @Inject() (
     retryFor[SubscriptionStatusResponse]("Get subscription status")(retryCondition) {
       httpClient
         .get(url"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status")
-        .setHeader(integrationFrameworkHeaders(correlationId): _*)
+        .setHeader(integrationFrameworkHeaders(correlationId, appConfig.getSubscriptionStatusBearerToken): _*)
         .executeAndDeserialise[SubscriptionStatusResponse]
     }
   }
@@ -72,7 +72,7 @@ class IntegrationFrameworkConnector @Inject() (
           url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"
         )
         .withBody(Json.toJson(eclSubscription))
-        .setHeader(integrationFrameworkHeaders(correlationId): _*)
+        .setHeader(integrationFrameworkHeaders(correlationId, appConfig.integrationFrameworkBearerToken): _*)
         .executeAndDeserialise[CreateEclSubscriptionResponse]
     }
   }
@@ -85,12 +85,17 @@ class IntegrationFrameworkConnector @Inject() (
 
   def getSubscription(
     eclReference: String
-  )(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] =
+  )(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] = {
+    val correlationId: String = createCorrelationId(hc)
+
     retryFor[GetSubscriptionResponse]("Get subscription")(retryCondition) {
       httpClient
         .get(url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/$eclReference")
-        .setHeader(integrationFrameworkHeaders(appConfig.integrationFrameworkGetSubscriptionBearerToken): _*)
+        .setHeader(
+          integrationFrameworkHeaders(correlationId, appConfig.integrationFrameworkGetSubscriptionBearerToken): _*
+        )
         .executeAndDeserialise[GetSubscriptionResponse]
     }
+  }
 
 }

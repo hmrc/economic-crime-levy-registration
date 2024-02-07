@@ -18,6 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
+import play.api.http.HeaderNames
 import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
@@ -52,11 +53,13 @@ class TaxEnrolmentsConnectorImpl @Inject() (
     createEnrolmentRequest: CreateEnrolmentRequest
   )(implicit hc: HeaderCarrier): Future[Unit] =
     retryFor[Unit]("Tax enrolment")(retryCondition) {
-      val authHeader = hc.extraHeaders.find(_._1 == "Authorization")
-      httpClient
+      val request = httpClient
         .put(url"$taxEnrolmentsUrl")
         .withBody(Json.toJson(createEnrolmentRequest))
-        .setHeader("Authorization" -> authHeader.head._2)
+
+      hc.authorization
+        .map(auth => request.setHeader(HeaderNames.AUTHORIZATION -> auth.value))
+        .getOrElse(request)
         .executeAndContinue
     }
 }
