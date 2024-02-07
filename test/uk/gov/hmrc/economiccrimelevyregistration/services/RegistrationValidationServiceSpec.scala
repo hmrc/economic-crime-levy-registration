@@ -24,7 +24,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Trust
-import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.{Amendment, Initial}
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
@@ -160,14 +160,28 @@ class RegistrationValidationServiceSpec extends SpecBase {
         result shouldBe Right(updatedExpectedEclSubscription)
     }
 
-    "return a non-empty list of errors when unconditional mandatory registration data items are missing" in {
+    "return DataValidationError.DataMissing when unconditional mandatory registration data items are missing if registration type is Initial" in {
+      val registration = Registration
+        .empty("internalId")
+        .copy(
+          carriedOutAmlRegulatedActivityInCurrentFy = Some(true),
+          entityType = None,
+          registrationType = Some(Initial)
+        )
+
+      val result = await(service.validateRegistration(registration).value)
+
+      result shouldBe Left(DataValidationError.DataMissing("Entity type missing"))
+    }
+
+    "return a DataValidationError.DataInvalid when wrong registration type is passed" in {
       val registration = Registration
         .empty("internalId")
         .copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true))
 
       val result = await(service.validateRegistration(registration).value)
 
-      result shouldBe Left(DataValidationError.DataInvalid("Entity type missing"))
+      result shouldBe Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
     }
 
     "return errors if the entity type is an incorporated entity type but there is no incorporated entity data in the registration" in forAll {

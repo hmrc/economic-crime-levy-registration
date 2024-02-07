@@ -20,7 +20,7 @@ import cats.data.EitherT
 import cats.implicits._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission, Hmrc}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
-import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.{Amendment, Initial}
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
@@ -45,9 +45,10 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         registration.entityType match {
           case Some(value) if EntityType.isOther(value) => validateOtherEntity(registration)
           case _                                        =>
-            registration.registrationType match {
-              case Some(Amendment) => transformToAmendedEclRegistration(registration)
-              case _               => Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
+            (registration.registrationType, registration.entityType) match {
+              case (Some(Amendment), _)  => transformToAmendedEclRegistration(registration)
+              case (Some(Initial), None) => Left(DataValidationError.DataMissing("Entity type missing"))
+              case (_, _)                => Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
             }
         }
       )
