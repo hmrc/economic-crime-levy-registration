@@ -20,8 +20,9 @@ import cats.data.EitherT
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.mvc.Results.Status
-import uk.gov.hmrc.economiccrimelevyregistration.models.{RegistrationAdditionalInfo, SessionData}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, Registration, RegistrationAdditionalInfo, SessionData}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -58,4 +59,27 @@ trait BaseController {
         Status(responseCode)(Json.toJson(response))
     }
 
+  implicit val registrationResponse: Converter[Registration] =
+    new Converter[Registration] {
+      override def getResponse(response: Registration, responseCode: Int): Result =
+        Status(responseCode)(Json.toJson(response))
+    }
+
+  implicit val eclSubscriptionStatusResponse: Converter[EclSubscriptionStatus] =
+    new Converter[EclSubscriptionStatus] {
+      override def getResponse(response: EclSubscriptionStatus, responseCode: Int): Result =
+        Status(responseCode)(Json.toJson(response))
+    }
+
+  implicit val booleanResponse: Converter[Boolean] =
+    new Converter[Boolean] {
+      override def getResponse(response: Boolean, responseCode: Int): Result =
+        Status(responseCode)(Json.toJson(response))
+    }
+
+  implicit val createEclSubscriptionResponsePayloadResponse: Converter[CreateEclSubscriptionResponsePayload] =
+    new Converter[CreateEclSubscriptionResponsePayload] {
+      override def getResponse(response: CreateEclSubscriptionResponsePayload, responseCode: Int): Result =
+        Status(responseCode)(Json.toJson(response))
+    }
 }

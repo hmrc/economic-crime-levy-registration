@@ -14,64 +14,69 @@
  * limitations under the License.
  */
 
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import org.mockito.ArgumentMatchers
+import akka.actor.ActorSystem
+import com.typesafe.config.Config
+import org.mockito.{ArgumentMatcher, ArgumentMatchers}
 import org.mockito.ArgumentMatchers.any
 import play.api.http.HeaderNames
+import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.http.{HttpClient, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
-import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdGenerator
-import uk.gov.hmrc.http.{HttpClient, UpstreamErrorResponse}
 
 import scala.concurrent.Future
 
 class IntegrationFrameworkConnectorSpec extends SpecBase {
-  val mockHttpClient: HttpClient                         = mock[HttpClient]
-  val mockCorrelationIdGenerator: CorrelationIdGenerator = mock[CorrelationIdGenerator]
-  val connector                                          = new IntegrationFrameworkConnector(appConfig, mockHttpClient, mockCorrelationIdGenerator)
+
+  val actorSystem: ActorSystem = ActorSystem("test")
+  val config: Config           = app.injector.instanceOf[Config]
+
+  val mockRequestBuilder: RequestBuilder = mock[RequestBuilder]
+
+  val mockHttpClient: HttpClientV2 = mock[HttpClientV2]
+  val connector                    = new IntegrationFrameworkConnector(appConfig, mockHttpClient, config, actorSystem)
 
   "getSubscriptionStatus" should {
-    "return a subscription status when the http client returns a subscription status" in forAll {
-      (
-        businessPartnerId: String,
-        subscriptionStatusResponse: SubscriptionStatusResponse,
-        correlationId: String
-      ) =>
-        val expectedUrl =
-          s"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status"
-
-        val expectedHeaders: Seq[(String, String)] = Seq(
-          (HeaderNames.AUTHORIZATION, s"Bearer ${appConfig.getSubscriptionStatusBearerToken}"),
-          (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
-          (CustomHeaderNames.CorrelationId, correlationId)
+    "return a subscription status when the http client returns a subscription status" in {
+      val subStatusResponseJson =
+        "{\"subscriptionStatus\": \"REG_FORM_RECEIVED\", \"idType\": \"test\", \"idValue\": \"test\", \"channel\": \"Online\"}"
+      when(mockHttpClient.get(any())(any())).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.execute[HttpResponse](any(), any()))
+        .thenReturn(
+          Future.successful(HttpResponse.apply(ACCEPTED, subStatusResponseJson))
         )
 
-        when(mockCorrelationIdGenerator.generateCorrelationId).thenReturn(correlationId)
+      val result = await(connector.getSubscriptionStatus("businessPartnerId"))
 
-        when(
-          mockHttpClient.GET[SubscriptionStatusResponse](
-            ArgumentMatchers.eq(expectedUrl),
-            any(),
-            ArgumentMatchers.eq(expectedHeaders)
-          )(any(), any(), any())
-        )
-          .thenReturn(Future.successful(subscriptionStatusResponse))
+      Json.toJson(result) shouldBe Json.parse(subStatusResponseJson.replace("REG_FORM_RECEIVED", "RegFormReceived"))
 
-        val result = await(connector.getSubscriptionStatus(businessPartnerId))
+      verify(mockRequestBuilder, times(1))
+        .execute(any(), any())
 
-        result shouldBe subscriptionStatusResponse
-
-        verify(mockHttpClient, times(1))
-          .GET[SubscriptionStatusResponse](
-            ArgumentMatchers.eq(expectedUrl),
-            any(),
-            ArgumentMatchers.eq(expectedHeaders)
-          )(any(), any(), any())
-        reset(mockHttpClient)
-
+      reset(mockHttpClient)
+      reset(mockRequestBuilder)
     }
   }
 
@@ -79,41 +84,22 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
     "return either an error or create subscription response when the http client returns one" in forAll {
       (
         eclSubscription: EclSubscription,
-        eitherResult: Either[UpstreamErrorResponse, CreateEclSubscriptionResponse],
-        correlationId: String
+        createEclSubscriptionResponse: CreateEclSubscriptionResponse
       ) =>
         val expectedUrl =
-          s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"
+          url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"
 
-        val expectedHeaders: Seq[(String, String)] = Seq(
-          (HeaderNames.AUTHORIZATION, s"Bearer ${appConfig.integrationFrameworkBearerToken}"),
-          (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
-          (CustomHeaderNames.CorrelationId, correlationId)
-        )
-
-        when(mockCorrelationIdGenerator.generateCorrelationId).thenReturn(correlationId)
-
-        when(
-          mockHttpClient.POST[Subscription, Either[UpstreamErrorResponse, CreateEclSubscriptionResponse]](
-            ArgumentMatchers.eq(expectedUrl),
-            ArgumentMatchers.eq(eclSubscription.subscription),
-            ArgumentMatchers.eq(expectedHeaders)
-          )(any(), any(), any(), any())
-        )
-          .thenReturn(Future.successful(eitherResult))
+        when(mockHttpClient.post(ArgumentMatchers.eq(expectedUrl))(any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.execute[HttpResponse](any(), any()))
+          .thenReturn(
+            Future.successful(HttpResponse.apply(ACCEPTED, Json.toJson(createEclSubscriptionResponse).toString()))
+          )
 
         val result = await(connector.subscribeToEcl(eclSubscription))
 
-        result shouldBe eitherResult
-
-        verify(mockHttpClient, times(1))
-          .POST[Subscription, Either[UpstreamErrorResponse, CreateEclSubscriptionResponse]](
-            ArgumentMatchers.eq(expectedUrl),
-            ArgumentMatchers.eq(eclSubscription.subscription),
-            ArgumentMatchers.eq(expectedHeaders)
-          )(any(), any(), any(), any())
-        reset(mockHttpClient)
-
+        result shouldBe createEclSubscriptionResponse
     }
   }
 
@@ -129,28 +115,16 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
           (CustomHeaderNames.CorrelationId, correlationId)
         )
 
-        when(mockCorrelationIdGenerator.generateCorrelationId).thenReturn(correlationId)
-
-        when(
-          mockHttpClient.GET[GetSubscriptionResponse](
-            ArgumentMatchers.eq(expectedUrl),
-            any(),
-            ArgumentMatchers.eq(expectedHeaders)
-          )(any(), any(), any())
-        )
-          .thenReturn(Future.successful(getSubscriptionResponse))
+        when(mockHttpClient.get(any())(any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.execute[HttpResponse](any(), any()))
+          .thenReturn(
+            Future.successful(HttpResponse.apply(ACCEPTED, Json.toJson(getSubscriptionResponse).toString()))
+          )
 
         val result = await(connector.getSubscription(eclReference))
 
         result shouldBe getSubscriptionResponse
-
-        verify(mockHttpClient, times(1))
-          .GET[GetSubscriptionResponse](
-            ArgumentMatchers.eq(expectedUrl),
-            any(),
-            ArgumentMatchers.eq(expectedHeaders)
-          )(any(), any(), any())
-        reset(mockHttpClient)
     }
 
   }

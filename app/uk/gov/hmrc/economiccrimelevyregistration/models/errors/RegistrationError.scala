@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.models.dms
+package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 
-import play.api.libs.json.{Json, OFormat}
+trait RegistrationError
 
-case class ObjectSummary(
-  location: String,
-  contentLength: Int,
-  contentMd5: String,
-  lastModified: String
-)
+object RegistrationError {
+  case class NotFound(id: String) extends RegistrationError
 
-object ObjectSummary {
-  implicit val format: OFormat[ObjectSummary] = Json.format[ObjectSummary]
+  case class InternalUnexpectedError(cause: Option[Throwable]) extends RegistrationError
 }

@@ -22,78 +22,72 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
 import play.api.mvc.Result
+import uk.gov.hmrc.economiccrimelevyregistration.ValidScottishOrGeneralPartnershipRegistration
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError.DataInvalid
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError, DataValidationErrors}
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EclSubscription
-import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
-import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditionalInfoService, RegistrationValidationService}
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError, ResponseError}
+import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditionalInfoService, RegistrationService, RegistrationValidationService}
 
 import scala.concurrent.Future
 
 class RegistrationValidationControllerSpec extends SpecBase {
 
   val mockRegistrationValidationService: RegistrationValidationService         = mock[RegistrationValidationService]
-  val mockRegistrationRepository: RegistrationRepository                       = mock[RegistrationRepository]
+  val mockRegistrationService: RegistrationService                             = mock[RegistrationService]
   val mockRegistrationAdditionalInfoService: RegistrationAdditionalInfoService = mock[RegistrationAdditionalInfoService]
 
   val controller = new RegistrationValidationController(
     cc,
-    mockRegistrationRepository,
+    mockRegistrationService,
     fakeAuthorisedAction,
     mockRegistrationValidationService,
     mockRegistrationAdditionalInfoService
   )
 
   "getValidationErrors" should {
-    "return 204 NO_CONTENT when the registration data is valid" in forAll {
+    "return 200 OK when the registration data is valid" in forAll {
       (
-        registration: Registration,
-        eclSubscription: EclSubscription,
+        registration: ValidScottishOrGeneralPartnershipRegistration,
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
-        when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
+        when(mockRegistrationService.getRegistration(any())(any()))
+          .thenReturn(EitherT.rightT(registration.registration))
 
-        when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
+        when(
+          mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.registration.internalId))(any())
+        )
           .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
-        when(mockRegistrationValidationService.validateRegistration(any(), any()))
-          .thenReturn(Left(eclSubscription).validNel)
+        when(mockRegistrationValidationService.validateSubscription(any(), any()))
+          .thenReturn(EitherT.rightT(registration.expectedEclSubscription))
 
         val result: Future[Result] =
-          controller.getValidationErrors(registration.internalId)(fakeRequest)
+          controller.checkForValidationErrors(registration.registration.internalId)(fakeRequest)
 
-        status(result) shouldBe NO_CONTENT
+        status(result) shouldBe OK
     }
 
-    "return 200 OK with validation errors in the JSON response body when the registration data is invalid" in forAll {
-      (registration: Registration, registrationAdditionalInfo: RegistrationAdditionalInfo) =>
-        when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(Some(registration)))
+    "return 200 OK with DataValidationError in the JSON response body when the registration data is invalid" in forAll {
+      (
+        registration: ValidScottishOrGeneralPartnershipRegistration,
+        registrationAdditionalInfo: RegistrationAdditionalInfo
+      ) =>
+        when(mockRegistrationService.getRegistration(any())(any()))
+          .thenReturn(EitherT.rightT(registration.registration))
 
-        when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
+        when(
+          mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.registration.internalId))(any())
+        )
           .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
-        when(mockRegistrationValidationService.validateRegistration(any(), any()))
-          .thenReturn(DataValidationError(DataInvalid, "Invalid data").invalidNel)
+        when(mockRegistrationValidationService.validateSubscription(any(), any()))
+          .thenReturn(EitherT.leftT(DataValidationError.DataInvalid("Invalid data")))
 
         val result: Future[Result] =
-          controller.getValidationErrors(registration.internalId)(fakeRequest)
+          controller.checkForValidationErrors(registration.registration.internalId)(fakeRequest)
 
         status(result)        shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(
-          DataValidationErrors(Seq(DataValidationError(DataInvalid, "Invalid data")))
-        )
-    }
-
-    "return 404 NOT_FOUND when there is no registration data to validate" in forAll { (registration: Registration) =>
-      when(mockRegistrationRepository.get(any())).thenReturn(Future.successful(None))
-
-      val result: Future[Result] =
-        controller.getValidationErrors(registration.internalId)(fakeRequest)
-
-      status(result) shouldBe NOT_FOUND
+        contentAsJson(result) shouldBe Json.toJson("Invalid data")
     }
   }
 

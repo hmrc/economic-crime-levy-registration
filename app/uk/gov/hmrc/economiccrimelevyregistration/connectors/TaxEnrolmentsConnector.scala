@@ -16,11 +16,15 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
+import akka.actor.ActorSystem
+import com.typesafe.config.Config
+import play.api.http.HeaderNames
+import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,23 +32,34 @@ import scala.concurrent.{ExecutionContext, Future}
 trait TaxEnrolmentsConnector {
   def enrol(
     createEnrolmentRequest: CreateEnrolmentRequest
-  )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, HttpResponse]]
+  )(implicit hc: HeaderCarrier): Future[Unit]
 }
 
 @Singleton
-class TaxEnrolmentsConnectorImpl @Inject() (appConfig: AppConfig, httpClient: HttpClient)(implicit
+class TaxEnrolmentsConnectorImpl @Inject() (
+  appConfig: AppConfig,
+  httpClient: HttpClientV2,
+  override val configuration: Config,
+  override val actorSystem: ActorSystem
+)(implicit
   ec: ExecutionContext
-) extends TaxEnrolmentsConnector {
+) extends BaseConnector
+    with TaxEnrolmentsConnector {
 
   private val taxEnrolmentsUrl: String =
     s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$ServiceName/enrolment"
 
   override def enrol(
     createEnrolmentRequest: CreateEnrolmentRequest
-  )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, HttpResponse]] =
-    httpClient
-      .PUT[CreateEnrolmentRequest, Either[UpstreamErrorResponse, HttpResponse]](
-        taxEnrolmentsUrl,
-        createEnrolmentRequest
-      )
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    retryFor[Unit]("Tax enrolment")(retryCondition) {
+      val request = httpClient
+        .put(url"$taxEnrolmentsUrl")
+        .withBody(Json.toJson(createEnrolmentRequest))
+
+      hc.authorization
+        .map(auth => request.setHeader(HeaderNames.AUTHORIZATION -> auth.value))
+        .getOrElse(request)
+        .executeAndContinue
+    }
 }

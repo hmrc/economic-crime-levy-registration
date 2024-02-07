@@ -16,27 +16,32 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
-import play.api.Logging
+import cats.data.EitherT
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.{IntegrationFrameworkConnector, TaxEnrolmentsConnector}
+import uk.gov.hmrc.economiccrimelevyregistration.models.audit.{AuditSubscriptionStatus, SubscriptionStatusRetrievedAuditEvent}
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, GetSubscriptionResponse}
-import uk.gov.hmrc.economiccrimelevyregistration.models.{KeyValue, KnownFactsWorkItem, Registration}
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.SubscriptionSubmissionError
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, SubscriptionStatusResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, KeyValue, KnownFactsWorkItem, Registration}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.GetSubscriptionResponse
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneOffset}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class SubscriptionService @Inject() (
   integrationFrameworkConnector: IntegrationFrameworkConnector,
   taxEnrolmentsConnector: TaxEnrolmentsConnector,
   knownFactsQueueRepository: KnownFactsQueueRepository,
-  auditService: AuditService
-)(implicit ec: ExecutionContext)
-    extends Logging {
+  auditService: AuditService,
+  auditConnector: AuditConnector
+)(implicit ec: ExecutionContext) {
 
   private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC)
 
@@ -44,47 +49,143 @@ class SubscriptionService @Inject() (
     eclSubscription: EclSubscription,
     registration: Registration,
     liabilityYear: Option[Int]
-  )(implicit hc: HeaderCarrier): Future[CreateEclSubscriptionResponse] =
-    integrationFrameworkConnector.subscribeToEcl(eclSubscription).flatMap {
-      case Right(createSubscriptionSuccessResponse) =>
-        taxEnrolmentsConnector.enrol(createEnrolmentRequest(createSubscriptionSuccessResponse)).flatMap {
-          case Left(e)  =>
-            logger.error(s"Failed to enrol synchronously: ${e.message}")
+  )(implicit hc: HeaderCarrier): EitherT[Future, SubscriptionSubmissionError, CreateEclSubscriptionResponse] =
+    for {
+      integrationFrameworkResult <- executeCallToIntegrationFramework(eclSubscription, registration, liabilityYear)
+      eclReference                = integrationFrameworkResult.success.eclReference
+      processingDate              = integrationFrameworkResult.success.processingDate
+      _                          <- executeCallToTaxEnrolment(
+                                      createEnrolmentRequest(integrationFrameworkResult),
+                                      registration,
+                                      eclReference,
+                                      liabilityYear,
+                                      processingDate
+                                    )
+      _                           = auditService.successfulSubscriptionAndEnrolment(registration, eclReference, liabilityYear)
+
+    } yield integrationFrameworkResult
+
+  def getSubscriptionStatus(businessPartnerId: String, internalId: String)(implicit
+    hc: HeaderCarrier
+  ): EitherT[Future, SubscriptionSubmissionError, EclSubscriptionStatus] =
+    for {
+      eclSubscriptionStatus <- executeCallToIntegrationFrameworkForSubscriptionStatus(businessPartnerId, internalId)
+    } yield eclSubscriptionStatus.toEclSubscriptionStatus
+
+  private def executeCallToIntegrationFrameworkForSubscriptionStatus(businessPartnerId: String, internalId: String)(
+    implicit hc: HeaderCarrier
+  ): EitherT[Future, SubscriptionSubmissionError, SubscriptionStatusResponse] =
+    EitherT {
+      integrationFrameworkConnector
+        .getSubscriptionStatus(businessPartnerId)
+        .map { response =>
+          executeExtendedAuditEvent(businessPartnerId, response, internalId)
+          Right(response)
+        }
+        .recover {
+          case error @ UpstreamErrorResponse(message, code, _, _)
+              if UpstreamErrorResponse.Upstream5xxResponse
+                .unapply(error)
+                .isDefined || UpstreamErrorResponse.Upstream4xxResponse
+                .unapply(error)
+                .isDefined =>
+            Left(SubscriptionSubmissionError.BadGateway(message, code))
+          case NonFatal(thr) => Left(SubscriptionSubmissionError.InternalUnexpectedError(thr.getMessage, Some(thr)))
+
+        }
+    }
+  def executeCallToKnownFactsQueueRepository(
+    knownFactsWorkItem: KnownFactsWorkItem
+  ): EitherT[Future, SubscriptionSubmissionError, Unit]                       =
+    EitherT {
+      knownFactsQueueRepository
+        .pushNew(knownFactsWorkItem)
+        .map(_ => Right(()))
+        .recover { case error =>
+          Left(SubscriptionSubmissionError.InternalUnexpectedError(error.getMessage, Some(error)))
+        }
+    }
+
+  def executeCallToTaxEnrolment(
+    enrolmentRequest: CreateEnrolmentRequest,
+    registration: Registration,
+    eclReference: String,
+    liabilityYear: Option[Int],
+    processingDate: Instant
+  )(implicit hc: HeaderCarrier): EitherT[Future, SubscriptionSubmissionError, Unit] =
+    EitherT {
+      taxEnrolmentsConnector
+        .enrol(enrolmentRequest)
+        .map(_ => Right(()))
+        .recover {
+          case error @ UpstreamErrorResponse(message, code, _, _)
+              if UpstreamErrorResponse.Upstream5xxResponse
+                .unapply(error)
+                .isDefined || UpstreamErrorResponse.Upstream4xxResponse.unapply(error).isDefined =>
+            executeCallToKnownFactsQueueRepository(
+              KnownFactsWorkItem(eclReference, dateFormatter.format(processingDate))
+            )
+            auditService.successfulSubscriptionFailedEnrolment(registration, eclReference, message, liabilityYear)
+
+            Left(SubscriptionSubmissionError.BadGateway(reason = message, code = code))
+          case NonFatal(thr) =>
+            executeCallToKnownFactsQueueRepository(
+              KnownFactsWorkItem(eclReference, dateFormatter.format(processingDate))
+            )
             auditService.successfulSubscriptionFailedEnrolment(
               registration,
-              createSubscriptionSuccessResponse.success.eclReference,
-              e.getMessage(),
+              eclReference,
+              thr.getMessage,
               liabilityYear
             )
 
-            knownFactsQueueRepository
-              .pushNew(
-                KnownFactsWorkItem(
-                  createSubscriptionSuccessResponse.success.eclReference,
-                  dateFormatter.format(createSubscriptionSuccessResponse.success.processingDate)
-                )
-              )
-              .map { _ =>
-                createSubscriptionSuccessResponse
-              }
-          case Right(_) =>
-            auditService
-              .successfulSubscriptionAndEnrolment(
-                registration,
-                createSubscriptionSuccessResponse.success.eclReference,
-                liabilityYear
-              )
-            Future.successful(createSubscriptionSuccessResponse)
+            Left(SubscriptionSubmissionError.InternalUnexpectedError(thr.getMessage, Some(thr)))
         }
-      case Left(e)                                  =>
-        auditService.failedSubscription(registration, e.getMessage(), liabilityYear)
-        throw e
+    }
+
+  def executeCallToIntegrationFramework(
+    eclSubscription: EclSubscription,
+    registration: Registration,
+    liabilityYear: Option[Int]
+  )(implicit hc: HeaderCarrier): EitherT[Future, SubscriptionSubmissionError, CreateEclSubscriptionResponse] =
+    EitherT {
+      integrationFrameworkConnector
+        .subscribeToEcl(eclSubscription)
+        .map(response => Right(response))
+        .recover {
+          case error @ UpstreamErrorResponse(message, code, _, _)
+              if UpstreamErrorResponse.Upstream5xxResponse
+                .unapply(error)
+                .isDefined || UpstreamErrorResponse.Upstream4xxResponse.unapply(error).isDefined =>
+            auditService.failedSubscription(registration, message, liabilityYear)
+            Left(SubscriptionSubmissionError.BadGateway(reason = message, code = code))
+          case NonFatal(thr) =>
+            auditService.failedSubscription(registration, thr.getMessage, liabilityYear)
+            Left(SubscriptionSubmissionError.InternalUnexpectedError(thr.getMessage, Some(thr)))
+        }
     }
 
   private def createEnrolmentRequest(subscriptionResponse: CreateEclSubscriptionResponse): CreateEnrolmentRequest =
     CreateEnrolmentRequest(
       identifiers = Seq(KeyValue(IdentifierKey, subscriptionResponse.success.eclReference)),
       verifiers = Seq(KeyValue(VerifierKey, dateFormatter.format(subscriptionResponse.success.processingDate)))
+    )
+
+  private def executeExtendedAuditEvent(
+    businessPartnerId: String,
+    subscriptionStatusResponse: SubscriptionStatusResponse,
+    internalId: String
+  ): Unit =
+    auditConnector.sendExtendedEvent(
+      SubscriptionStatusRetrievedAuditEvent(
+        internalId,
+        businessPartnerId,
+        AuditSubscriptionStatus(
+          subscriptionStatusResponse.subscriptionStatus,
+          subscriptionStatusResponse.idValue,
+          subscriptionStatusResponse.channel
+        )
+      ).extendedDataEvent
     )
 
   def getSubscription(eclRegistrationReference: String)(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] =

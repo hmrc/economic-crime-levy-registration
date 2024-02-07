@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
+import cats.data.EitherT
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
@@ -23,9 +24,9 @@ import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.IntegrationFrameworkConnector
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{GetSubscriptionResponse, SubscriptionStatusResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
 import uk.gov.hmrc.economiccrimelevyregistration.services.SubscriptionService
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.GetSubscriptionResponse
 
 import scala.concurrent.Future
 
@@ -33,31 +34,25 @@ class SubscriptionControllerSpec extends SpecBase {
 
   val mockIntegrationFrameworkConnector: IntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
   val mockSubscriptionService: SubscriptionService                     = mock[SubscriptionService]
-  val mockAuditConnector: AuditConnector                               = mock[AuditConnector]
-
-  val controller = new SubscriptionController(
+  val controller                                                       = new SubscriptionController(
     cc,
-    mockIntegrationFrameworkConnector,
     mockSubscriptionService,
-    mockAuditConnector,
     fakeAuthorisedAction
   )
 
   "getSubscriptionStatus" should {
     "return 200 OK with the subscription status for a given business partner ID" in forAll {
-      (businessPartnerId: String, subscriptionStatusResponse: SubscriptionStatusResponse) =>
-        when(mockIntegrationFrameworkConnector.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId))(any()))
-          .thenReturn(Future.successful(subscriptionStatusResponse))
+      (businessPartnerId: String, subscriptionStatus: EclSubscriptionStatus) =>
+        when(mockSubscriptionService.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId), any())(any()))
+          .thenReturn(EitherT.rightT(subscriptionStatus))
 
         val result: Future[Result] =
           controller.getSubscriptionStatus(businessPartnerId)(fakeRequest)
 
-        status(result)        shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(subscriptionStatusResponse.toEclSubscriptionStatus)
+        status(result) shouldBe OK
 
-        verify(mockAuditConnector, times(1)).sendExtendedEvent(any())(any(), any())
+        contentAsJson(result) shouldBe Json.toJson(subscriptionStatus)
 
-        reset(mockAuditConnector)
         reset(mockIntegrationFrameworkConnector)
     }
   }
@@ -76,7 +71,6 @@ class SubscriptionControllerSpec extends SpecBase {
 
         verify(mockSubscriptionService, times(1)).getSubscription(ArgumentMatchers.eq(eclReference))(any())
 
-        reset(mockAuditConnector)
         reset(mockIntegrationFrameworkConnector)
         reset(mockSubscriptionService)
     }
@@ -95,7 +89,6 @@ class SubscriptionControllerSpec extends SpecBase {
       result.getMessage shouldBe "Error"
       result            shouldBe a[IllegalStateException]
 
-      reset(mockAuditConnector)
       reset(mockIntegrationFrameworkConnector)
       reset(mockSubscriptionService)
     }

@@ -16,22 +16,29 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
+import akka.NotUsed
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import play.api.http.Status.INTERNAL_SERVER_ERROR
+import cats.data.EitherT
+import play.api.http.Status.BAD_GATEWAY
+import play.api.mvc.MultipartFormData
 import play.api.mvc.MultipartFormData.{DataPart, FilePart}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.DmsConnector
+import uk.gov.hmrc.economiccrimelevyregistration.controllers.ErrorHandler
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DmsSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
 import uk.gov.hmrc.economiccrimelevyregistration.utils.PdfGenerator.buildPdf
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
+import java.io.ByteArrayOutputStream
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class DmsService @Inject() (
@@ -39,48 +46,94 @@ class DmsService @Inject() (
   appConfig: AppConfig
 )(implicit
   ec: ExecutionContext
-) {
+) extends ErrorHandler {
 
-  def submitToDms(optBase64EncodedDmsSubmissionHtml: Option[String], now: Instant)(implicit
+  def submitToDms(base64EncodedDmsSubmissionHtml: Option[String], now: Instant)(implicit
     hc: HeaderCarrier
-  ): Future[Either[UpstreamErrorResponse, CreateEclSubscriptionResponsePayload]] =
-    optBase64EncodedDmsSubmissionHtml match {
-      case Some(base64EncodedDmsSubmissionHtml) =>
-        val html = new String(Base64.getDecoder.decode(base64EncodedDmsSubmissionHtml))
-        val pdf  = buildPdf(html)
+  ): EitherT[Future, DmsSubmissionError, CreateEclSubscriptionResponsePayload] =
+    for {
+      pdf      <- createPdf(base64EncodedDmsSubmissionHtml)
+      body     <- createBody(pdf, now)
+      response <- sendPdf(body, now)(hc)
+    } yield response
 
-        val dateOfReceipt = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
-          LocalDateTime.ofInstant(now.truncatedTo(ChronoUnit.SECONDS), ZoneOffset.UTC)
-        )
-
-        val body = Source(
-          Seq(
-            DataPart("callbackUrl", appConfig.dmsSubmissionCallbackUrl),
-            DataPart("metadata.source", appConfig.dmsSubmissionSource),
-            DataPart("metadata.timeOfReceipt", dateOfReceipt),
-            DataPart("metadata.formId", appConfig.dmsSubmissionFormId),
-            DataPart("metadata.customerId", appConfig.dmsSubmissionCustomerId),
-            DataPart("metadata.classificationType", appConfig.dmsSubmissionClassificationType),
-            DataPart("metadata.businessArea", appConfig.dmsSubmissionBusinessArea),
-            FilePart(
-              key = "form",
-              filename = "form.pdf",
-              contentType = Some("application/pdf"),
-              ref = Source.single(ByteString(pdf.toByteArray))
-            )
-          )
-        )
-
-        dmsConnector.sendPdf(body).map {
-          case Right(_)                    => Right(CreateEclSubscriptionResponsePayload(now, ""))
-          case Left(upstreamErrorResponse) => Left(upstreamErrorResponse)
+  private def createPdf(
+    base64EncodedDmsSubmissionHtml: Option[String]
+  ): EitherT[Future, DmsSubmissionError, ByteArrayOutputStream] =
+    EitherT {
+      Future.successful(
+        base64EncodedDmsSubmissionHtml match {
+          case Some(value) =>
+            Try(new String(Base64.getDecoder.decode(value))) match {
+              case Success(result) =>
+                Try(buildPdf(result)) match {
+                  case Success(pdfResult) => Right(pdfResult)
+                  case Failure(e)         => Left(DmsSubmissionError.InternalUnexpectedError(Some(e.getCause)))
+                }
+              case Failure(e)      => Left(DmsSubmissionError.InternalUnexpectedError(Some(e.getCause)))
+            }
+          case None        =>
+            Left(DmsSubmissionError.BadGateway("base64EncodedDmsSubmissionHtml field not provided", BAD_GATEWAY))
         }
-      case None                                 =>
-        Future.successful(
-          Left(
-            UpstreamErrorResponse
-              .apply("Base64 encoded DMS submission HTML not found in registration data", INTERNAL_SERVER_ERROR)
+      )
+    }
+
+  private def createBody(
+    pdf: ByteArrayOutputStream,
+    now: Instant
+  ): EitherT[Future, DmsSubmissionError.InternalUnexpectedError, Source[MultipartFormData.Part[
+    Source[ByteString, NotUsed]
+  ], NotUsed]] =
+    EitherT {
+      Future.successful(
+        Try(
+          DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+            LocalDateTime.ofInstant(now, ZoneOffset.UTC)
           )
+        ) match {
+          case Success(result) => Right(assembleBodySource(pdf, result))
+          case Failure(e)      => Left(DmsSubmissionError.InternalUnexpectedError(Some(e.getCause)))
+        }
+      )
+    }
+
+  private def assembleBodySource(
+    pdf: ByteArrayOutputStream,
+    dateOfReceipt: String
+  ): Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed] =
+    Source(
+      Seq(
+        DataPart("callbackUrl", appConfig.dmsSubmissionCallbackUrl),
+        DataPart("metadata.source", appConfig.dmsSubmissionSource),
+        DataPart("metadata.timeOfReceipt", dateOfReceipt),
+        DataPart("metadata.formId", appConfig.dmsSubmissionFormId),
+        DataPart("metadata.customerId", appConfig.dmsSubmissionCustomerId),
+        DataPart("metadata.classificationType", appConfig.dmsSubmissionClassificationType),
+        DataPart("metadata.businessArea", appConfig.dmsSubmissionBusinessArea),
+        FilePart(
+          key = "form",
+          filename = "form.pdf",
+          contentType = Some("application/pdf"),
+          ref = Source.single(ByteString(pdf.toByteArray))
         )
+      )
+    )
+
+  def sendPdf(
+    body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed],
+    now: Instant
+  )(implicit hc: HeaderCarrier): EitherT[Future, DmsSubmissionError, CreateEclSubscriptionResponsePayload] =
+    EitherT {
+      dmsConnector
+        .sendPdf(body)
+        .map(_ => Right(CreateEclSubscriptionResponsePayload(now, "")))
+        .recover {
+          case error @ UpstreamErrorResponse(message, code, _, _)
+              if UpstreamErrorResponse.Upstream5xxResponse
+                .unapply(error)
+                .isDefined || UpstreamErrorResponse.Upstream4xxResponse.unapply(error).isDefined =>
+            Left(DmsSubmissionError.BadGateway(reason = message, code = code))
+          case NonFatal(thr) => Left(DmsSubmissionError.InternalUnexpectedError(Some(thr)))
+        }
     }
 }

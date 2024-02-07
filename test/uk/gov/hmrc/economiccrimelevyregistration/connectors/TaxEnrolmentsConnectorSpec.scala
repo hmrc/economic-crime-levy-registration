@@ -16,53 +16,43 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import org.mockito.ArgumentMatchers
+import akka.actor.ActorSystem
+import com.typesafe.config.Config
 import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
-import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
-import uk.gov.hmrc.http.{HttpClient, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
 import scala.concurrent.Future
 
 class TaxEnrolmentsConnectorSpec extends SpecBase {
-  val mockHttpClient: HttpClient = mock[HttpClient]
-  val connector                  = new TaxEnrolmentsConnectorImpl(appConfig, mockHttpClient)
+  val mockHttpClient: HttpClientV2 = mock[HttpClientV2]
+  val actorSystem: ActorSystem     = ActorSystem("test")
+  val config: Config               = app.injector.instanceOf[Config]
+
+  val mockRequestBuilder: RequestBuilder = mock[RequestBuilder]
+  val connector                          = new TaxEnrolmentsConnectorImpl(appConfig, mockHttpClient, config, actorSystem)
 
   "enrol" should {
-    "return either an upstream error response or http response" in forAll {
-      (createEnrolmentRequest: CreateEnrolmentRequest, eitherResult: Either[UpstreamErrorResponse, HttpResponse]) =>
-        val expectedUrl = s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$ServiceName/enrolment"
+    "return successful empty response" in forAll { (createEnrolmentRequest: CreateEnrolmentRequest) =>
+      val hc = HeaderCarrier(extraHeaders = Seq("Authorization" -> "123"))
+      when(mockHttpClient.put(any())(any())).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.execute[HttpResponse](any(), any()))
+        .thenReturn(Future.successful(HttpResponse.apply(ACCEPTED, "")))
 
-        when(
-          mockHttpClient
-            .PUT[CreateEnrolmentRequest, Either[UpstreamErrorResponse, HttpResponse]](
-              ArgumentMatchers.eq(expectedUrl),
-              any(),
-              any()
-            )(
-              any(),
-              any(),
-              any(),
-              any()
-            )
-        )
-          .thenReturn(Future.successful(eitherResult))
+      val result: Unit = await(connector.enrol(createEnrolmentRequest)(hc))
 
-        val result: Unit = await(connector.enrol(createEnrolmentRequest))
+      result shouldBe ()
 
-        result shouldBe ()
+      verify(mockRequestBuilder, times(1))
+        .execute(any(), any())
 
-        verify(mockHttpClient, times(1))
-          .PUT[CreateEnrolmentRequest, HttpResponse](ArgumentMatchers.eq(expectedUrl), any(), any())(
-            any(),
-            any(),
-            any(),
-            any()
-          )
-
-        reset(mockHttpClient)
+      reset(mockHttpClient)
+      reset(mockRequestBuilder)
     }
   }
 }

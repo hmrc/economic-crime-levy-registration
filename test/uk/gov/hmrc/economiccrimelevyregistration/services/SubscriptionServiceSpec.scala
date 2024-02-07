@@ -21,128 +21,265 @@ import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.{IntegrationFrameworkConnector, TaxEnrolmentsConnector}
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.{KnownFactsWorkItem, Registration}
+import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.SubscriptionSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{KnownFactsWorkItem, Registration}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
-import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.WorkItem
+import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 
-import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneOffset}
+import javax.management.RuntimeErrorException
 import scala.concurrent.Future
 
 class SubscriptionServiceSpec extends SpecBase {
+
   val mockIntegrationFrameworkConnector: IntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
   val mockTaxEnrolmentsConnector: TaxEnrolmentsConnector               = mock[TaxEnrolmentsConnector]
   val mockKnownFactsQueueRepository: KnownFactsQueueRepository         = mock[KnownFactsQueueRepository]
   val mockAuditService: AuditService                                   = mock[AuditService]
+  val mockAuditConnector: AuditConnector                               = mock[AuditConnector]
+  val errorMessage                                                     = "Error message"
+  val upstreamErrorResponse: UpstreamErrorResponse                     = UpstreamErrorResponse(errorMessage, INTERNAL_SERVER_ERROR)
+  private val dateFormatter                                            = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC)
 
   val service = new SubscriptionService(
     mockIntegrationFrameworkConnector,
     mockTaxEnrolmentsConnector,
     mockKnownFactsQueueRepository,
-    mockAuditService
+    mockAuditService,
+    mockAuditConnector
   )
 
-  "subscribeToEcl" should {
-    "return the ECL reference number when the subscription and enrolment is successful" in forAll {
+  "subscribe to ECL" should {
+    "return a successful Future and correct response if Integration Framework call is successful" in forAll {
       (
-        registration: Registration,
         eclSubscription: EclSubscription,
         subscriptionResponse: CreateEclSubscriptionResponse,
-        year: Int
+        registration: Registration,
+        liabilityYear: Int
       ) =>
-        when(mockIntegrationFrameworkConnector.subscribeToEcl(ArgumentMatchers.eq(eclSubscription))(any()))
-          .thenReturn(Future.successful(Right(subscriptionResponse)))
-
-        when(mockTaxEnrolmentsConnector.enrol(any())(any()))
-          .thenReturn(Future.successful(Right(HttpResponse(OK, "", Map.empty))))
-
-        val result = await(service.subscribeToEcl(eclSubscription, registration, Some(year)))
-
-        result shouldBe subscriptionResponse
-
-        verify(mockAuditService, times(1)).successfulSubscriptionAndEnrolment(
-          ArgumentMatchers.eq(registration),
-          ArgumentMatchers.eq(subscriptionResponse.success.eclReference),
-          ArgumentMatchers.eq(Some(year))
-        )(any())
-
+        reset(mockIntegrationFrameworkConnector)
         reset(mockAuditService)
+
+        when(mockIntegrationFrameworkConnector.subscribeToEcl(any())(any()))
+          .thenReturn(Future.successful(subscriptionResponse))
+
+        val result =
+          await(service.executeCallToIntegrationFramework(eclSubscription, registration, Some(liabilityYear)).value)
+
+        result shouldBe Right(subscriptionResponse)
+
+        verify(mockIntegrationFrameworkConnector, times(1))
+          .subscribeToEcl(any())(any())
+
+        verify(mockAuditService, times(0))
+          .failedSubscription(any(), any(), any())(any())
     }
 
-    "return the ECL reference number and push the known facts to a queue when the subscription is successful but the enrolment fails" in forAll {
+    "return successful Future with SubscriptionSubmissionError if Integration framework call failed" in forAll {
       (
-        registration: Registration,
         eclSubscription: EclSubscription,
-        subscriptionResponse: CreateEclSubscriptionResponse,
-        workItem: WorkItem[KnownFactsWorkItem],
-        year: Int
+        registration: Registration,
+        liabilityYear: Int
       ) =>
-        val updatedSubscriptionResponse = CreateEclSubscriptionResponse(success =
-          subscriptionResponse.success.copy(processingDate = Instant.parse("2007-12-25T10:15:30Z"))
-        )
-
-        val error = UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR)
-
-        when(mockIntegrationFrameworkConnector.subscribeToEcl(ArgumentMatchers.eq(eclSubscription))(any()))
-          .thenReturn(Future.successful(Right(updatedSubscriptionResponse)))
-
-        when(mockTaxEnrolmentsConnector.enrol(any())(any()))
-          .thenReturn(Future.successful(Left(error)))
-
-        val expectedKnownFactsWorkItem =
-          KnownFactsWorkItem(
-            eclReference = updatedSubscriptionResponse.success.eclReference,
-            eclRegistrationDate = "20071225"
-          )
-
-        when(mockKnownFactsQueueRepository.pushNew(ArgumentMatchers.eq(expectedKnownFactsWorkItem), any(), any()))
-          .thenReturn(Future.successful(workItem.copy(item = expectedKnownFactsWorkItem)))
-
-        val result = await(service.subscribeToEcl(eclSubscription, registration, Some(year)))
-
-        result shouldBe updatedSubscriptionResponse
-
-        verify(mockKnownFactsQueueRepository, times(1))
-          .pushNew(ArgumentMatchers.eq(expectedKnownFactsWorkItem), any(), any())
-
-        reset(mockKnownFactsQueueRepository)
-
-        verify(mockAuditService, times(1)).successfulSubscriptionFailedEnrolment(
-          ArgumentMatchers.eq(registration),
-          ArgumentMatchers.eq(subscriptionResponse.success.eclReference),
-          ArgumentMatchers.eq(error.getMessage()),
-          ArgumentMatchers.eq(Some(year))
-        )(any())
-
+        reset(mockIntegrationFrameworkConnector)
         reset(mockAuditService)
-    }
 
-    "throw an exception when the subscription fails" in forAll {
-      (
-        registration: Registration,
-        eclSubscription: EclSubscription,
-        year: Int
-      ) =>
-        val error = UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR)
+        when(mockIntegrationFrameworkConnector.subscribeToEcl(any())(any()))
+          .thenReturn(Future.failed(UpstreamErrorResponse(errorMessage, INTERNAL_SERVER_ERROR)))
 
-        when(mockIntegrationFrameworkConnector.subscribeToEcl(ArgumentMatchers.eq(eclSubscription))(any()))
-          .thenReturn(Future.successful(Left(error)))
+        when(mockAuditService.failedSubscription(any(), any(), any())(any()))
+          .thenReturn(Future.successful(AuditResult.Success))
 
-        val result = intercept[UpstreamErrorResponse] {
-          await(service.subscribeToEcl(eclSubscription, registration, Some(year)))
-        }
+        val result =
+          await(service.executeCallToIntegrationFramework(eclSubscription, registration, Some(liabilityYear)).value)
 
-        result shouldBe error
+        result shouldBe Left(SubscriptionSubmissionError.BadGateway(errorMessage, INTERNAL_SERVER_ERROR))
+
+        verify(mockIntegrationFrameworkConnector, times(1))
+          .subscribeToEcl(any())(any())
 
         verify(mockAuditService, times(1))
-          .failedSubscription(
-            ArgumentMatchers.eq(registration),
-            ArgumentMatchers.eq(error.getMessage()),
-            ArgumentMatchers.eq(Some(year))
-          )(any())
-
-        reset(mockAuditService)
+          .failedSubscription(any(), any(), any())(any())
     }
+
+    "return successful Future without any payload if Tax enrolment call is successful" in forAll {
+      (
+        enrolmentRequest: CreateEnrolmentRequest,
+        registration: Registration,
+        eclReference: String,
+        liabilityYear: Int,
+        dateProcessed: Instant
+      ) =>
+        reset(mockTaxEnrolmentsConnector)
+        reset(mockAuditService)
+
+        when(mockTaxEnrolmentsConnector.enrol(any())(any()))
+          .thenReturn(Future.successful())
+
+        when(mockAuditService.successfulSubscriptionFailedEnrolment(any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(AuditResult.Success))
+
+        val result = await(
+          service
+            .executeCallToTaxEnrolment(enrolmentRequest, registration, eclReference, Some(liabilityYear), dateProcessed)
+            .value
+        )
+
+        result shouldBe Right(())
+
+        verify(mockTaxEnrolmentsConnector, times(1))
+          .enrol(any())(any())
+
+        verify(mockAuditService, times(0))
+          .successfulSubscriptionFailedEnrolment(any(), any(), any(), any())(any())
+    }
+
+    "return successful Future with SubscriptionSubmissionError if Tax enrolment call failed" in forAll {
+      (
+        enrolmentRequest: CreateEnrolmentRequest,
+        registration: Registration,
+        eclReference: String,
+        liabilityYear: Int,
+        dateProcessed: Instant,
+        workItem: WorkItem[KnownFactsWorkItem]
+      ) =>
+        reset(mockTaxEnrolmentsConnector)
+        reset(mockAuditService)
+        reset(mockKnownFactsQueueRepository)
+
+        val knownFactsWorkItem = KnownFactsWorkItem(eclReference, dateFormatter.format(dateProcessed))
+
+        when(mockTaxEnrolmentsConnector.enrol(any())(any()))
+          .thenReturn(Future.failed(UpstreamErrorResponse(errorMessage, INTERNAL_SERVER_ERROR)))
+
+        when(mockKnownFactsQueueRepository.pushNew(ArgumentMatchers.eq(knownFactsWorkItem), any(), any()))
+          .thenReturn(Future.successful(workItem))
+
+        when(mockAuditService.successfulSubscriptionFailedEnrolment(any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(AuditResult.Success))
+
+        val result = await(
+          service
+            .executeCallToTaxEnrolment(enrolmentRequest, registration, eclReference, Some(liabilityYear), dateProcessed)
+            .value
+        )
+
+        result shouldBe Left(SubscriptionSubmissionError.BadGateway(errorMessage, INTERNAL_SERVER_ERROR))
+
+        verify(mockTaxEnrolmentsConnector, times(1))
+          .enrol(any())(any())
+
+        verify(mockAuditService, times(1))
+          .successfulSubscriptionFailedEnrolment(any(), any(), any(), any())(any())
+    }
+  }
+
+  "return successful Future without payload if call to KnownFactsQueueRepository is successful" in forAll {
+    (workItem: WorkItem[KnownFactsWorkItem]) =>
+      reset(mockKnownFactsQueueRepository)
+
+      val knownFactsWorkItem = KnownFactsWorkItem(testEclRegistrationReference, dateFormatter.format(Instant.now()))
+
+      when(mockKnownFactsQueueRepository.pushNew(ArgumentMatchers.eq(knownFactsWorkItem), any(), any()))
+        .thenReturn(Future.successful(workItem))
+
+      val result = await(service.executeCallToKnownFactsQueueRepository(knownFactsWorkItem).value)
+
+      result shouldBe Right(())
+
+      verify(mockKnownFactsQueueRepository, times(1))
+        .pushNew(ArgumentMatchers.eq(knownFactsWorkItem), any(), any())
+  }
+
+  "return successful Future with SubscriptionSubmissionError if call to KnownFactsQueueRepository has failed" in forAll {
+    (knownFactsWorkItem: KnownFactsWorkItem) =>
+      reset(mockKnownFactsQueueRepository)
+
+      val exception = new RuntimeErrorException(new Error(), errorMessage)
+
+      when(mockKnownFactsQueueRepository.pushNew(ArgumentMatchers.eq(knownFactsWorkItem), any(), any()))
+        .thenReturn(Future.failed(exception))
+
+      val result = await(service.executeCallToKnownFactsQueueRepository(knownFactsWorkItem).value)
+
+      result shouldBe Left(SubscriptionSubmissionError.InternalUnexpectedError(errorMessage, Some(exception)))
+
+      verify(mockKnownFactsQueueRepository, times(1))
+        .pushNew(ArgumentMatchers.eq(knownFactsWorkItem), any(), any())
+  }
+
+  "return successful Future with CreateEclSubscriptionResponse payload if calls to all services that methods depends on are successful" in forAll {
+    (
+      subscriptionResponse: CreateEclSubscriptionResponse,
+      eclSubscription: EclSubscription,
+      registration: Registration,
+      liabilityYear: Int
+    ) =>
+      reset(mockAuditService)
+      reset(mockTaxEnrolmentsConnector)
+      reset(mockIntegrationFrameworkConnector)
+
+      when(mockIntegrationFrameworkConnector.subscribeToEcl(any())(any()))
+        .thenReturn(Future.successful(subscriptionResponse))
+
+      when(mockTaxEnrolmentsConnector.enrol(any())(any()))
+        .thenReturn(Future.successful())
+
+      when(mockAuditService.successfulSubscriptionAndEnrolment(any(), any(), any())(any()))
+        .thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(service.subscribeToEcl(eclSubscription, registration, Some(liabilityYear)).value)
+
+      result shouldBe Right(subscriptionResponse)
+
+      verify(mockAuditService, times(1))
+        .successfulSubscriptionAndEnrolment(any(), any(), any())(any())
+
+      verify(mockTaxEnrolmentsConnector, times(1))
+        .enrol(any())(any())
+
+      verify(mockAuditService, times(1))
+        .successfulSubscriptionAndEnrolment(any(), any(), any())(any())
+  }
+
+  "return successful Future with SubscriptionSubmissionError payload if call to one of the services that method depends on fails" in forAll {
+    (
+      subscriptionResponse: CreateEclSubscriptionResponse,
+      eclSubscription: EclSubscription,
+      registration: Registration,
+      liabilityYear: Int
+    ) =>
+      reset(mockAuditService)
+      reset(mockTaxEnrolmentsConnector)
+      reset(mockIntegrationFrameworkConnector)
+
+      val exception = new RuntimeErrorException(new Error(), errorMessage)
+
+      when(mockIntegrationFrameworkConnector.subscribeToEcl(any())(any()))
+        .thenReturn(Future.successful(subscriptionResponse))
+
+      when(mockTaxEnrolmentsConnector.enrol(any())(any()))
+        .thenReturn(Future.successful())
+
+      when(mockAuditService.successfulSubscriptionAndEnrolment(any(), any(), any())(any()))
+        .thenReturn(Future.successful(AuditResult.Failure(errorMessage, Some(exception))))
+
+      val result = await(service.subscribeToEcl(eclSubscription, registration, Some(liabilityYear)).value)
+
+      result shouldBe Right(subscriptionResponse)
+
+      verify(mockAuditService, times(1))
+        .successfulSubscriptionAndEnrolment(any(), any(), any())(any())
+
+      verify(mockTaxEnrolmentsConnector, times(1))
+        .enrol(any())(any())
+
+      verify(mockAuditService, times(1))
+        .successfulSubscriptionAndEnrolment(any(), any(), any())(any())
   }
 }

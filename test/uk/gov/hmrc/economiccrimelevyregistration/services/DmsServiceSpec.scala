@@ -19,6 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.DmsConnector
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DmsSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
 import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 
@@ -30,7 +31,7 @@ class DmsServiceSpec extends SpecBase {
 
   val mockDmsConnector: DmsConnector = mock[DmsConnector]
   val html                           = "<html><head></head><body></body></html>"
-  val now                            = Instant.now
+  val now: Instant                   = Instant.now
 
   val service = new DmsService(mockDmsConnector, appConfig)
 
@@ -41,7 +42,7 @@ class DmsServiceSpec extends SpecBase {
 
       when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.successful(Right(expectedResponse)))
 
-      val result = await(service.submitToDms(Some(encoded), now))
+      val result = await(service.submitToDms(Some(encoded), now).value)
 
       result shouldBe Right(CreateEclSubscriptionResponsePayload(now, ""))
     }
@@ -49,24 +50,21 @@ class DmsServiceSpec extends SpecBase {
     "return upstream error if submission fails" in {
       val encoded = Base64.getEncoder.encodeToString(html.getBytes)
 
-      val upstream5xxResponse = UpstreamErrorResponse.apply("", INTERNAL_SERVER_ERROR)
-      when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.successful(Left(upstream5xxResponse)))
+      val upstream5xxResponse = UpstreamErrorResponse.apply("Error message", BAD_GATEWAY)
+      when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.failed(upstream5xxResponse))
 
-      val result = await(service.submitToDms(Some(encoded), now))
+      val result = await(service.submitToDms(Some(encoded), now).value)
 
-      result shouldBe Left(upstream5xxResponse)
+      result shouldBe Left(DmsSubmissionError.BadGateway("Error message", BAD_GATEWAY))
     }
 
     "return upstream error if no data to submit" in {
 
-      val upstream5xxResponse = UpstreamErrorResponse.apply(
-        "Base64 encoded DMS submission HTML not found in registration data",
-        INTERNAL_SERVER_ERROR
+      val result = await(service.submitToDms(None, now).value)
+
+      result shouldBe Left(
+        DmsSubmissionError.BadGateway("base64EncodedDmsSubmissionHtml field not provided", BAD_GATEWAY)
       )
-
-      val result = await(service.submitToDms(None, now))
-
-      result shouldBe Left(upstream5xxResponse)
     }
   }
 }

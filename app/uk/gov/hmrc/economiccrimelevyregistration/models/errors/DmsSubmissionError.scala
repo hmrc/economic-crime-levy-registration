@@ -16,13 +16,9 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 
-trait DataValidationError {
-  def errorMessage: String
-}
+trait DmsSubmissionError
 
-object DataValidationError {
-  case class SchemaValidationError(errorMessage: String) extends DataValidationError
-  case class DataMissing(errorMessage: String) extends DataValidationError
-  case class DataInvalid(errorMessage: String) extends DataValidationError
-
+object DmsSubmissionError {
+  case class InternalUnexpectedError(cause: Option[Throwable]) extends DmsSubmissionError
+  case class BadGateway(reason: String, code: Int) extends DmsSubmissionError
 }

@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.JsValue
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
-import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
+import uk.gov.hmrc.economiccrimelevyregistration.services.RegistrationService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.play.bootstrap.backend.http.ErrorResponse
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -30,26 +29,31 @@ import scala.concurrent.ExecutionContext
 @Singleton()
 class RegistrationController @Inject() (
   cc: ControllerComponents,
-  registrationRepository: RegistrationRepository,
+  registrationService: RegistrationService,
   authorise: AuthorisedAction
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc)
+    with BaseController
+    with ErrorHandler {
 
   def upsertRegistration: Action[JsValue] = authorise(parse.json).async { implicit request =>
     withJsonBody[Registration] { registration =>
-      registrationRepository.upsert(registration).map(_ => Ok(Json.toJson(registration)))
+      (for {
+        unit <- registrationService.upsertRegistration(registration).asResponseError
+      } yield unit).convertToResult(OK)
     }
   }
 
   def getRegistration(id: String): Action[AnyContent] = authorise.async { _ =>
-    registrationRepository.get(id).map {
-      case Some(registration) => Ok(Json.toJson(registration))
-      case None               => NotFound(Json.toJson(ErrorResponse(NOT_FOUND, "Registration not found")))
-    }
+    (for {
+      registration <- registrationService.getRegistration(id).asResponseError
+    } yield registration).convertToResult(OK)
   }
 
   def deleteRegistration(id: String): Action[AnyContent] = authorise.async { _ =>
-    registrationRepository.clear(id).map(_ => NoContent)
+    (for {
+      _ <- registrationService.deleteRegistration(id).asResponseError
+    } yield ()).convertToResult(OK)
   }
 
 }

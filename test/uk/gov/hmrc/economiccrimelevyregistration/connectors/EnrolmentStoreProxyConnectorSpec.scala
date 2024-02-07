@@ -16,63 +16,48 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import org.mockito.ArgumentMatchers
+import akka.actor.ActorSystem
+import com.typesafe.config.Config
 import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{EclEnrolment, UpsertKnownFactsRequest}
-import uk.gov.hmrc.http.{HttpClient, HttpResponse, UpstreamErrorResponse}
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.UpsertKnownFactsRequest
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
 import scala.concurrent.Future
 
 class EnrolmentStoreProxyConnectorSpec extends SpecBase {
 
-  val mockHttpClient: HttpClient = mock[HttpClient]
-  val connector                  = new EnrolmentStoreProxyConnectorImpl(appConfig, mockHttpClient)
-  val enrolmentStoreUrl: String  = s"${appConfig.enrolmentStoreProxyBaseUrl}/enrolment-store-proxy/enrolment-store"
+  val actorSystem: ActorSystem = ActorSystem("test")
+  val config: Config           = app.injector.instanceOf[Config]
+
+  val mockHttpClient: HttpClientV2       = mock[HttpClientV2]
+  val connector                          = new EnrolmentStoreProxyConnectorImpl(appConfig, mockHttpClient, config, actorSystem)
+  val mockRequestBuilder: RequestBuilder = mock[RequestBuilder]
+
+  val enrolmentStoreUrl: String = s"${appConfig.enrolmentStoreProxyBaseUrl}/enrolment-store-proxy/enrolment-store"
 
   "upsertKnownFacts" should {
-
-    "return either an upstream error response or http response" in forAll {
+    "return successful empty response" in forAll {
       (
         eclReference: String,
-        upsertKnownFactsRequest: UpsertKnownFactsRequest,
-        eitherResult: Either[UpstreamErrorResponse, HttpResponse]
+        upsertKnownFactsRequest: UpsertKnownFactsRequest
       ) =>
-        val expectedUrl = s"$enrolmentStoreUrl/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}"
+        when(mockHttpClient.put(any())(any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.execute[HttpResponse](any(), any()))
+          .thenReturn(Future.successful(HttpResponse.apply(ACCEPTED, "")))
 
-        when(
-          mockHttpClient
-            .PUT[UpsertKnownFactsRequest, Either[UpstreamErrorResponse, HttpResponse]](
-              ArgumentMatchers.eq(expectedUrl),
-              ArgumentMatchers.eq(upsertKnownFactsRequest),
-              any()
-            )(
-              any(),
-              any(),
-              any(),
-              any()
-            )
-        )
-          .thenReturn(Future.successful(eitherResult))
+        val result: Unit = await(connector.upsertKnownFacts(upsertKnownFactsRequest, eclReference)(hc))
 
-        val result = await(connector.upsertKnownFacts(upsertKnownFactsRequest, eclReference))
+        result shouldBe ()
 
-        result shouldBe eitherResult
+        verify(mockRequestBuilder, times(1))
+          .execute(any(), any())
 
-        verify(mockHttpClient, times(1))
-          .PUT[UpsertKnownFactsRequest, Either[UpstreamErrorResponse, HttpResponse]](
-            ArgumentMatchers.eq(expectedUrl),
-            ArgumentMatchers.eq(upsertKnownFactsRequest),
-            any()
-          )(
-            any(),
-            any(),
-            any(),
-            any()
-          )
-
-        reset(mockHttpClient)
+        reset(mockRequestBuilder)
     }
   }
 

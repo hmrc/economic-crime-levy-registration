@@ -16,10 +16,13 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
+import akka.actor.ActorSystem
+import com.typesafe.config.Config
+import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{EclEnrolment, UpsertKnownFactsRequest}
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,22 +30,30 @@ import scala.concurrent.{ExecutionContext, Future}
 trait EnrolmentStoreProxyConnector {
   def upsertKnownFacts(upsertKnownFactsRequest: UpsertKnownFactsRequest, eclReference: String)(implicit
     hc: HeaderCarrier
-  ): Future[Either[UpstreamErrorResponse, HttpResponse]]
+  ): Future[Unit]
 }
 
 @Singleton
-class EnrolmentStoreProxyConnectorImpl @Inject() (appConfig: AppConfig, httpClient: HttpClient)(implicit
+class EnrolmentStoreProxyConnectorImpl @Inject() (
+  appConfig: AppConfig,
+  httpClient: HttpClientV2,
+  override val configuration: Config,
+  override val actorSystem: ActorSystem
+)(implicit
   ec: ExecutionContext
-) extends EnrolmentStoreProxyConnector {
+) extends BaseConnector
+    with EnrolmentStoreProxyConnector {
 
   private val enrolmentStoreUrl: String =
     s"${appConfig.enrolmentStoreProxyBaseUrl}/enrolment-store-proxy/enrolment-store"
 
   def upsertKnownFacts(upsertKnownFactsRequest: UpsertKnownFactsRequest, eclReference: String)(implicit
     hc: HeaderCarrier
-  ): Future[Either[UpstreamErrorResponse, HttpResponse]] =
-    httpClient.PUT[UpsertKnownFactsRequest, Either[UpstreamErrorResponse, HttpResponse]](
-      s"$enrolmentStoreUrl/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}",
-      upsertKnownFactsRequest
-    )
+  ): Future[Unit] =
+    retryFor[Unit]("Upsert known facts")(retryCondition) {
+      httpClient
+        .put(url"$enrolmentStoreUrl/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}")
+        .withBody(Json.toJson(upsertKnownFactsRequest))
+        .executeAndContinue
+    }
 }

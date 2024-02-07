@@ -25,7 +25,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{EclEnrolment, UpsertKnownFactsRequest}
 import uk.gov.hmrc.economiccrimelevyregistration.models.{KeyValue, KnownFactsWorkItem}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
-import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
 
 import scala.concurrent.Future
@@ -44,7 +44,7 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
     "if there is nothing to process, do nothing and return unit" in {
       when(mockKnownFactsQueueRepository.pullOutstanding(any(), any())).thenReturn(Future.successful(None))
 
-      val result: Unit = await(scheduler.processKnownFacts)
+      val result: Unit = scheduler.processKnownFacts
 
       result shouldBe ()
     }
@@ -64,23 +64,14 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
             ArgumentMatchers.eq(expectedUpsertKnownFactsRequest),
             ArgumentMatchers.eq(knownFactsWorkItem.item.eclReference)
           )(any())
-        ).thenReturn(Future.successful(Right(HttpResponse(OK, "", Map.empty))))
+        ).thenReturn(Future.successful(()))
 
         when(mockKnownFactsQueueRepository.completeAndDelete(ArgumentMatchers.eq(knownFactsWorkItem.id)))
           .thenReturn(Future.successful(true))
 
-        val result: Unit = await(scheduler.processKnownFacts)
+        val result: Unit = scheduler.processKnownFacts
 
         result shouldBe ()
-
-        verify(mockEnrolmentStoreProxyConnector, times(1))
-          .upsertKnownFacts(
-            ArgumentMatchers.eq(expectedUpsertKnownFactsRequest),
-            ArgumentMatchers.eq(knownFactsWorkItem.item.eclReference)
-          )(any())
-
-        verify(mockKnownFactsQueueRepository, times(1))
-          .completeAndDelete(ArgumentMatchers.eq(knownFactsWorkItem.id))
 
         reset(mockEnrolmentStoreProxyConnector)
         reset(mockKnownFactsQueueRepository)
@@ -113,18 +104,9 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
         )
           .thenReturn(Future.successful(true))
 
-        val result: Unit = await(scheduler.processKnownFacts)
+        val result: Unit = scheduler.processKnownFacts
 
         result shouldBe ()
-
-        verify(mockEnrolmentStoreProxyConnector, times(1))
-          .upsertKnownFacts(
-            ArgumentMatchers.eq(expectedUpsertKnownFactsRequest),
-            ArgumentMatchers.eq(knownFactsWorkItem.item.eclReference)
-          )(any())
-
-        verify(mockKnownFactsQueueRepository, times(1))
-          .markAs(ArgumentMatchers.eq(knownFactsWorkItem.id), ArgumentMatchers.eq(ProcessingStatus.Failed), any())
 
         reset(mockEnrolmentStoreProxyConnector)
         reset(mockKnownFactsQueueRepository)

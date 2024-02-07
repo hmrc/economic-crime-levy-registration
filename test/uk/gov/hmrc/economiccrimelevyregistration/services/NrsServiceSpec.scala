@@ -14,6 +14,22 @@
  * limitations under the License.
  */
 
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import org.mockito.ArgumentMatchers
@@ -25,6 +41,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.NrsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.NrsSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
 
@@ -65,14 +82,16 @@ class NrsServiceSpec extends SpecBase {
 
       val result =
         await(
-          service.submitToNrs(
-            Some(validNrsSubmission.base64EncodedNrsSubmissionHtml),
-            validNrsSubmission.eclRegistrationReference,
-            mockAppConfig.eclFirstTimeRegistrationNotableEvent
-          )(hc, request)
+          service
+            .submitToNrs(
+              Some(validNrsSubmission.base64EncodedNrsSubmissionHtml),
+              validNrsSubmission.eclRegistrationReference,
+              mockAppConfig.eclFirstTimeRegistrationNotableEvent
+            )(hc, request)
+            .value
         )
 
-      result shouldBe nrsSubmissionResponse
+      result shouldBe Right(nrsSubmissionResponse)
     }
 
     "throw an IllegalStateException when there is no base64 encoded NRS submission HTML" in forAll(
@@ -84,17 +103,20 @@ class NrsServiceSpec extends SpecBase {
         validNrsSubmission.nrsSubmission.metadata.identityData
       )
 
-      val result = intercept[IllegalStateException] {
-        await(
-          service.submitToNrs(
+      val result = await(
+        service
+          .submitToNrs(
             None,
             validNrsSubmission.eclRegistrationReference,
             mockAppConfig.eclFirstTimeRegistrationNotableEvent
           )(hc, request)
-        )
-      }
+          .value
+      )
 
-      result.getMessage shouldBe "Base64 encoded NRS submission HTML not found in registration data"
+      result shouldBe Left(
+        NrsSubmissionError
+          .InternalUnexpectedError(None)
+      )
     }
   }
 

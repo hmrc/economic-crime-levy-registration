@@ -16,53 +16,86 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
+import akka.actor.ActorSystem
+import com.typesafe.config.Config
 import play.api.http.HeaderNames
+import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
-import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdGenerator
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdHelper
+import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdHelper.HEADER_X_CORRELATION_ID
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class IntegrationFrameworkConnector @Inject() (
   appConfig: AppConfig,
-  httpClient: HttpClient,
-  correlationIdGenerator: CorrelationIdGenerator
-)(implicit ec: ExecutionContext) {
+  httpClient: HttpClientV2,
+  override val configuration: Config,
+  override val actorSystem: ActorSystem
+)(implicit ec: ExecutionContext)
+    extends BaseConnector {
 
-  private def integrationFrameworkHeaders(bearerToken: String): Seq[(String, String)] = Seq(
+  private def integrationFrameworkHeaders(correlationId: String, bearerToken: String): Seq[(String, String)] = Seq(
     (HeaderNames.AUTHORIZATION, s"Bearer $bearerToken"),
     (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
-    (CustomHeaderNames.CorrelationId, correlationIdGenerator.generateCorrelationId)
+    (CustomHeaderNames.CorrelationId, correlationId),
+    (HEADER_X_CORRELATION_ID, correlationId)
   )
 
   def getSubscriptionStatus(
     businessPartnerId: String
-  )(implicit hc: HeaderCarrier): Future[SubscriptionStatusResponse] =
-    httpClient.GET[SubscriptionStatusResponse](
-      s"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status",
-      headers = integrationFrameworkHeaders(appConfig.getSubscriptionStatusBearerToken)
-    )
+  )(implicit hc: HeaderCarrier): Future[SubscriptionStatusResponse] = {
+    val correlationId = createCorrelationId(hc)
+
+    retryFor[SubscriptionStatusResponse]("Get subscription status")(retryCondition) {
+      httpClient
+        .get(url"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status")
+        .setHeader(integrationFrameworkHeaders(correlationId, appConfig.getSubscriptionStatusBearerToken): _*)
+        .executeAndDeserialise[SubscriptionStatusResponse]
+    }
+  }
 
   def subscribeToEcl(eclSubscription: EclSubscription)(implicit
     hc: HeaderCarrier
-  ): Future[Either[UpstreamErrorResponse, CreateEclSubscriptionResponse]] =
-    httpClient.POST[Subscription, Either[UpstreamErrorResponse, CreateEclSubscriptionResponse]](
-      s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}",
-      eclSubscription.subscription,
-      headers = integrationFrameworkHeaders(appConfig.integrationFrameworkBearerToken)
-    )
+  ): Future[CreateEclSubscriptionResponse] = {
+    val correlationId: String = createCorrelationId(hc)
+
+    retryFor[CreateEclSubscriptionResponse]("Subscribe to ECL")(retryCondition) {
+      httpClient
+        .post(
+          url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"
+        )
+        .withBody(Json.toJson(eclSubscription))
+        .setHeader(integrationFrameworkHeaders(correlationId, appConfig.integrationFrameworkBearerToken): _*)
+        .executeAndDeserialise[CreateEclSubscriptionResponse]
+    }
+  }
+
+  private def createCorrelationId(hc: HeaderCarrier): String =
+    hc.headers(Seq(CorrelationIdHelper.HEADER_X_CORRELATION_ID)) match {
+      case Nil                     => UUID.randomUUID().toString
+      case Seq((_, correlationId)) => correlationId
+    }
 
   def getSubscription(
     eclReference: String
-  )(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] =
-    httpClient.GET[GetSubscriptionResponse](
-      s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/$eclReference",
-      headers = integrationFrameworkHeaders(appConfig.integrationFrameworkGetSubscriptionBearerToken)
-    )
+  )(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] = {
+    val correlationId: String = createCorrelationId(hc)
+
+    retryFor[GetSubscriptionResponse]("Get subscription")(retryCondition) {
+      httpClient
+        .get(url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/$eclReference")
+        .setHeader(
+          integrationFrameworkHeaders(correlationId, appConfig.integrationFrameworkGetSubscriptionBearerToken): _*
+        )
+        .executeAndDeserialise[GetSubscriptionResponse]
+    }
+  }
 
 }

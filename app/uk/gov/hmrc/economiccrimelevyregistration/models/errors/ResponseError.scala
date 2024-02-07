@@ -31,8 +31,8 @@ sealed abstract class ResponseError extends Product with Serializable {
 
 object ResponseError {
 
-  val MessageFieldName = "message"
-  val CodeFieldName    = "code"
+  private val MessageFieldName = "message"
+  private val CodeFieldName    = "code"
 
   def badRequestError(message: String): ResponseError =
     StandardError(message, ErrorCode.BadRequest)
@@ -54,11 +54,10 @@ object ResponseError {
     UpstreamServiceError(message, code, cause)
 
   def internalServiceError(
-    message: String = "Internal server error",
     code: ErrorCode = ErrorCode.InternalServerError,
     cause: Option[Throwable] = None
   ): ResponseError =
-    InternalServiceError(message, code, cause)
+    InternalServiceError("Internal server error", code, cause)
 
   implicit val errorWrites: OWrites[ResponseError] =
     (

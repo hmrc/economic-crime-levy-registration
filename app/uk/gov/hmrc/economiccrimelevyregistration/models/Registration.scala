@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.{IncorporatedEntityJourneyData, PartnershipEntityJourneyData, SoleTraderEntityJourneyData}
 
 import java.time.Instant
@@ -47,6 +48,13 @@ final case class Registration(
 ) {
   def otherEntityJourneyData: OtherEntityJourneyData =
     optOtherEntityJourneyData.getOrElse(OtherEntityJourneyData.empty())
+
+  def isRegistration: Boolean =
+    (entityType, registrationType) match {
+      case (Some(value), _) if EntityType.isOther(value) => true
+      case (_, Some(Amendment))                          => true
+      case _                                             => false
+    }
 }
 
 object Registration {

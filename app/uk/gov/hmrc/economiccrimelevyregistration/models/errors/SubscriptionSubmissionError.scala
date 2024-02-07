@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.economiccrimelevyregistration.utils
+package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 
-import java.util.UUID
-import javax.inject.Singleton
+trait SubscriptionSubmissionError
 
-@Singleton
-class CorrelationIdGenerator {
+object SubscriptionSubmissionError {
+  case class InternalUnexpectedError(message: String, cause: Option[Throwable]) extends SubscriptionSubmissionError
 
-  def generateCorrelationId: String = UUID.randomUUID().toString
+  case class BadGateway(reason: String, code: Int) extends SubscriptionSubmissionError
+
+  case class NonFatalUnexpectedError(reason: String, cause: Option[Throwable]) extends SubscriptionSubmissionError
+
 }

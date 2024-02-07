@@ -16,21 +16,18 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
-import cats.data.Validated.Valid
-import cats.implicits.catsSyntaxValidatedId
-import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.scalacheck.{Arbitrary, Gen}
 import uk.gov.hmrc.economiccrimelevyregistration._
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Trust
-import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.{Amendment, Initial}
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
 import uk.gov.hmrc.economiccrimelevyregistration.utils.SchemaValidator
 
@@ -61,18 +58,19 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(updatedExpectedEclSubscription.subscription),
+            any(),
             any()
           )(any())
-        ).thenReturn(validIncorporatedEntityRegistration.expectedEclSubscription.subscription.validNel)
+        ).thenReturn(Right(()))
 
         val result =
-          service.validateRegistration(
-            validIncorporatedEntityRegistration.registration,
-            registrationAdditionalInfo
+          await(
+            service
+              .validateSubscription(validIncorporatedEntityRegistration.registration, registrationAdditionalInfo)
+              .value
           )
 
-        result shouldBe Valid(Left(updatedExpectedEclSubscription))
+        result shouldBe Right(updatedExpectedEclSubscription)
     }
 
     "return the ECL subscription if the registration for a sole trader is valid" in forAll {
@@ -90,13 +88,15 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(updatedExpectedEclSubscription.subscription),
+            any(),
             any()
           )(any())
-        ).thenReturn(validSoleTraderRegistration.expectedEclSubscription.subscription.validNel)
+        ).thenReturn(Right(()))
 
-        val result = service.validateRegistration(validSoleTraderRegistration.registration, registrationAdditionalInfo)
-        result shouldBe Valid(Left(updatedExpectedEclSubscription))
+        val result = await(
+          service.validateSubscription(validSoleTraderRegistration.registration, registrationAdditionalInfo).value
+        )
+        result shouldBe Right(updatedExpectedEclSubscription)
     }
 
     "return the ECL subscription if the registration for a limited partnership is valid" in forAll {
@@ -114,14 +114,18 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(updatedExpectedEclSubscription.subscription),
+            any(),
             any()
           )(any())
-        ).thenReturn(validLimitedPartnershipRegistration.expectedEclSubscription.subscription.validNel)
+        ).thenReturn(Right(()))
 
         val result =
-          service.validateRegistration(validLimitedPartnershipRegistration.registration, registrationAdditionalInfo)
-        result shouldBe Valid(Left(updatedExpectedEclSubscription))
+          await(
+            service
+              .validateSubscription(validLimitedPartnershipRegistration.registration, registrationAdditionalInfo)
+              .value
+          )
+        result shouldBe Right(updatedExpectedEclSubscription)
     }
 
     "return the ECL subscription if the registration for a scottish or general partnership is valid" in forAll {
@@ -139,46 +143,45 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
         when(
           mockSchemaValidator.validateAgainstJsonSchema(
-            ArgumentMatchers.eq(updatedExpectedEclSubscription.subscription),
+            any(),
             any()
           )(any())
-        ).thenReturn(validScottishOrGeneralPartnershipRegistration.expectedEclSubscription.subscription.validNel)
+        ).thenReturn(Right(()))
 
-        val result = service.validateRegistration(
-          validScottishOrGeneralPartnershipRegistration.registration,
-          registrationAdditionalInfo
+        val result = await(
+          service
+            .validateSubscription(
+              validScottishOrGeneralPartnershipRegistration.registration,
+              registrationAdditionalInfo
+            )
+            .value
         )
-        result shouldBe Valid(Left(updatedExpectedEclSubscription))
+
+        result shouldBe Right(updatedExpectedEclSubscription)
     }
 
-    "return a non-empty list of errors when unconditional mandatory registration data items are missing" in forAll {
-      (
-        registrationAdditionalInfo: RegistrationAdditionalInfo
-      ) =>
-        val registration = Registration
-          .empty("internalId")
-          .copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true))
-
-        val expectedErrors = Seq(
-          DataValidationError(DataMissing, "Business partner ID is missing"),
-          DataValidationError(DataMissing, "Relevant AP 12 months choice is missing"),
-          DataValidationError(DataMissing, "Relevant AP revenue is missing"),
-          DataValidationError(DataMissing, "Revenue meets threshold flag is missing"),
-          DataValidationError(DataMissing, "AML supervisor is missing"),
-          DataValidationError(DataMissing, "Business sector is missing"),
-          DataValidationError(DataMissing, "First contact name is missing"),
-          DataValidationError(DataMissing, "First contact role is missing"),
-          DataValidationError(DataMissing, "First contact email is missing"),
-          DataValidationError(DataMissing, "First contact number is missing"),
-          DataValidationError(DataMissing, "Contact address is missing"),
-          DataValidationError(DataMissing, "Entity type is missing"),
-          DataValidationError(DataMissing, "Second contact choice is missing")
+    "return DataValidationError.DataMissing when unconditional mandatory registration data items are missing if registration type is Initial" in {
+      val registration = Registration
+        .empty("internalId")
+        .copy(
+          carriedOutAmlRegulatedActivityInCurrentFy = Some(true),
+          entityType = None,
+          registrationType = Some(Initial)
         )
 
-        val result = service.validateRegistration(registration, registrationAdditionalInfo)
+      val result = await(service.validateRegistration(registration).value)
 
-        result.isValid shouldBe false
-        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+      result shouldBe Left(DataValidationError.DataMissing("Entity type missing"))
+    }
+
+    "return a DataValidationError.DataInvalid when wrong registration type is passed" in {
+      val registration = Registration
+        .empty("internalId")
+        .copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true))
+
+      val result = await(service.validateRegistration(registration).value)
+
+      result shouldBe Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
     }
 
     "return errors if the entity type is an incorporated entity type but there is no incorporated entity data in the registration" in forAll {
@@ -188,18 +191,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
       ) =>
         val invalidRegistration = validRegistration.registration.copy(incorporatedEntityJourneyData = None)
 
-        val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-        result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain theSameElementsAs Seq(
-            DataValidationError(
-              DataMissing,
-              "Incorporated entity data is missing"
-            ),
-            DataValidationError(DataMissing, "Business partner ID is missing")
-          )
-        )
+        result shouldBe Left(DataValidationError.DataMissing("Incorporated entity data is missing"))
     }
 
     "return an error if the relevant AP is not 12 months and the relevant AP length is missing" in forAll {
@@ -210,15 +204,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidRegistration =
           validRegistration.registration.copy(relevantAp12Months = Some(false), relevantApLength = None)
 
-        val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-        result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain only DataValidationError(
-            DataMissing,
-            "Relevant AP length is missing"
-          )
-        )
+        result shouldBe Left(DataValidationError.DataMissing("Relevant AP length is missing"))
+
     }
 
     "return errors if the entity type is partnership but there is no partnership data in the registration" in forAll {
@@ -229,16 +218,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidRegistration = validLimitedPartnershipRegistration.registration
           .copy(partnershipEntityJourneyData = None)
 
-        val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-        result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain theSameElementsAs
-            Seq(
-              DataValidationError(DataMissing, "Partnership data is missing"),
-              DataValidationError(DataMissing, "Business partner ID is missing")
-            )
-        )
+        result shouldBe Left(DataValidationError.DataMissing("Partnership data is missing"))
+
     }
 
     "return errors if the entity type is sole trader but there is no sole trader data in the registration" in forAll {
@@ -249,15 +232,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidRegistration = validSoleTraderRegistration.registration
           .copy(soleTraderEntityJourneyData = None)
 
-        val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-        result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain theSameElementsAs Seq(
-            DataValidationError(DataMissing, "Sole trader data is missing"),
-            DataValidationError(DataMissing, "Business partner ID is missing")
-          )
-        )
+        result shouldBe Left(DataValidationError.DataMissing("Sole trader data is missing"))
     }
 
     "return an error if the registration data does not contain the business partner ID" in forAll {
@@ -275,15 +252,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
             )
           )
 
-        val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-        result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain only DataValidationError(
-            DataMissing,
-            "Business partner ID is missing"
-          )
-        )
+        result shouldBe Left(DataValidationError.DataMissing("Business partner ID is missing"))
     }
 
     "return errors if the second contact choice is true and there are no second contact details in the registration data" in forAll {
@@ -296,17 +267,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
           validContacts.copy(secondContact = Some(true), secondContactDetails = ContactDetails(None, None, None, None))
         )
 
-        val expectedErrors = Seq(
-          DataValidationError(DataMissing, "Second contact name is missing"),
-          DataValidationError(DataMissing, "Second contact role is missing"),
-          DataValidationError(DataMissing, "Second contact email is missing"),
-          DataValidationError(DataMissing, "Second contact number is missing")
-        )
+        val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-        val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
-
-        result.isValid shouldBe false
-        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+        result shouldBe Left(DataValidationError.DataMissing("Second contact name is missing"))
     }
 
     "return an error if the registration data does not contain the AML regulated activity choice" in forAll {
@@ -317,15 +280,10 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidRegistration = validRegistration.registration
           .copy(carriedOutAmlRegulatedActivityInCurrentFy = None)
 
-        val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-        result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain only DataValidationError(
-            DataMissing,
-            "Carried out AML regulated activity choice is missing"
-          )
-        )
+        result shouldBe Left(DataValidationError.DataMissing("Carried out AML regulated activity choice is missing"))
+
     }
 
     "return an error if the registration data contains GC or FCA as the AML supervisor" in forAll(
@@ -341,15 +299,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidRegistration = validRegistration.registration
           .copy(amlSupervisor = Some(AmlSupervisor(gcOrFca, None)))
 
-        val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-        result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain only DataValidationError(
-            DataInvalid,
-            "AML supervisor cannot be GC or FCA"
-          )
-        )
+        result shouldBe Left(DataValidationError.DataInvalid("AML supervisor cannot be GC or FCA"))
     }
 
     "return an error if the registration data contains the revenue meets threshold flag not set" in forAll {
@@ -360,15 +312,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidRegistration = validRegistration.registration
           .copy(revenueMeetsThreshold = None)
 
-        val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-        result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain only DataValidationError(
-            DataMissing,
-            "Revenue meets threshold flag is missing"
-          )
-        )
+        result shouldBe Left(DataValidationError.DataMissing("Revenue meets threshold flag is missing"))
     }
 
     "return an error if the contact address contains no address lines" in forAll {
@@ -381,15 +327,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
             validRegistration.registration.contactAddress.map(_.copy(None, None, None, None, None, None, None, None))
           )
 
-        val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-        result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain only DataValidationError(
-            DataInvalid,
-            "Contact address has no address lines"
-          )
-        )
+        result shouldBe Left(DataValidationError.DataMissing("Contact address has no address lines"))
     }
 
     "return errors if the registration data contains no partnership name, SA UTR and " +
@@ -409,16 +349,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
           val invalidRegistration = validScottishOrGeneralPartnershipRegistration.registration
             .copy(partnershipEntityJourneyData = invalidPartnershipData, partnershipName = None)
 
-          val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+          val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-          val expectedErrors = Seq(
-            DataValidationError(DataMissing, "Partnership SA UTR is missing"),
-            DataValidationError(DataMissing, "Partnership postcode is missing"),
-            DataValidationError(DataMissing, "Partnership name is missing")
-          )
-
-          result.isValid shouldBe false
-          result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+          result shouldBe Left(DataValidationError.DataMissing("Partnership SA UTR is missing"))
       }
 
     "return errors if the registration data contains no partnership SA UTR and " +
@@ -438,15 +371,9 @@ class RegistrationValidationServiceSpec extends SpecBase {
           val invalidRegistration = validLimitedPartnershipRegistration.registration
             .copy(partnershipEntityJourneyData = invalidPartnershipData)
 
-          val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+          val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-          val expectedErrors = Seq(
-            DataValidationError(DataMissing, "Partnership SA UTR is missing"),
-            DataValidationError(DataMissing, "Partnership company profile is missing")
-          )
-
-          result.isValid shouldBe false
-          result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+          result shouldBe Left(DataValidationError.DataMissing("Partnership SA UTR is missing"))
       }
 
     "return errors if the registration data contains no sole trader SA UTR or NINO and the entity type is sole trader" in forAll {
@@ -464,54 +391,32 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidRegistration =
           validSoleTraderRegistration.registration.copy(soleTraderEntityJourneyData = invalidSoleTraderData)
 
-        val result = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val result = await(service.validateSubscription(invalidRegistration, registrationAdditionalInfo).value)
 
-        result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain only DataValidationError(
-            DataMissing,
-            "Sole trader SA UTR or NINO is missing"
-          )
-        )
+        result shouldBe Left(DataValidationError.DataMissing("Sole trader SA UTR or NINO is missing"))
+
     }
 
-    "return errors if the registration for a other entity is invalid" in forAll {
-      (registrationAdditionalInfo: RegistrationAdditionalInfo) =>
-        val invalidRegistration = Registration
-          .empty("")
-          .copy(
-            entityType = Some(Trust),
-            carriedOutAmlRegulatedActivityInCurrentFy = Some(true)
-          )
-        val expectedErrors      = Seq(
-          DataValidationError(DataMissing, "AML supervisor is missing"),
-          DataValidationError(DataMissing, "Relevant AP 12 months choice is missing"),
-          DataValidationError(DataMissing, "Relevant AP revenue is missing"),
-          DataValidationError(DataMissing, "Revenue meets threshold flag is missing"),
-          DataValidationError(DataMissing, "Business sector is missing"),
-          DataValidationError(DataMissing, "First contact name is missing"),
-          DataValidationError(DataMissing, "First contact role is missing"),
-          DataValidationError(DataMissing, "First contact email is missing"),
-          DataValidationError(DataMissing, "First contact number is missing"),
-          DataValidationError(DataMissing, "Second contact choice is missing"),
-          DataValidationError(DataMissing, "Contact address is missing"),
-          DataValidationError(DataMissing, "Other entity data is missing"),
-          DataValidationError(DataMissing, "Business name is missing"),
-          DataValidationError(DataMissing, "Corporation Tax Unique Taxpayer Reference is missing")
+    "return errors if the registration for a other entity is invalid" in {
+      val invalidRegistration = Registration
+        .empty("")
+        .copy(
+          entityType = Some(Charity),
+          carriedOutAmlRegulatedActivityInCurrentFy = Some(true)
         )
-        val result              = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
-        result.isValid shouldBe false
-        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+      val result              = await(service.validateRegistration(invalidRegistration).value)
+
+      result shouldBe Left(DataValidationError.DataMissing("AML supervisor is missing"))
     }
 
     "return the registration if the registration for a charity is valid" in forAll {
-      (validCharityRegistration: ValidCharityRegistration, registrationAdditionalInfo: RegistrationAdditionalInfo) =>
-        val result = service.validateRegistration(validCharityRegistration.registration, registrationAdditionalInfo)
-        result shouldBe Valid(Right(validCharityRegistration.registration))
+      (validCharityRegistration: ValidCharityRegistration) =>
+        val result = await(service.validateRegistration(validCharityRegistration.registration).value)
+        result shouldBe Right(validCharityRegistration.registration)
     }
 
     "return errors if the registration for a charity is invalid" in forAll {
-      (validCharityRegistration: ValidCharityRegistration, registrationAdditionalInfo: RegistrationAdditionalInfo) =>
+      (validCharityRegistration: ValidCharityRegistration) =>
         val otherEntityJourneyData     = validCharityRegistration.registration.otherEntityJourneyData.copy(
           charityRegistrationNumber = None,
           companyRegistrationNumber = None
@@ -519,19 +424,15 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidCharityRegistration = validCharityRegistration.registration.copy(
           optOtherEntityJourneyData = Some(otherEntityJourneyData)
         )
-        val expectedErrors             = Seq(
-          DataValidationError(DataMissing, "Charity registration number is missing"),
-          DataValidationError(DataMissing, "Company registration number is missing")
-        )
-        val result                     = service.validateRegistration(invalidCharityRegistration, registrationAdditionalInfo)
-        result.isValid shouldBe false
-        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+
+        val result = await(service.validateRegistration(invalidCharityRegistration).value)
+
+        result shouldBe Left(DataValidationError.DataMissing("Charity registration number is missing"))
     }
 
     "return errors if the registration for a unincorporated association is invalid when isCtUtrPresent flag is not present" in {
       (
-        unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration,
-        registrationAdditionalInfo: RegistrationAdditionalInfo
+        unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration
       ) =>
         val otherEntityJourneyData                       = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
           isCtUtrPresent = None,
@@ -540,19 +441,17 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidUnincorporatedAssociationRegistration = unincorporatedAssociationRegistration.registration.copy(
           optOtherEntityJourneyData = Some(otherEntityJourneyData)
         )
-        val expectedErrors                               = Seq(
-          DataValidationError(DataMissing, "Corporation Tax Unique Taxpayer Reference choice is missing")
-        )
         val result                                       =
-          service.validateRegistration(invalidUnincorporatedAssociationRegistration, registrationAdditionalInfo)
-        result.isValid shouldBe false
-        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+          await(service.validateRegistration(invalidUnincorporatedAssociationRegistration).value)
+
+        result shouldBe Left(
+          DataValidationError.DataMissing("Corporation Tax Unique Taxpayer Reference choice is missing")
+        )
     }
 
     "return errors if the registration for a unincorporated association is invalid when CT-UTR is not present" in {
       (
-        unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration,
-        registrationAdditionalInfo: RegistrationAdditionalInfo
+        unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration
       ) =>
         val otherEntityJourneyData                       = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
           isCtUtrPresent = Some(true),
@@ -561,20 +460,16 @@ class RegistrationValidationServiceSpec extends SpecBase {
         val invalidUnincorporatedAssociationRegistration = unincorporatedAssociationRegistration.registration.copy(
           optOtherEntityJourneyData = Some(otherEntityJourneyData)
         )
-        val expectedErrors                               = Seq(
-          DataValidationError(DataMissing, "Corporation Tax Unique Taxpayer Reference is missing")
-        )
 
         val result =
-          service.validateRegistration(invalidUnincorporatedAssociationRegistration, registrationAdditionalInfo)
-        result.isValid shouldBe false
-        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+          await(service.validateRegistration(invalidUnincorporatedAssociationRegistration).value)
+
+        result shouldBe Left(DataValidationError.DataMissing("Corporation Tax Unique Taxpayer Reference is missing"))
     }
 
     "return the registration if the registration for an unincorporated association is valid" in {
       (
-        unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration,
-        registrationAdditionalInfo: RegistrationAdditionalInfo
+        unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration
       ) =>
         val otherEntityJourneyData = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
           isCtUtrPresent = Some(true)
@@ -583,101 +478,71 @@ class RegistrationValidationServiceSpec extends SpecBase {
           optOtherEntityJourneyData = Some(otherEntityJourneyData)
         )
 
-        val result = service.validateRegistration(validRegistration, registrationAdditionalInfo)
-        result.isValid shouldBe true
-        result         shouldBe Valid(Left(validRegistration))
+        val result = await(service.validateRegistration(validRegistration).value)
+
+        result shouldBe Right(validRegistration)
     }
 
     "return errors if the registration for a Trust is invalid when CT-UTR is not present" in {
-      (trustRegistration: ValidTrustRegistration, registrationAdditionalInfo: RegistrationAdditionalInfo) =>
+      (trustRegistration: ValidTrustRegistration) =>
         val otherEntityJourneyData   = trustRegistration.registration.otherEntityJourneyData.copy(
           ctUtr = None
         )
         val invalidTrustRegistration = trustRegistration.registration.copy(
           optOtherEntityJourneyData = Some(otherEntityJourneyData)
         )
-        val expectedErrors           = Seq(
-          DataValidationError(DataMissing, "Corporation Tax Unique Taxpayer Reference is missing")
-        )
 
-        val result = service.validateRegistration(invalidTrustRegistration, registrationAdditionalInfo)
-        result.isValid shouldBe false
-        result.leftMap(nec => nec.toList should contain theSameElementsAs expectedErrors)
+        val result = await(service.validateRegistration(invalidTrustRegistration).value)
+        result shouldBe Left(DataValidationError.DataMissing("Corporation Tax Unique Taxpayer Reference is missing"))
     }
 
     "return the registration if the registration for a Trust is valid" in {
-      (trustRegistration: ValidTrustRegistration, registrationAdditionalInfo: RegistrationAdditionalInfo) =>
-        val result = service.validateRegistration(trustRegistration.registration, registrationAdditionalInfo)
-        result.isValid shouldBe true
-        result         shouldBe Valid(Left(trustRegistration.registration))
+      (trustRegistration: ValidTrustRegistration) =>
+        val result = await(service.validateRegistration(trustRegistration.registration).value)
+        result shouldBe Right(trustRegistration.registration)
     }
 
     "return the registration if the registration for a non-Uk establishment is valid" in forAll {
       (
-        validNonUkEstablishmentRegistration: ValidNonUkEstablishmentRegistration,
-        registrationAdditionalInfo: RegistrationAdditionalInfo
+        validNonUkEstablishmentRegistration: ValidNonUkEstablishmentRegistration
       ) =>
         val result =
-          service.validateRegistration(validNonUkEstablishmentRegistration.registration, registrationAdditionalInfo)
-        result shouldBe Valid(Right(validNonUkEstablishmentRegistration.registration))
+          await(service.validateRegistration(validNonUkEstablishmentRegistration.registration).value)
+        result shouldBe Right(validNonUkEstablishmentRegistration.registration)
     }
 
     "return errors if the registration for a non-UK establishment is invalid" in forAll {
       (
         validNonUkEstablishmentRegistration: ValidNonUkEstablishmentRegistration,
-        none: Boolean,
-        isUkCrnPresent: Boolean,
-        utrType: UtrType,
-        registrationAdditionalInfo: RegistrationAdditionalInfo
+        utrType: UtrType
       ) =>
         val otherEntityJourneyData     = validNonUkEstablishmentRegistration.registration.otherEntityJourneyData.copy(
-          isUkCrnPresent = if (none) None else Some(isUkCrnPresent),
           companyRegistrationNumber = None,
-          utrType = if (none) None else Some(utrType),
+          isUkCrnPresent = Some(true),
+          utrType = Some(utrType),
           ctUtr = None,
           saUtr = None
         )
         val invalidCharityRegistration = validNonUkEstablishmentRegistration.registration.copy(
           optOtherEntityJourneyData = Some(otherEntityJourneyData)
         )
-        val message                    =
-          if (none) {
-            "Utr type"
-          } else {
-            utrType match {
-              case SaUtr => "Self Assessment Unique Taxpayer Reference"
-              case CtUtr => "Corporation Tax Unique Taxpayer Reference"
-            }
-          }
-        val expectedErrors             =
-          if (none) {
-            Seq(DataValidationError(DataMissing, "Has uk crn is missing"))
-          } else if (isUkCrnPresent) {
-            Seq(DataValidationError(DataMissing, "Company registration number is missing"))
-          } else {
-            Seq()
-          }
-        val result                     = service.validateRegistration(invalidCharityRegistration, registrationAdditionalInfo)
-        result.isValid shouldBe false
-        result.leftMap(nec =>
-          nec.toList should contain theSameElementsAs expectedErrors ++
-            Seq(DataValidationError(DataMissing, message + " is missing"))
-        )
+
+        val result = await(service.validateRegistration(invalidCharityRegistration).value)
+        result shouldBe Left(DataValidationError.DataMissing("Company registration number is missing"))
     }
+
     "return an error if if no amend reason for an amendment" in forAll {
       (
-        validRegistration: ValidLimitedPartnershipRegistration,
-        registrationAdditionalInfo: RegistrationAdditionalInfo
+        validRegistration: ValidLimitedPartnershipRegistration
       ) =>
         val invalidRegistration =
           validRegistration.registration
             .copy(registrationType = Some(Amendment), amendReason = None)
 
-        val result  = service.validateRegistration(invalidRegistration, registrationAdditionalInfo)
+        val result  = await(service.validateRegistration(invalidRegistration).value)
         val message = "Reason for amendment"
 
-        result.isValid shouldBe false
-        result.leftMap(nec => nec.toList should contain(DataValidationError(DataMissing, message + " is missing")))
+        result shouldBe Left(DataValidationError.DataMissing(message + " is missing"))
     }
   }
 }

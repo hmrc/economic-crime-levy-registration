@@ -60,6 +60,8 @@ object CachedArbitraries extends EclTestData {
   implicit lazy val arbUtrType: Arbitrary[UtrType]                                                       = mkArb
   implicit lazy val arbDmsNotification: Arbitrary[DmsNotification]                                       = mkArb
   implicit lazy val arbSessionData: Arbitrary[SessionData]                                               = mkArb
+  implicit lazy val arbKnownFactsWorkItem: Arbitrary[KnownFactsWorkItem]                                 = mkArb
+  implicit lazy val arbEclSubscriptionStatus: Arbitrary[EclSubscriptionStatus]                           = mkArb
   implicit lazy val arbGetSubscriptionResponse: Arbitrary[GetSubscriptionResponse]                       = mkArb
 
 }

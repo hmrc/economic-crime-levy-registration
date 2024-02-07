@@ -21,20 +21,21 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError._
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataValidationError, DataValidationErrors}
+import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Charity
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EntityType, Registration, RegistrationAdditionalInfo}
 
 class RegistrationValidationISpec extends ISpecBase {
 
-  s"GET ${routes.RegistrationValidationController.getValidationErrors(":id").url}" should {
-    "return 204 NO_CONTENT when the registration data is valid" in {
+  s"GET ${routes.RegistrationValidationController.checkForValidationErrors(":id").url}" should {
+    "return 200 OK when the registration data is valid" in {
       stubAuthorised()
 
-      val validRegistration = random[ValidIncorporatedEntityRegistration]
-
+      val validRegistration   = random[ValidCharityRegistration]
       val updatedRegistration =
-        validRegistration.registration.copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true))
+        validRegistration.registration
+          .copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true), registrationType = Some(Amendment))
 
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(
@@ -51,15 +52,15 @@ class RegistrationValidationISpec extends ISpecBase {
       lazy val validationResult =
         callRoute(
           FakeRequest(
-            routes.RegistrationValidationController.getValidationErrors(updatedRegistration.internalId)
+            routes.RegistrationValidationController.checkForValidationErrors(updatedRegistration.internalId)
           )
         )
 
-      status(validationResult) shouldBe NO_CONTENT
+      status(validationResult) shouldBe OK
 
     }
 
-    "return 200 OK with validation errors in the JSON response body when the registration data is invalid" in {
+    "return 200 OK with true in the JSON response body when the registration data is invalid" in {
       stubAuthorised()
 
       val internalId                 = random[String]
@@ -85,21 +86,12 @@ class RegistrationValidationISpec extends ISpecBase {
       ).futureValue
 
       lazy val validationResult =
-        callRoute(FakeRequest(routes.RegistrationValidationController.getValidationErrors(internalId)))
+        callRoute(FakeRequest(routes.RegistrationValidationController.checkForValidationErrors(internalId)))
 
-      val expectedErrors = Seq(
-        DataValidationError(DataMissing, "Business sector is missing"),
-        DataValidationError(DataMissing, "First contact name is missing"),
-        DataValidationError(DataMissing, "First contact role is missing"),
-        DataValidationError(DataMissing, "First contact email is missing"),
-        DataValidationError(DataMissing, "First contact number is missing"),
-        DataValidationError(DataMissing, "Contact address is missing"),
-        DataValidationError(DataMissing, "Entity type is missing"),
-        DataValidationError(DataMissing, "Second contact choice is missing")
+      status(validationResult)        shouldBe OK
+      contentAsJson(validationResult) shouldBe Json.toJson(
+        "Entity type is missing"
       )
-
-      status(validationResult)                                      shouldBe OK
-      contentAsJson(validationResult).as[DataValidationErrors].errors should contain allElementsOf expectedErrors
     }
 
     "return 404 NOT_FOUND when there is no registration data to validate" in {
@@ -108,7 +100,7 @@ class RegistrationValidationISpec extends ISpecBase {
       val internalId = random[String]
 
       lazy val validationResult =
-        callRoute(FakeRequest(routes.RegistrationValidationController.getValidationErrors(internalId)))
+        callRoute(FakeRequest(routes.RegistrationValidationController.checkForValidationErrors(internalId)))
 
       status(validationResult) shouldBe NOT_FOUND
     }

@@ -12,7 +12,7 @@ GET           /session/:id                                   uk.gov.hmrc.economi
 PUT           /session                                       uk.gov.hmrc.economiccrimelevyregistration.controllers.SessionController.upsert
 DELETE        /session/:id                                   uk.gov.hmrc.economiccrimelevyregistration.controllers.SessionController.delete(id)
 
-GET           /registrations/:id/validation-errors           uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationValidationController.getValidationErrors(id)
+GET           /registrations/:id/validation-errors           uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationValidationController.checkForValidationErrors(id)
 
 POST          /submit-registration/:id                       uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationSubmissionController.submitRegistration(id)
 
