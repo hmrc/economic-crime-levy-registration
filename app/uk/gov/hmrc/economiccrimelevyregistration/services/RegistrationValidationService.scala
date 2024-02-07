@@ -44,12 +44,11 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       Future.successful(
         registration.entityType match {
           case Some(value) if EntityType.isOther(value) => validateOtherEntity(registration)
-          case Some(_)                                  =>
+          case _                                        =>
             registration.registrationType match {
               case Some(Amendment) => transformToAmendedEclRegistration(registration)
               case _               => Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
             }
-          case _                                        => Left(DataValidationError.DataInvalid("Entity type missing"))
         }
       )
     }
