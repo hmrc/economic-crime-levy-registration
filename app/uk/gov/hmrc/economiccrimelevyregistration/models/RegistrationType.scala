@@ -25,8 +25,9 @@ object RegistrationType {
 
   case object Initial extends RegistrationType("Initial")
   case object Amendment extends RegistrationType("Amendment")
+  case object Dereg extends RegistrationType("Dereg")
 
-  lazy val values: Set[RegistrationType] = Set(Initial, Amendment)
+  lazy val values: Set[RegistrationType] = Set(Initial, Amendment, Dereg)
 
   implicit val format: Format[RegistrationType] = new Format[RegistrationType] {
     override def reads(json: JsValue): JsResult[RegistrationType] = json.validate[String] match {
@@ -34,6 +35,7 @@ object RegistrationType {
         value match {
           case "Initial"   => JsSuccess(Initial)
           case "Amendment" => JsSuccess(Amendment)
+          case "Dereg"     => JsSuccess(Dereg)
         }
       case e: JsError          => e
     }
@@ -41,6 +43,7 @@ object RegistrationType {
     override def writes(o: RegistrationType): JsValue = o match {
       case Initial   => JsString("Initial")
       case Amendment => JsString("Amendment")
+      case Dereg     => JsString("Dereg")
     }
   }
 
@@ -48,6 +51,7 @@ object RegistrationType {
     override def to(value: RegistrationType): String = value match {
       case Initial   => "Initial"
       case Amendment => "Amendment"
+      case Dereg     => "Dereg"
     }
   }
 }

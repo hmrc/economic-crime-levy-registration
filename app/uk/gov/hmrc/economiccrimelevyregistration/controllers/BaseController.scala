@@ -20,6 +20,7 @@ import cats.data.EitherT
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.mvc.Results.Status
+import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
 import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, Registration, RegistrationAdditionalInfo, SessionData}
@@ -80,6 +81,12 @@ trait BaseController {
   implicit val createEclSubscriptionResponsePayloadResponse: Converter[CreateEclSubscriptionResponsePayload] =
     new Converter[CreateEclSubscriptionResponsePayload] {
       override def getResponse(response: CreateEclSubscriptionResponsePayload, responseCode: Int): Result =
+        Status(responseCode)(Json.toJson(response))
+    }
+
+  implicit val deRegistrationResponse: Converter[Deregistration] =
+    new Converter[Deregistration] {
+      override def getResponse(response: Deregistration, responseCode: Int): Result =
         Status(responseCode)(Json.toJson(response))
     }
 }
