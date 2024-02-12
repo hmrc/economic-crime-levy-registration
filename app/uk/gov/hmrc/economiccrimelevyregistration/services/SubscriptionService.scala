@@ -65,21 +65,25 @@ class SubscriptionService @Inject() (
 
     } yield integrationFrameworkResult
 
-  def getSubscriptionStatus(businessPartnerId: String, internalId: String)(implicit
+  def getSubscriptionStatus(idType: String, idValue: String, internalId: String)(implicit
     hc: HeaderCarrier
   ): EitherT[Future, SubscriptionSubmissionError, EclSubscriptionStatus] =
     for {
-      eclSubscriptionStatus <- executeCallToIntegrationFrameworkForSubscriptionStatus(businessPartnerId, internalId)
+      eclSubscriptionStatus <- executeCallToIntegrationFrameworkForSubscriptionStatus(idType, idValue, internalId)
     } yield eclSubscriptionStatus.toEclSubscriptionStatus
 
-  private def executeCallToIntegrationFrameworkForSubscriptionStatus(businessPartnerId: String, internalId: String)(
-    implicit hc: HeaderCarrier
+  private def executeCallToIntegrationFrameworkForSubscriptionStatus(
+    idType: String,
+    idValue: String,
+    internalId: String
+  )(implicit
+    hc: HeaderCarrier
   ): EitherT[Future, SubscriptionSubmissionError, SubscriptionStatusResponse] =
     EitherT {
       integrationFrameworkConnector
-        .getSubscriptionStatus(businessPartnerId)
+        .getSubscriptionStatus(idType, idValue)
         .map { response =>
-          executeExtendedAuditEvent(businessPartnerId, response, internalId)
+          executeExtendedAuditEvent(idType, idValue, response, internalId)
           Right(response)
         }
         .recover {
@@ -172,14 +176,16 @@ class SubscriptionService @Inject() (
     )
 
   private def executeExtendedAuditEvent(
-    businessPartnerId: String,
+    idType: String,
+    idValue: String,
     subscriptionStatusResponse: SubscriptionStatusResponse,
     internalId: String
   ): Unit =
     auditConnector.sendExtendedEvent(
       SubscriptionStatusRetrievedAuditEvent(
         internalId,
-        businessPartnerId,
+        idType,
+        idValue,
         AuditSubscriptionStatus(
           subscriptionStatusResponse.subscriptionStatus,
           subscriptionStatusResponse.idValue,
