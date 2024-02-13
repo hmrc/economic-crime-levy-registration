@@ -68,7 +68,7 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
           Future.successful(HttpResponse.apply(ACCEPTED, subStatusResponseJson))
         )
 
-      val result = await(connector.getSubscriptionStatus("businessPartnerId"))
+      val result = await(connector.getSubscriptionStatus("SAFE", "businessPartnerId"))
 
       Json.toJson(result) shouldBe Json.parse(subStatusResponseJson.replace("REG_FORM_RECEIVED", "RegFormReceived"))
 
