@@ -19,6 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 import play.api.libs.json._
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus.ContractObjectInactive
 
 sealed trait EtmpSubscriptionStatus
 
@@ -96,9 +97,11 @@ final case class SubscriptionStatusResponse(
       idType,
       idValue
     ) match {
-      case (_, Some("ZECL"), Some(eclRegistrationReference)) =>
+      case (ContractObjectInactive, Some("ZECL"), Some(eclRegistrationReference)) =>
+        EclSubscriptionStatus(DeRegistered(eclRegistrationReference))
+      case (_, Some("ZECL"), Some(eclRegistrationReference))                      =>
         EclSubscriptionStatus(Subscribed(eclRegistrationReference))
-      case _                                                 => EclSubscriptionStatus(NotSubscribed)
+      case _                                                                      => EclSubscriptionStatus(NotSubscribed)
     }
 }
 

@@ -16,7 +16,7 @@ GET           /registrations/:id/validation-errors           uk.gov.hmrc.economi
 
 POST          /submit-registration/:id                       uk.gov.hmrc.economiccrimelevyregistration.controllers.RegistrationSubmissionController.submitRegistration(id)
 
-GET           /subscription-status/:businessPartnerId        uk.gov.hmrc.economiccrimelevyregistration.controllers.SubscriptionController.getSubscriptionStatus(businessPartnerId)
+GET           /subscription-status/:idType/:idValue          uk.gov.hmrc.economiccrimelevyregistration.controllers.SubscriptionController.getSubscriptionStatus(idType, idValue)
 GET           /subscription/:eclReference                    uk.gov.hmrc.economiccrimelevyregistration.controllers.SubscriptionController.getSubscription(eclReference)
 
 POST          /dms-registration-callback                     uk.gov.hmrc.economiccrimelevyregistration.controllers.DmsNotificationController.dmsCallback()

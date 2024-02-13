@@ -49,13 +49,14 @@ class IntegrationFrameworkConnector @Inject() (
   )
 
   def getSubscriptionStatus(
-    businessPartnerId: String
+    idType: String,
+    idValue: String
   )(implicit hc: HeaderCarrier): Future[SubscriptionStatusResponse] = {
     val correlationId = createCorrelationId(hc)
 
     retryFor[SubscriptionStatusResponse]("Get subscription status")(retryCondition) {
       httpClient
-        .get(url"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status")
+        .get(url"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/$idType/$idValue/status")
         .setHeader(integrationFrameworkHeaders(correlationId, appConfig.getSubscriptionStatusBearerToken): _*)
         .executeAndDeserialise[SubscriptionStatusResponse]
     }

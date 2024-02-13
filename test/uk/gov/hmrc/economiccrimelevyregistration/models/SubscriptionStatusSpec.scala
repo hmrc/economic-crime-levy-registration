@@ -31,6 +31,10 @@ class SubscriptionStatusSpec extends SpecBase {
           Subscribed(testEclRegistrationReference),
           Json.obj("status" -> "Subscribed", "eclRegistrationReference" -> testEclRegistrationReference)
         ),
+        (
+          DeRegistered(testEclRegistrationReference),
+          Json.obj("status" -> "DeRegistered", "eclRegistrationReference" -> testEclRegistrationReference)
+        ),
         (NotSubscribed, JsString("NotSubscribed"))
       )
     ) { (subscriptionStatus: SubscriptionStatus, expectedResult: JsValue) =>

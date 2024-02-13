@@ -37,11 +37,11 @@ class SubscriptionController @Inject() (
     with BaseController
     with ErrorHandler {
 
-  def getSubscriptionStatus(businessPartnerId: String): Action[AnyContent] = authorise.async { implicit request =>
+  def getSubscriptionStatus(idType: String, idValue: String): Action[AnyContent] = authorise.async { implicit request =>
     implicit val hc: HeaderCarrier = CorrelationIdHelper.headerCarrierWithCorrelationId(request)
 
     (for {
-      response <- subscriptionService.getSubscriptionStatus(businessPartnerId, request.internalId).asResponseError
+      response <- subscriptionService.getSubscriptionStatus(idType, idValue, request.internalId).asResponseError
     } yield response).convertToResult(OK)
   }
 
