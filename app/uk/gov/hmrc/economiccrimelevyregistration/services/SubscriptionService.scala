@@ -154,7 +154,7 @@ class SubscriptionService @Inject() (
   )(implicit hc: HeaderCarrier): EitherT[Future, SubscriptionSubmissionError, CreateEclSubscriptionResponse] =
     EitherT {
       integrationFrameworkConnector
-        .subscribeToEcl(eclSubscription)
+        .subscribeToEcl(eclSubscription.businessPartnerId, eclSubscription.subscription)
         .map(response => Right(response))
         .recover {
           case error @ UpstreamErrorResponse(message, code, _, _)

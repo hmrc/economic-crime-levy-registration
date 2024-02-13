@@ -62,7 +62,7 @@ class IntegrationFrameworkConnector @Inject() (
     }
   }
 
-  def subscribeToEcl(eclSubscription: EclSubscription)(implicit
+  def subscribeToEcl(businessPartnerId: String, subscription: Subscription)(implicit
     hc: HeaderCarrier
   ): Future[CreateEclSubscriptionResponse] = {
     val correlationId: String = createCorrelationId(hc)
@@ -70,9 +70,9 @@ class IntegrationFrameworkConnector @Inject() (
     retryFor[CreateEclSubscriptionResponse]("Subscribe to ECL")(retryCondition) {
       httpClient
         .post(
-          url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"
+          url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/$businessPartnerId"
         )
-        .withBody(Json.toJson(eclSubscription))
+        .withBody(Json.toJson(subscription))
         .setHeader(integrationFrameworkHeaders(correlationId, appConfig.integrationFrameworkBearerToken): _*)
         .executeAndDeserialise[CreateEclSubscriptionResponse]
     }

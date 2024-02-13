@@ -97,7 +97,7 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
             Future.successful(HttpResponse.apply(ACCEPTED, Json.toJson(createEclSubscriptionResponse).toString()))
           )
 
-        val result = await(connector.subscribeToEcl(eclSubscription))
+        val result = await(connector.subscribeToEcl(eclSubscription.businessPartnerId, eclSubscription.subscription))
 
         result shouldBe createEclSubscriptionResponse
     }
