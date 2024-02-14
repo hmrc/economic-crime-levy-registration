@@ -592,6 +592,10 @@ trait EclTestData {
         ctUtr                  <- Arbitrary.arbitrary[String]
         isCtUtrPresent         <- Arbitrary.arbitrary[Boolean]
         commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
+        isUkCrnPresent         <- Arbitrary.arbitrary[Boolean]
+        companyNumber          <- Arbitrary.arbitrary[String]
+        utrType                <- Arbitrary.arbitrary[UtrType]
+        utrNumber              <- Arbitrary.arbitrary[String]
       } yield ValidUnincorporatedAssociationRegistration(
         commonRegistrationData.registration.copy(
           entityType = Some(UnincorporatedAssociation),
@@ -601,8 +605,11 @@ trait EclTestData {
           optOtherEntityJourneyData = Some(
             commonRegistrationData.registration.otherEntityJourneyData.copy(
               businessName = Some(businessName),
-              isCtUtrPresent = Some(isCtUtrPresent),
-              ctUtr = Some(ctUtr)
+              isUkCrnPresent = Some(isUkCrnPresent),
+              companyRegistrationNumber = Some(companyNumber),
+              utrType = Some(utrType),
+              ctUtr = if (utrType == CtUtr) Some(utrNumber) else None,
+              saUtr = if (utrType == SaUtr) Some(utrNumber) else None
             )
           )
         )
