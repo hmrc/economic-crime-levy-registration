@@ -41,7 +41,7 @@ class DeregistrationControllerSpec extends SpecBase {
   )
 
   "upsertDeregistration" should {
-    "return 200 OK with the registration that was upserted" in forAll { deregistration: Deregistration =>
+    "return 200 OK" in forAll { deregistration: Deregistration =>
       when(mockDeregistrationService.upsertDeregistration(ArgumentMatchers.eq(deregistration))(any()))
         .thenReturn(EitherT.rightT(deregistration))
 
@@ -50,13 +50,12 @@ class DeregistrationControllerSpec extends SpecBase {
           fakeRequestWithJsonBody(Json.toJson(deregistration))
         )
 
-      status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(deregistration)
+      status(result) shouldBe OK
     }
   }
 
   "getDeregistration" should {
-    "return 200 OK with an existing registration when there is one for the id" in forAll {
+    "return 200 OK with an existing deregistration when there is one for the id" in forAll {
       deregistration: Deregistration =>
         when(mockDeregistrationService.getDeregistration(any())(any())).thenReturn(EitherT.rightT(deregistration))
 
@@ -84,7 +83,7 @@ class DeregistrationControllerSpec extends SpecBase {
   }
 
   "deleteDeregistration" should {
-    "return 200 OK when a registration is deleted" in {
+    "return 200 OK when a deregistration is deleted" in {
       when(mockDeregistrationService.deleteDeregistration(any())(any())).thenReturn(EitherT.rightT(()))
 
       val result: Future[Result] =

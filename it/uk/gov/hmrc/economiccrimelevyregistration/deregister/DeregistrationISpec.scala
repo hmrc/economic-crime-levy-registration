@@ -49,7 +49,6 @@ class DeregistrationISpec extends ISpecBase {
         )
 
       status(putResult)        shouldBe OK
-      contentAsJson(putResult) shouldBe Json.toJson(deregistration)
       status(getResult)        shouldBe OK
       contentAsJson(getResult) shouldBe Json.toJson(deregistration.copy(lastUpdated = Some(now)))
     }

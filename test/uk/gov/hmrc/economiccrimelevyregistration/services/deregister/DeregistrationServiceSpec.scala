@@ -31,7 +31,7 @@ class DeregistrationServiceSpec extends SpecBase {
 
   val service = new DeregistrationService(mockRepository)
 
-  val e = new Exception("error")
+  val testException = new Exception("error")
 
   "upsertDeregistration" should {
     "return the deregistration if successful" in forAll { deregistration: Deregistration =>
@@ -43,11 +43,11 @@ class DeregistrationServiceSpec extends SpecBase {
     }
 
     "return error if failure" in forAll { deregistration: Deregistration =>
-      when(mockRepository.upsert(any())).thenReturn(Future.failed(e))
+      when(mockRepository.upsert(any())).thenReturn(Future.failed(testException))
 
       val result = await(service.upsertDeregistration(deregistration).value)
 
-      result shouldBe Left(RegistrationError.InternalUnexpectedError(Some(e)))
+      result shouldBe Left(RegistrationError.InternalUnexpectedError(Some(testException)))
     }
   }
 
@@ -69,11 +69,11 @@ class DeregistrationServiceSpec extends SpecBase {
     }
 
     "return error if failure" in forAll { deregistration: Deregistration =>
-      when(mockRepository.get(anyString())).thenReturn(Future.failed(e))
+      when(mockRepository.get(anyString())).thenReturn(Future.failed(testException))
 
       val result = await(service.getDeregistration(deregistration.internalId).value)
 
-      result shouldBe Left(RegistrationError.InternalUnexpectedError(Some(e)))
+      result shouldBe Left(RegistrationError.InternalUnexpectedError(Some(testException)))
     }
   }
 
@@ -87,11 +87,11 @@ class DeregistrationServiceSpec extends SpecBase {
     }
 
     "return error if failure" in forAll { deregistration: Deregistration =>
-      when(mockRepository.deleteRecord(anyString())).thenReturn(Future.failed(e))
+      when(mockRepository.deleteRecord(anyString())).thenReturn(Future.failed(testException))
 
       val result = await(service.deleteDeregistration(deregistration.internalId).value)
 
-      result shouldBe Left(RegistrationError.InternalUnexpectedError(Some(e)))
+      result shouldBe Left(RegistrationError.InternalUnexpectedError(Some(testException)))
     }
   }
 }

@@ -40,8 +40,8 @@ class DeregistrationController @Inject() (
   def upsertDeregistration: Action[JsValue] = authorise(parse.json).async { implicit request =>
     withJsonBody[Deregistration] { deregistration =>
       (for {
-        updatedRegistration <- deregistrationService.upsertDeregistration(deregistration).asResponseError
-      } yield updatedRegistration).convertToResult(OK)
+        _ <- deregistrationService.upsertDeregistration(deregistration).asResponseError
+      } yield ()).convertToResult(OK)
     }
   }
 

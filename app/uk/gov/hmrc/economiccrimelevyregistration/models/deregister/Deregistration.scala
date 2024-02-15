@@ -17,7 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models.deregister
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Dereg
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.DeRegistration
 import uk.gov.hmrc.economiccrimelevyregistration.models.{ContactDetails, Registration, RegistrationType}
 
 import java.time.{Instant, LocalDate}
@@ -41,6 +41,6 @@ object Deregistration {
     reason = None,
     date = None,
     contactDetails = ContactDetails(None, None, None, None),
-    Dereg
+    DeRegistration
   )
 }
