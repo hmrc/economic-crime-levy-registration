@@ -400,14 +400,25 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
   private def validateUnincorporatedAssociation(
     registration: Registration
   ): ValidationResult[Unit] = {
-    val otherEntityJourneyData = registration.otherEntityJourneyData
+    val data = registration.otherEntityJourneyData
 
     for {
-      _ <- validateOptExists(otherEntityJourneyData.isCtUtrPresent, "Corporation Tax Unique Taxpayer Reference choice")
+      _ <- validateOptExists(data.isUkCrnPresent, "Has uk crn")
       _ <- validateConditionalOptExists(
-             otherEntityJourneyData.ctUtr,
-             otherEntityJourneyData.isCtUtrPresent.contains(true),
+             data.companyRegistrationNumber,
+             data.isUkCrnPresent.contains(true),
+             "Company registration number"
+           )
+      _ <- validateOptExists(data.utrType, "Utr type")
+      _ <- validateConditionalOptExists(
+             data.ctUtr,
+             data.utrType.contains(CtUtr),
              "Corporation Tax Unique Taxpayer Reference"
+           )
+      _ <- validateConditionalOptExists(
+             data.saUtr,
+             data.utrType.contains(SaUtr),
+             "Self Assessment Unique Taxpayer Reference"
            )
     } yield Right(())
   }

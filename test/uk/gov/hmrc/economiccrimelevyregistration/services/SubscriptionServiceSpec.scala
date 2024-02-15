@@ -65,7 +65,7 @@ class SubscriptionServiceSpec extends SpecBase {
         reset(mockIntegrationFrameworkConnector)
         reset(mockAuditService)
 
-        when(mockIntegrationFrameworkConnector.subscribeToEcl(any())(any()))
+        when(mockIntegrationFrameworkConnector.subscribeToEcl(any(), any())(any()))
           .thenReturn(Future.successful(subscriptionResponse))
 
         val result =
@@ -74,7 +74,7 @@ class SubscriptionServiceSpec extends SpecBase {
         result shouldBe Right(subscriptionResponse)
 
         verify(mockIntegrationFrameworkConnector, times(1))
-          .subscribeToEcl(any())(any())
+          .subscribeToEcl(any(), any())(any())
 
         verify(mockAuditService, times(0))
           .failedSubscription(any(), any(), any())(any())
@@ -89,7 +89,7 @@ class SubscriptionServiceSpec extends SpecBase {
         reset(mockIntegrationFrameworkConnector)
         reset(mockAuditService)
 
-        when(mockIntegrationFrameworkConnector.subscribeToEcl(any())(any()))
+        when(mockIntegrationFrameworkConnector.subscribeToEcl(any(), any())(any()))
           .thenReturn(Future.failed(UpstreamErrorResponse(errorMessage, INTERNAL_SERVER_ERROR)))
 
         when(mockAuditService.failedSubscription(any(), any(), any())(any()))
@@ -101,7 +101,7 @@ class SubscriptionServiceSpec extends SpecBase {
         result shouldBe Left(SubscriptionSubmissionError.BadGateway(errorMessage, INTERNAL_SERVER_ERROR))
 
         verify(mockIntegrationFrameworkConnector, times(1))
-          .subscribeToEcl(any())(any())
+          .subscribeToEcl(any(), any())(any())
 
         verify(mockAuditService, times(1))
           .failedSubscription(any(), any(), any())(any())
@@ -224,7 +224,7 @@ class SubscriptionServiceSpec extends SpecBase {
       reset(mockTaxEnrolmentsConnector)
       reset(mockIntegrationFrameworkConnector)
 
-      when(mockIntegrationFrameworkConnector.subscribeToEcl(any())(any()))
+      when(mockIntegrationFrameworkConnector.subscribeToEcl(any(), any())(any()))
         .thenReturn(Future.successful(subscriptionResponse))
 
       when(mockTaxEnrolmentsConnector.enrol(any())(any()))
@@ -260,7 +260,7 @@ class SubscriptionServiceSpec extends SpecBase {
 
       val exception = new RuntimeErrorException(new Error(), errorMessage)
 
-      when(mockIntegrationFrameworkConnector.subscribeToEcl(any())(any()))
+      when(mockIntegrationFrameworkConnector.subscribeToEcl(any(), any())(any()))
         .thenReturn(Future.successful(subscriptionResponse))
 
       when(mockTaxEnrolmentsConnector.enrol(any())(any()))

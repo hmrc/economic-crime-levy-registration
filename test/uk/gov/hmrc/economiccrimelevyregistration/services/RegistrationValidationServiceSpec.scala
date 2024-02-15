@@ -469,10 +469,12 @@ class RegistrationValidationServiceSpec extends SpecBase {
 
     "return the registration if the registration for an unincorporated association is valid" in {
       (
-        unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration
+        unincorporatedAssociationRegistration: ValidUnincorporatedAssociationRegistration,
+        crn: String
       ) =>
         val otherEntityJourneyData = unincorporatedAssociationRegistration.registration.otherEntityJourneyData.copy(
-          isCtUtrPresent = Some(true)
+          isCtUtrPresent = Some(true),
+          companyRegistrationNumber = Some(crn)
         )
         val validRegistration      = unincorporatedAssociationRegistration.registration.copy(
           optOtherEntityJourneyData = Some(otherEntityJourneyData)

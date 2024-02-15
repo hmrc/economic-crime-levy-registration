@@ -43,11 +43,11 @@ class SubscriptionControllerSpec extends SpecBase {
   "getSubscriptionStatus" should {
     "return 200 OK with the subscription status for a given business partner ID" in forAll {
       (businessPartnerId: String, subscriptionStatus: EclSubscriptionStatus) =>
-        when(mockSubscriptionService.getSubscriptionStatus(ArgumentMatchers.eq(businessPartnerId), any())(any()))
+        when(mockSubscriptionService.getSubscriptionStatus(any(), ArgumentMatchers.eq(businessPartnerId), any())(any()))
           .thenReturn(EitherT.rightT(subscriptionStatus))
 
         val result: Future[Result] =
-          controller.getSubscriptionStatus(businessPartnerId)(fakeRequest)
+          controller.getSubscriptionStatus("SAFE", businessPartnerId)(fakeRequest)
 
         status(result) shouldBe OK
 

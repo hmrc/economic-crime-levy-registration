@@ -49,19 +49,20 @@ class IntegrationFrameworkConnector @Inject() (
   )
 
   def getSubscriptionStatus(
-    businessPartnerId: String
+    idType: String,
+    idValue: String
   )(implicit hc: HeaderCarrier): Future[SubscriptionStatusResponse] = {
     val correlationId = createCorrelationId(hc)
 
     retryFor[SubscriptionStatusResponse]("Get subscription status")(retryCondition) {
       httpClient
-        .get(url"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/SAFE/$businessPartnerId/status")
+        .get(url"${appConfig.integrationFrameworkUrl}/cross-regime/subscription/ECL/$idType/$idValue/status")
         .setHeader(integrationFrameworkHeaders(correlationId, appConfig.getSubscriptionStatusBearerToken): _*)
         .executeAndDeserialise[SubscriptionStatusResponse]
     }
   }
 
-  def subscribeToEcl(eclSubscription: EclSubscription)(implicit
+  def subscribeToEcl(businessPartnerId: String, subscription: Subscription)(implicit
     hc: HeaderCarrier
   ): Future[CreateEclSubscriptionResponse] = {
     val correlationId: String = createCorrelationId(hc)
@@ -69,9 +70,9 @@ class IntegrationFrameworkConnector @Inject() (
     retryFor[CreateEclSubscriptionResponse]("Subscribe to ECL")(retryCondition) {
       httpClient
         .post(
-          url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"
+          url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/$businessPartnerId"
         )
-        .withBody(Json.toJson(eclSubscription))
+        .withBody(Json.toJson(subscription))
         .setHeader(integrationFrameworkHeaders(correlationId, appConfig.integrationFrameworkBearerToken): _*)
         .executeAndDeserialise[CreateEclSubscriptionResponse]
     }
