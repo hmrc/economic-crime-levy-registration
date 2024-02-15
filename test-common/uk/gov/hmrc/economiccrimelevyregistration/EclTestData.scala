@@ -36,6 +36,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType._
 import uk.gov.hmrc.economiccrimelevyregistration.models.UtrType.{CtUtr, SaUtr}
 import uk.gov.hmrc.economiccrimelevyregistration.models._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus.ContractObjectInactive
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.LegalEntityDetails.CustomerType
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
@@ -96,10 +97,26 @@ final case class ValidNonUkEstablishmentRegistration(
   registration: Registration
 )
 
+final case class NonContractObjectInactiveEtmpSubscriptionStatus(
+  etmpSubscriptionStatus: EtmpSubscriptionStatus
+)
+
 trait EclTestData {
 
   private val base64EncodedNrsSubmissionHtml  = "PGh0bWw+PHRpdGxlPkhlbGxvIFdvcmxkITwvdGl0bGU+PC9odG1sPg=="
   private val nrsSubmissionHtmlSha256Checksum = "38a8012d1af5587a9b37aef812810e31b2ddf7d405d20b5f1230a209d95c9d2b"
+
+  implicit val arbNonDeRegisteredEtmpSubscriptionStatus: Arbitrary[NonContractObjectInactiveEtmpSubscriptionStatus] =
+    Arbitrary {
+      for {
+        status <- MkArbitrary[EtmpSubscriptionStatus].arbitrary.arbitrary.retryUntil(s =>
+                    s match {
+                      case ContractObjectInactive => false
+                      case _                      => true
+                    }
+                  )
+      } yield NonContractObjectInactiveEtmpSubscriptionStatus(status)
+    }
 
   implicit val arbInstant: Arbitrary[Instant] = Arbitrary {
     Instant.now()
