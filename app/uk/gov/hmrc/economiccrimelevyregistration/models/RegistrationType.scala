@@ -51,7 +51,7 @@ object RegistrationType {
     override def to(value: RegistrationType): String = value match {
       case Initial        => "Initial"
       case Amendment      => "Amendment"
-      case DeRegistration => "Dereg"
+      case DeRegistration => "DeRegistration"
     }
   }
 }
