@@ -23,7 +23,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EclSubscription
-import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EclRegistrationModel, Registration, RegistrationAdditionalInfo}
 import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditionalInfoService, RegistrationService, RegistrationValidationService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -60,11 +60,17 @@ class RegistrationValidationController @Inject() (
   private def resolveRegistrationValidationExecutionPath(
     registration: Registration,
     additionalInfo: RegistrationAdditionalInfo
-  ): EitherT[Future, DataValidationError, Unit] =
-    if (registration.isRegistration) {
-      registrationValidationService.validateRegistration(registration).map(_ => ())
-    } else {
-      registrationValidationService.validateSubscription(registration, additionalInfo).map(_ => ())
-    }
+  ): EitherT[Future, DataValidationError, Unit] = {
+    val eclRegistrationModel = EclRegistrationModel(registration, additionalInfo)
 
+    if (registration.isRegistration) {
+      registrationValidationService
+        .validateRegistration(eclRegistrationModel)
+        .map(_ => ())
+    } else {
+      registrationValidationService
+        .validateSubscription(eclRegistrationModel)
+        .map(_ => ())
+    }
+  }
 }

@@ -39,8 +39,11 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
 
   private type ValidationResult[T] = Either[DataValidationError, T]
 
-  def validateRegistration(registration: Registration): EitherT[Future, DataValidationError, Registration] =
+  def validateRegistration(
+    eclRegistrationModel: EclRegistrationModel
+  ): EitherT[Future, DataValidationError, Registration] =
     EitherT {
+      val registration = eclRegistrationModel.registration
       Future.successful(
         registration.entityType match {
           case Some(value) if EntityType.isOther(value) => validateOtherEntity(registration)
@@ -55,12 +58,11 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     }
 
   def validateSubscription(
-    registration: Registration,
-    registrationAdditionalInfo: RegistrationAdditionalInfo
+    eclRegistrationModel: EclRegistrationModel
   ): EitherT[Future, DataValidationError, EclSubscription] =
     EitherT {
       Future.successful(
-        transformToEclSubscription(registration, registrationAdditionalInfo) match {
+        transformToEclSubscription(eclRegistrationModel.registration, eclRegistrationModel.additionalInfo) match {
           case Right(eclSubscription) =>
             schemaValidator.validateAgainstJsonSchema(
               eclSubscription.subscription,
