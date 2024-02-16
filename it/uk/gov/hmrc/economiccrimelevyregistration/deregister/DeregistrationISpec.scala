@@ -25,10 +25,11 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes._
 
 class DeregistrationISpec extends ISpecBase {
 
-  s"PUT ${uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController.upsertDeregistration.url}"           should {
+  s"PUT ${DeregistrationController.upsertDeregistration.url}"           should {
     "create or update a deregistration and return 200 OK with the deregistration" in {
       stubAuthorised()
 
@@ -36,25 +37,25 @@ class DeregistrationISpec extends ISpecBase {
 
       lazy val putResult = callRoute(
         FakeRequest(
-          uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController.upsertDeregistration
+          DeregistrationController.upsertDeregistration
         ).withJsonBody(Json.toJson(deregistration))
       )
 
       lazy val getResult =
         callRoute(
           FakeRequest(
-            uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController
+            DeregistrationController
               .getDeregistration(deregistration.internalId)
           )
         )
 
-      status(putResult)        shouldBe OK
+      status(putResult)        shouldBe NO_CONTENT
       status(getResult)        shouldBe OK
       contentAsJson(getResult) shouldBe Json.toJson(deregistration.copy(lastUpdated = Some(now)))
     }
   }
 
-  s"GET ${uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController.getDeregistration(":id").url}"       should {
+  s"GET ${DeregistrationController.getDeregistration(":id").url}"       should {
     "return 200 OK with a deregistration that is already in the database" in {
       stubAuthorised()
 
@@ -62,14 +63,14 @@ class DeregistrationISpec extends ISpecBase {
 
       callRoute(
         FakeRequest(
-          uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController.upsertDeregistration
+          DeregistrationController.upsertDeregistration
         ).withJsonBody(Json.toJson(deregistration))
       ).futureValue
 
       lazy val result =
         callRoute(
           FakeRequest(
-            uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController
+            DeregistrationController
               .getDeregistration(deregistration.internalId)
           )
         )
@@ -86,7 +87,7 @@ class DeregistrationISpec extends ISpecBase {
 
       val result = callRoute(
         FakeRequest(
-          uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController
+          DeregistrationController
             .getDeregistration(validDeregistration.internalId)
         )
       )
@@ -98,7 +99,7 @@ class DeregistrationISpec extends ISpecBase {
     }
   }
 
-  s"DELETE ${uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController.deleteDeregistration(":id").url}" should {
+  s"DELETE ${DeregistrationController.deleteDeregistration(":id").url}" should {
     "delete a deregistration and return 200 OK" in {
       stubAuthorised()
 
@@ -106,14 +107,14 @@ class DeregistrationISpec extends ISpecBase {
 
       callRoute(
         FakeRequest(
-          uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController.upsertDeregistration
+          DeregistrationController.upsertDeregistration
         ).withJsonBody(Json.toJson(deregistration))
       ).futureValue
 
       lazy val getResultBeforeDelete =
         callRoute(
           FakeRequest(
-            uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController
+            DeregistrationController
               .getDeregistration(deregistration.internalId)
           )
         )
@@ -121,7 +122,7 @@ class DeregistrationISpec extends ISpecBase {
       lazy val deleteResult =
         callRoute(
           FakeRequest(
-            uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController
+            DeregistrationController
               .deleteDeregistration(deregistration.internalId)
           )
         )
@@ -129,13 +130,13 @@ class DeregistrationISpec extends ISpecBase {
       lazy val getResultAfterDelete =
         callRoute(
           FakeRequest(
-            uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.DeregistrationController
+            DeregistrationController
               .getDeregistration(deregistration.internalId)
           )
         )
 
       status(getResultBeforeDelete) shouldBe OK
-      status(deleteResult)          shouldBe OK
+      status(deleteResult)          shouldBe NO_CONTENT
       status(getResultAfterDelete)  shouldBe NOT_FOUND
     }
   }

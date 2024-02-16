@@ -41,7 +41,7 @@ class DeregistrationController @Inject() (
     withJsonBody[Deregistration] { deregistration =>
       (for {
         _ <- deregistrationService.upsertDeregistration(deregistration).asResponseError
-      } yield ()).convertToResult(OK)
+      } yield ()).convertToResult(NO_CONTENT)
     }
   }
 
@@ -54,7 +54,7 @@ class DeregistrationController @Inject() (
   def deleteDeregistration(id: String): Action[AnyContent] = authorise.async { _ =>
     (for {
       _ <- deregistrationService.deleteDeregistration(id).asResponseError
-    } yield ()).convertToResult(OK)
+    } yield ()).convertToResult(NO_CONTENT)
   }
 
 }
