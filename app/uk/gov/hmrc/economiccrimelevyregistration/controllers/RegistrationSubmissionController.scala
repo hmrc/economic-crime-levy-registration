@@ -23,7 +23,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedA
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
-import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{EclRegistrationModel, Registration, RegistrationAdditionalInfo}
 import uk.gov.hmrc.economiccrimelevyregistration.services._
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdHelper
 import uk.gov.hmrc.http.HeaderCarrier
@@ -57,19 +57,22 @@ class RegistrationSubmissionController @Inject() (
       registration   <- registrationService.getRegistration(id).asResponseError
       additionalInfo <- registrationAdditionalInfoService.get(registration.internalId).asResponseError
       response       <- if (registration.isRegistration) {
-                          registerForEcl(registration, additionalInfo.liabilityYear)
+                          registerForEcl(registration, additionalInfo)
                         } else {
                           subscribeToEcl(registration, additionalInfo)
                         }
     } yield response).convertToResult(OK)
   }
 
-  private def registerForEcl(registration: Registration, liabilityYear: Option[Int])(implicit
+  private def registerForEcl(registration: Registration, registrationAdditionalInfo: RegistrationAdditionalInfo)(
+    implicit
     hc: HeaderCarrier,
     request: AuthorisedRequest[_]
   ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
     for {
-      _        <- registrationValidationService.validateRegistration(registration).asResponseError
+      _        <- registrationValidationService
+                    .validateRegistration(EclRegistrationModel(registration, registrationAdditionalInfo))
+                    .asResponseError
       now       = Instant.now().truncatedTo(ChronoUnit.SECONDS)
       response <- dmsService
                     .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), now)
@@ -81,7 +84,11 @@ class RegistrationSubmissionController @Inject() (
                       appConfig.eclAmendRegistrationNotableEvent
                     )
                   }
-      _         = auditService.successfulSubscriptionAndEnrolment(registration, response.eclReference, liabilityYear)
+      _         = auditService.successfulSubscriptionAndEnrolment(
+                    registration,
+                    response.eclReference,
+                    registrationAdditionalInfo.liabilityYear
+                  )
     } yield response
 
   def subscribeToEcl(registration: Registration, additionalInfo: RegistrationAdditionalInfo)(implicit
@@ -89,7 +96,9 @@ class RegistrationSubmissionController @Inject() (
     request: AuthorisedRequest[_]
   ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
     for {
-      sub      <- registrationValidationService.validateSubscription(registration, additionalInfo).asResponseError
+      sub      <- registrationValidationService
+                    .validateSubscription(EclRegistrationModel(registration, additionalInfo))
+                    .asResponseError
       response <- subscriptionService.subscribeToEcl(sub, registration, None).asResponseError
       _         = if (appConfig.nrsSubmissionEnabled) {
                     nrsService

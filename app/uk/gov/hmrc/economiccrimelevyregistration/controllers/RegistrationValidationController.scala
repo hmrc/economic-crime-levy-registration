@@ -22,7 +22,6 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EclSubscription
 import uk.gov.hmrc.economiccrimelevyregistration.models.{EclRegistrationModel, Registration, RegistrationAdditionalInfo}
 import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditionalInfoService, RegistrationService, RegistrationValidationService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
