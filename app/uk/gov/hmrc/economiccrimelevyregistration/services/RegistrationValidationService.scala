@@ -409,15 +409,19 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
              data.isUkCrnPresent.contains(true),
              "Company registration number"
            )
-      _ <- validateOptExists(data.utrType, "Utr type")
+      _ <- validateConditionalOptExists(
+             data.utrType,
+             data.isCtUtrPresent.contains(true),
+             "Utr type"
+           )
       _ <- validateConditionalOptExists(
              data.ctUtr,
-             data.utrType.contains(CtUtr),
+             data.isCtUtrPresent.contains(true) & data.utrType.contains(CtUtr),
              "Corporation Tax Unique Taxpayer Reference"
            )
       _ <- validateConditionalOptExists(
              data.saUtr,
-             data.utrType.contains(SaUtr),
+             data.isCtUtrPresent.contains(true) & data.utrType.contains(SaUtr),
              "Self Assessment Unique Taxpayer Reference"
            )
     } yield Right(())
