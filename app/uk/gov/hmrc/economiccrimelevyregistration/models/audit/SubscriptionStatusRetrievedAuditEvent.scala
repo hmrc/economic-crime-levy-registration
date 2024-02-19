@@ -31,7 +31,8 @@ object AuditSubscriptionStatus {
 
 case class SubscriptionStatusRetrievedAuditEvent(
   internalId: String,
-  businessPartnerId: String,
+  idType: String,
+  idValue: String,
   subscriptionStatus: AuditSubscriptionStatus
 ) extends AuditEvent {
   override val auditType: String   = "SubscriptionStatusRetrieved"

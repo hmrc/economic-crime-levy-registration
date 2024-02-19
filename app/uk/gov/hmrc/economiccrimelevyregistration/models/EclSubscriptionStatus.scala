@@ -23,6 +23,7 @@ sealed trait SubscriptionStatus
 final case class EclSubscriptionStatus(subscriptionStatus: SubscriptionStatus)
 
 object EclSubscriptionStatus {
+  case class DeRegistered(eclRegistrationReference: String) extends SubscriptionStatus
   case class Subscribed(eclRegistrationReference: String) extends SubscriptionStatus
   case object NotSubscribed extends SubscriptionStatus
 
@@ -37,17 +38,20 @@ object EclSubscriptionStatus {
         (json \ "status", json \ "eclRegistrationReference") match {
           case (JsDefined(status), JsDefined(eclRegistrationReference)) =>
             (status.as[String], eclRegistrationReference.as[String]) match {
-              case ("Subscribed", eclRegistrationReference) => JsSuccess(Subscribed(eclRegistrationReference))
-              case (s, _)                                   => JsError(s"$s is not a valid SubscriptionStatus")
+              case ("Subscribed", eclRegistrationReference)   => JsSuccess(Subscribed(eclRegistrationReference))
+              case ("DeRegistered", eclRegistrationReference) => JsSuccess(DeRegistered(eclRegistrationReference))
+              case (s, _)                                     => JsError(s"$s is not a valid SubscriptionStatus")
             }
           case _                                                        => JsError(s"$json is not a valid SubscriptionStatus")
         }
     }
 
     override def writes(o: SubscriptionStatus): JsValue = o match {
-      case Subscribed(eclRegistrationReference) =>
+      case DeRegistered(eclRegistrationReference) =>
+        Json.obj("status" -> "DeRegistered", "eclRegistrationReference" -> eclRegistrationReference)
+      case Subscribed(eclRegistrationReference)   =>
         Json.obj("status" -> "Subscribed", "eclRegistrationReference" -> eclRegistrationReference)
-      case subscriptionStatus                   => JsString(subscriptionStatus.toString)
+      case subscriptionStatus                     => JsString(subscriptionStatus.toString)
     }
   }
 

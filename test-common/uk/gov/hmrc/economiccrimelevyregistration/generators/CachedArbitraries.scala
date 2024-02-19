@@ -22,6 +22,7 @@ import org.scalacheck.derive.MkArbitrary
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.models.audit.RequestStatus
 import uk.gov.hmrc.economiccrimelevyregistration.models._
+import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
 import uk.gov.hmrc.economiccrimelevyregistration.models.dms.DmsNotification
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd._
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
@@ -63,5 +64,6 @@ object CachedArbitraries extends EclTestData {
   implicit lazy val arbKnownFactsWorkItem: Arbitrary[KnownFactsWorkItem]                                 = mkArb
   implicit lazy val arbEclSubscriptionStatus: Arbitrary[EclSubscriptionStatus]                           = mkArb
   implicit lazy val arbGetSubscriptionResponse: Arbitrary[GetSubscriptionResponse]                       = mkArb
+  implicit lazy val arbDeregistration: Arbitrary[Deregistration]                                         = mkArb
 
 }
