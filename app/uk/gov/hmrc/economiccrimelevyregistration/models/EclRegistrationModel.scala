@@ -18,7 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class EclRegistrationModel(registration: Registration, additionalInfo: RegistrationAdditionalInfo)
+case class EclRegistrationModel(registration: Registration, additionalInfo: Option[RegistrationAdditionalInfo] = None)
 
 object EclRegistrationModel {
 

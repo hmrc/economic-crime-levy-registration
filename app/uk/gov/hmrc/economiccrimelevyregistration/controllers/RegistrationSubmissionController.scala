@@ -57,38 +57,41 @@ class RegistrationSubmissionController @Inject() (
       registration   <- registrationService.getRegistration(id).asResponseError
       additionalInfo <- registrationAdditionalInfoService.get(registration.internalId).asResponseError
       response       <- if (registration.isRegistration) {
-                          registerForEcl(registration, additionalInfo)
+                          registerForEcl(registration, Some(additionalInfo))
                         } else {
                           subscribeToEcl(registration, additionalInfo)
                         }
     } yield response).convertToResult(OK)
   }
 
-  private def registerForEcl(registration: Registration, registrationAdditionalInfo: RegistrationAdditionalInfo)(
-    implicit
+  private def registerForEcl(
+    registration: Registration,
+    registrationAdditionalInfo: Option[RegistrationAdditionalInfo]
+  )(implicit
     hc: HeaderCarrier,
     request: AuthorisedRequest[_]
   ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
     for {
-      _        <- registrationValidationService
-                    .validateRegistration(EclRegistrationModel(registration, registrationAdditionalInfo))
-                    .asResponseError
-      now       = Instant.now().truncatedTo(ChronoUnit.SECONDS)
-      response <- dmsService
-                    .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), now)
-                    .asResponseError
-      _         = if (appConfig.amendRegistrationNrsEnabled) {
-                    nrsService.submitToNrs(
-                      registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                      response.eclReference,
-                      appConfig.eclAmendRegistrationNotableEvent
-                    )
-                  }
-      _         = auditService.successfulSubscriptionAndEnrolment(
-                    registration,
-                    response.eclReference,
-                    registrationAdditionalInfo.liabilityYear
-                  )
+      _              <- registrationValidationService
+                          .validateRegistration(EclRegistrationModel(registration, registrationAdditionalInfo))
+                          .asResponseError
+      now             = Instant.now().truncatedTo(ChronoUnit.SECONDS)
+      response       <- dmsService
+                          .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), now)
+                          .asResponseError
+      _               = if (appConfig.amendRegistrationNrsEnabled) {
+                          nrsService.submitToNrs(
+                            registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                            response.eclReference,
+                            appConfig.eclAmendRegistrationNotableEvent
+                          )
+                        }
+      additionalInfo <- valueOrError(registrationAdditionalInfo, "")
+      _               = auditService.successfulSubscriptionAndEnrolment(
+                          registration,
+                          response.eclReference,
+                          additionalInfo.liabilityYear
+                        )
     } yield response
 
   def subscribeToEcl(registration: Registration, additionalInfo: RegistrationAdditionalInfo)(implicit
@@ -97,7 +100,7 @@ class RegistrationSubmissionController @Inject() (
   ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
     for {
       sub      <- registrationValidationService
-                    .validateSubscription(EclRegistrationModel(registration, additionalInfo))
+                    .validateSubscription(EclRegistrationModel(registration, Some(additionalInfo)))
                     .asResponseError
       response <- subscriptionService.subscribeToEcl(sub, registration, None).asResponseError
       _         = if (appConfig.nrsSubmissionEnabled) {

@@ -60,7 +60,7 @@ class RegistrationValidationController @Inject() (
     registration: Registration,
     additionalInfo: RegistrationAdditionalInfo
   ): EitherT[Future, DataValidationError, Unit] = {
-    val eclRegistrationModel = EclRegistrationModel(registration, additionalInfo)
+    val eclRegistrationModel = EclRegistrationModel(registration, Some(additionalInfo))
 
     if (registration.isRegistration) {
       registrationValidationService

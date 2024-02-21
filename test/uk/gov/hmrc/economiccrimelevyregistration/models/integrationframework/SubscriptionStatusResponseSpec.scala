@@ -20,14 +20,15 @@ import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus.Successful
 
 class SubscriptionStatusResponseSpec extends SpecBase {
 
   "toEclSubscriptionStatus" should {
     "return Subscribed with the ECL registration reference when the id type is ZECL" in forAll {
-      (idValue: String, channel: Option[Channel], etmpSubscriptionStatus: EtmpSubscriptionStatus) =>
+      (idValue: String, channel: Option[Channel]) =>
         val subscriptionStatusResponse = SubscriptionStatusResponse(
-          subscriptionStatus = etmpSubscriptionStatus,
+          subscriptionStatus = Successful,
           idType = Some("ZECL"),
           idValue = Some(idValue),
           channel = channel

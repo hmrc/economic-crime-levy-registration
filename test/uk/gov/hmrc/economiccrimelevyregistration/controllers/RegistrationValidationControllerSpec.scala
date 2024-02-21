@@ -25,7 +25,7 @@ import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.ValidScottishOrGeneralPartnershipRegistration
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError, ResponseError}
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError}
 import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditionalInfoService, RegistrationService, RegistrationValidationService}
 
 import scala.concurrent.Future
@@ -58,7 +58,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
         )
           .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
-        when(mockRegistrationValidationService.validateSubscription(any(), any()))
+        when(mockRegistrationValidationService.validateSubscription(any()))
           .thenReturn(EitherT.rightT(registration.expectedEclSubscription))
 
         val result: Future[Result] =
@@ -80,7 +80,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
         )
           .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
-        when(mockRegistrationValidationService.validateSubscription(any(), any()))
+        when(mockRegistrationValidationService.validateSubscription(any()))
           .thenReturn(EitherT.leftT(DataValidationError.DataInvalid("Invalid data")))
 
         val result: Future[Result] =

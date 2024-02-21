@@ -91,7 +91,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
           when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
 
-          when(mockRegistrationValidationService.validateSubscription(any(), any()))
+          when(mockRegistrationValidationService.validateSubscription(any()))
             .thenReturn(EitherT.rightT(eclSubscription))
 
           when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
@@ -150,7 +150,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
           when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
 
-          when(mockRegistrationValidationService.validateSubscription(any(), any()))
+          when(mockRegistrationValidationService.validateSubscription(any()))
             .thenReturn(EitherT.rightT(eclSubscription))
 
           when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
@@ -272,7 +272,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             )
 
             val registrationAdditionalInfo =
-              RegistrationAdditionalInfo(aRegistration.internalId, None, Some("Test"), None)
+              RegistrationAdditionalInfo(aRegistration.internalId, None, Some("Test"), None, None, None, None)
 
             when(mockRegistrationService.getRegistration(any())(any()))
               .thenReturn(EitherT.rightT(registration))
@@ -322,7 +322,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             )
 
             val registrationAdditionalInfo =
-              RegistrationAdditionalInfo(registration.internalId, None, Some("Test"), None)
+              RegistrationAdditionalInfo(registration.internalId, None, Some("Test"), None, None, None, None)
 
             when(mockRegistrationService.getRegistration(any())(any()))
               .thenReturn(EitherT.rightT(registration))

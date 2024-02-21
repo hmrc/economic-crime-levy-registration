@@ -46,14 +46,18 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
       val registration               = eclRegistrationModel.registration
       val registrationAdditionalInfo = eclRegistrationModel.additionalInfo
       Future.successful(
-        registration.entityType match {
-          case Some(value) if EntityType.isOther(value) => validateOtherEntity(registration, registrationAdditionalInfo)
-          case _                                        =>
-            (registration.registrationType, registration.entityType) match {
-              case (Some(Amendment), _)  => transformToAmendedEclRegistration(registration, registrationAdditionalInfo)
-              case (Some(Initial), None) => Left(DataValidationError.DataMissing("Entity type missing"))
-              case (_, _)                => Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
+        registrationAdditionalInfo match {
+          case Some(additionalInfo) =>
+            registration.entityType match {
+              case Some(value) if EntityType.isOther(value) => validateOtherEntity(registration, additionalInfo)
+              case _                                        =>
+                (registration.registrationType, registration.entityType) match {
+                  case (Some(Amendment), _)  => transformToAmendedEclRegistration(registration, additionalInfo)
+                  case (Some(Initial), None) => Left(DataValidationError.DataMissing("Entity type missing"))
+                  case (_, _)                => Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
+                }
             }
+          case None                 => Left(DataValidationError.DataMissing("Additional information missing"))
         }
       )
     }
@@ -62,17 +66,23 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     eclRegistrationModel: EclRegistrationModel
   ): EitherT[Future, DataValidationError, EclSubscription] =
     EitherT {
+      val registrationAdditionalInfo = eclRegistrationModel.additionalInfo
+
       Future.successful(
-        transformToEclSubscription(eclRegistrationModel.registration, eclRegistrationModel.additionalInfo) match {
-          case Right(eclSubscription) =>
-            schemaValidator.validateAgainstJsonSchema(
-              eclSubscription.subscription,
-              SchemaLoader.loadSchema("create-ecl-subscription-request.json")
-            ) match {
-              case Right(_)    => Right(eclSubscription)
-              case Left(error) => Left(error)
+        registrationAdditionalInfo match {
+          case Some(additionalInfo) =>
+            transformToEclSubscription(eclRegistrationModel.registration, additionalInfo) match {
+              case Right(eclSubscription) =>
+                schemaValidator.validateAgainstJsonSchema(
+                  eclSubscription.subscription,
+                  SchemaLoader.loadSchema("create-ecl-subscription-request.json")
+                ) match {
+                  case Right(_)    => Right(eclSubscription)
+                  case Left(error) => Left(error)
+                }
+              case Left(error)            => Left(error)
             }
-          case Left(error)            => Left(error)
+          case None                 => Left(DataValidationError.DataMissing("Additional information missing"))
         }
       )
     }
