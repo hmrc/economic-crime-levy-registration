@@ -86,7 +86,7 @@ class RegistrationSubmissionController @Inject() (
                             appConfig.eclAmendRegistrationNotableEvent
                           )
                         }
-      additionalInfo <- valueOrError(registrationAdditionalInfo, "")
+      additionalInfo <- valueOrError(registrationAdditionalInfo, "Registration additional info")
       _               = auditService.successfulSubscriptionAndEnrolment(
                           registration,
                           response.eclReference,
