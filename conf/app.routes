@@ -20,3 +20,7 @@ GET           /subscription-status/:idType/:idValue          uk.gov.hmrc.economi
 GET           /subscription/:eclReference                    uk.gov.hmrc.economiccrimelevyregistration.controllers.SubscriptionController.getSubscription(eclReference)
 
 POST          /dms-registration-callback                     uk.gov.hmrc.economiccrimelevyregistration.controllers.DmsNotificationController.dmsCallback()
+
+GET           /deregistration/:id                            uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.DeregistrationController.getDeregistration(id)
+PUT           /deregistration                                uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.DeregistrationController.upsertDeregistration
+DELETE        /deregistration/:id                            uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.DeregistrationController.deleteDeregistration(id)

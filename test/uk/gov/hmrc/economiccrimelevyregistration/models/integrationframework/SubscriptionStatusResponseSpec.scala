@@ -16,19 +16,41 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
+import uk.gov.hmrc.economiccrimelevyregistration.NonContractObjectInactiveEtmpSubscriptionStatus
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus.Successful
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus.ContractObjectInactive
 
 class SubscriptionStatusResponseSpec extends SpecBase {
 
   "toEclSubscriptionStatus" should {
-    "return Subscribed with the ECL registration reference when the id type is ZECL" in forAll {
-      (idValue: String, channel: Option[Channel]) =>
+    "return DeRegistered with the ECL registration reference when the id type is ZECL and idType is ContractObjectInactive" in forAll {
+      (
+        idValue: String,
+        channel: Option[Channel]
+      ) =>
         val subscriptionStatusResponse = SubscriptionStatusResponse(
-          subscriptionStatus = Successful,
+          subscriptionStatus = ContractObjectInactive,
+          idType = Some("ZECL"),
+          idValue = Some(idValue),
+          channel = channel
+        )
+
+        val result = subscriptionStatusResponse.toEclSubscriptionStatus
+
+        result shouldBe EclSubscriptionStatus(DeRegistered(idValue))
+    }
+
+    "return Subscribed with the ECL registration reference when the id type is ZECL and idType is not ContractObjectInactive" in forAll {
+      (
+        idValue: String,
+        channel: Option[Channel],
+        etmpSubscriptionStatus: NonContractObjectInactiveEtmpSubscriptionStatus
+      ) =>
+        val subscriptionStatusResponse = SubscriptionStatusResponse(
+          subscriptionStatus = etmpSubscriptionStatus.etmpSubscriptionStatus,
           idType = Some("ZECL"),
           idValue = Some(idValue),
           channel = channel
