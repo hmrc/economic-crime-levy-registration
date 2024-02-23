@@ -21,10 +21,8 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
-import uk.gov.hmrc.economiccrimelevyregistration.models.{EntityType, Registration, RegistrationAdditionalInfo}
+import uk.gov.hmrc.economiccrimelevyregistration.models.{Registration, RegistrationAdditionalInfo}
 
 class RegistrationValidationISpec extends ISpecBase {
 
@@ -75,7 +73,7 @@ class RegistrationValidationISpec extends ISpecBase {
 
       callRoute(
         FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
-          Json.toJson(RegistrationAdditionalInfo(invalidRegistration.internalId, None, None, None))
+          Json.toJson(RegistrationAdditionalInfo(invalidRegistration.internalId, None, None, None, None, None, None))
         )
       ).futureValue
 

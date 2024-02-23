@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 
+import play.api.libs.Files.logger
 import play.api.libs.functional.syntax.unlift
 import uk.gov.hmrc.http.UpstreamErrorResponse
-
 import play.api.libs.json.OWrites
 import play.api.libs.json.Reads
 import play.api.libs.json.__
@@ -54,10 +54,24 @@ object ResponseError {
     UpstreamServiceError(message, code, cause)
 
   def internalServiceError(
+    message: String = "Internal server error",
     code: ErrorCode = ErrorCode.InternalServerError,
     cause: Option[Throwable] = None
-  ): ResponseError =
+  ): ResponseError = {
+    val causeText = cause
+      .map { ex =>
+        s"""
+           |Message: ${ex.getMessage}
+           |Trace: ${ex.getStackTrace.mkString(System.lineSeparator())}
+           |""".stripMargin
+      }
+      .getOrElse("No exception is available")
+    logger.error(s"""Internal Server Error: $message
+                    |
+                    |$causeText""".stripMargin)
+
     InternalServiceError("Internal server error", code, cause)
+  }
 
   implicit val errorWrites: OWrites[ResponseError] =
     (

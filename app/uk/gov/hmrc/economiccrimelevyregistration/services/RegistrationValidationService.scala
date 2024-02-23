@@ -39,37 +39,50 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
 
   private type ValidationResult[T] = Either[DataValidationError, T]
 
-  def validateRegistration(registration: Registration): EitherT[Future, DataValidationError, Registration] =
+  def validateRegistration(
+    eclRegistrationModel: EclRegistrationModel
+  ): EitherT[Future, DataValidationError, Registration] =
     EitherT {
+      val registration               = eclRegistrationModel.registration
+      val registrationAdditionalInfo = eclRegistrationModel.additionalInfo
       Future.successful(
-        registration.entityType match {
-          case Some(value) if EntityType.isOther(value) => validateOtherEntity(registration)
-          case _                                        =>
-            (registration.registrationType, registration.entityType) match {
-              case (Some(Amendment), _)  => transformToAmendedEclRegistration(registration)
-              case (Some(Initial), None) => Left(DataValidationError.DataMissing("Entity type missing"))
-              case (_, _)                => Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
+        registrationAdditionalInfo match {
+          case Some(additionalInfo) =>
+            registration.entityType match {
+              case Some(value) if EntityType.isOther(value) => validateOtherEntity(registration, additionalInfo)
+              case _                                        =>
+                (registration.registrationType, registration.entityType) match {
+                  case (Some(Amendment), _)  => transformToAmendedEclRegistration(registration, additionalInfo)
+                  case (Some(Initial), None) => Left(DataValidationError.DataMissing("Entity type missing"))
+                  case (_, _)                => Left(DataValidationError.DataInvalid("Wrong registrationType is passed"))
+                }
             }
+          case None                 => Left(DataValidationError.DataMissing("Additional information missing"))
         }
       )
     }
 
   def validateSubscription(
-    registration: Registration,
-    registrationAdditionalInfo: RegistrationAdditionalInfo
+    eclRegistrationModel: EclRegistrationModel
   ): EitherT[Future, DataValidationError, EclSubscription] =
     EitherT {
+      val registrationAdditionalInfo = eclRegistrationModel.additionalInfo
+
       Future.successful(
-        transformToEclSubscription(registration, registrationAdditionalInfo) match {
-          case Right(eclSubscription) =>
-            schemaValidator.validateAgainstJsonSchema(
-              eclSubscription.subscription,
-              SchemaLoader.loadSchema("create-ecl-subscription-request.json")
-            ) match {
-              case Right(_)    => Right(eclSubscription)
-              case Left(error) => Left(error)
+        registrationAdditionalInfo match {
+          case Some(additionalInfo) =>
+            transformToEclSubscription(eclRegistrationModel.registration, additionalInfo) match {
+              case Right(eclSubscription) =>
+                schemaValidator.validateAgainstJsonSchema(
+                  eclSubscription.subscription,
+                  SchemaLoader.loadSchema("create-ecl-subscription-request.json")
+                ) match {
+                  case Right(_)    => Right(eclSubscription)
+                  case Left(error) => Left(error)
+                }
+              case Left(error)            => Left(error)
             }
-          case Left(error)            => Left(error)
+          case None                 => Left(DataValidationError.DataMissing("Additional information missing"))
         }
       )
     }
@@ -79,7 +92,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     registrationAdditionalInfo: RegistrationAdditionalInfo
   ): ValidationResult[EclSubscription] =
     for {
-      _                    <- validateAmlRegulatedActivityCommonFields(registration)
+      _                    <- validateAmlRegulatedActivityCommonFields(registration, registrationAdditionalInfo)
       legalEntityDetails   <- validateLegalEntityDetails(registration, registrationAdditionalInfo)
       businessPartnerId    <- validateBusinessPartnerId(registration)
       businessSector       <- validateOptExists(registration.businessSector, "Business sector")
@@ -102,10 +115,11 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     )
 
   private def transformToAmendedEclRegistration(
-    registration: Registration
+    registration: Registration,
+    registrationAdditionalInfo: RegistrationAdditionalInfo
   ): ValidationResult[Registration] =
     for {
-      _ <- validateAmlSupervisor(registration)
+      _ <- validateAmlSupervisor(registration, registrationAdditionalInfo)
       _ <- validateOptExists(registration.businessSector, "Business sector")
       _ <- validateContactDetails("First", registration.contacts.firstContactDetails)
       _ <- validateSecondContactDetails(registration.contacts)
@@ -271,14 +285,21 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
         Left(DataValidationError.DataMissing(missingErrorMessage("Carried out AML regulated activity choice")))
     }
 
-  private def validateAmlSupervisor(registration: Registration): ValidationResult[Unit] =
-    registration.amlSupervisor match {
-      case Some(AmlSupervisor(GamblingCommission | FinancialConductAuthority, _)) =>
-        Left(DataValidationError.DataInvalid("AML supervisor cannot be GC or FCA"))
-      case Some(AmlSupervisor(Hmrc, _))                                           => Right(())
-      case Some(AmlSupervisor(_, Some(_)))                                        => Right(())
-      case _                                                                      =>
-        Left(DataValidationError.DataMissing(missingErrorMessage("AML supervisor")))
+  private def validateAmlSupervisor(
+    registration: Registration,
+    registrationAdditionalInfo: RegistrationAdditionalInfo
+  ): ValidationResult[Unit] =
+    if (registrationAdditionalInfo.registeringForCurrentYear.contains(true)) {
+      registration.amlSupervisor match {
+        case Some(AmlSupervisor(GamblingCommission | FinancialConductAuthority, _)) =>
+          Left(DataValidationError.DataInvalid("AML supervisor cannot be GC or FCA"))
+        case Some(AmlSupervisor(Hmrc, _))                                           => Right(())
+        case Some(AmlSupervisor(_, Some(_)))                                        => Right(())
+        case _                                                                      =>
+          Left(DataValidationError.DataMissing(missingErrorMessage("AML supervisor")))
+      }
+    } else {
+      Right(())
     }
 
   private def validateRevenueMeetsThreshold(registration: Registration): ValidationResult[Registration] =
@@ -344,10 +365,11 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
   private def missingErrorMessage(missingDataDescription: String): String = s"$missingDataDescription is missing"
 
   private def validateOtherEntity(
-    registration: Registration
+    registration: Registration,
+    registrationAdditionalInfo: RegistrationAdditionalInfo
   ): ValidationResult[Registration] =
     for {
-      _ <- validateAmlRegulatedActivityCommonFields(registration)
+      _ <- validateAmlRegulatedActivityCommonFields(registration, registrationAdditionalInfo)
       _ <- validateOptExists(registration.businessSector, "Business sector")
       _ <- validateContactDetails("First", registration.contacts.firstContactDetails)
       _ <- validateSecondContactDetails(registration.contacts)
@@ -364,21 +386,26 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     } yield registration
 
   private def validateAmlRegulatedActivityCommonFields(
-    registration: Registration
+    registration: Registration,
+    registrationAdditionalInfo: RegistrationAdditionalInfo
   ): ValidationResult[Registration] =
-    if (registration.carriedOutAmlRegulatedActivityInCurrentFy.contains(true)) {
-      for {
-        _ <- validateAmlSupervisor(registration)
-        _ <- validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice")
-        _ <- validateOptExists(registration.relevantApRevenue, "Relevant AP revenue")
-        _ <- validateConditionalOptExists(
-               registration.relevantApLength,
-               registration.relevantAp12Months.contains(false),
-               "Relevant AP length"
-             )
-        _ <- validateRevenueMeetsThreshold(registration)
-      } yield registration
-    } else { validateAmlRegulatedActivity(registration).map(_ => registration) }
+    if (registrationAdditionalInfo.registeringForCurrentYear.contains(true)) {
+      if (registration.carriedOutAmlRegulatedActivityInCurrentFy.contains(true)) {
+        for {
+          _ <- validateAmlSupervisor(registration, registrationAdditionalInfo)
+          _ <- validateOptExists(registration.relevantAp12Months, "Relevant AP 12 months choice")
+          _ <- validateOptExists(registration.relevantApRevenue, "Relevant AP revenue")
+          _ <- validateConditionalOptExists(
+                 registration.relevantApLength,
+                 registration.relevantAp12Months.contains(false),
+                 "Relevant AP length"
+               )
+          _ <- validateRevenueMeetsThreshold(registration)
+        } yield registration
+      } else { validateAmlRegulatedActivity(registration).map(_ => registration) }
+    } else {
+      Right(registration)
+    }
 
   private def validateCharity(
     registration: Registration

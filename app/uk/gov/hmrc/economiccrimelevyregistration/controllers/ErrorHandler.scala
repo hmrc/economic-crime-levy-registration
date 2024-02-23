@@ -53,7 +53,10 @@ trait ErrorHandler extends Logging {
         case _                                       => Future.successful(())
       }
   }
-
+  def valueOrError[T](value: Option[T], valueType: String) =
+    EitherT {
+      Future.successful(value.map(Right(_)).getOrElse(Left(ResponseError.internalServiceError(s"Missing $valueType"))))
+    }
   trait Converter[E] {
     def convert(error: E): ResponseError
   }
