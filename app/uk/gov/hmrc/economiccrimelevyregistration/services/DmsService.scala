@@ -26,6 +26,8 @@ import play.api.mvc.MultipartFormData.{DataPart, FilePart}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.DmsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.ErrorHandler
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.DeRegistration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DmsSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
 import uk.gov.hmrc.economiccrimelevyregistration.utils.PdfGenerator.buildPdf
@@ -48,12 +50,12 @@ class DmsService @Inject() (
   ec: ExecutionContext
 ) extends ErrorHandler {
 
-  def submitToDms(base64EncodedDmsSubmissionHtml: Option[String], now: Instant)(implicit
-    hc: HeaderCarrier
+  def submitToDms(base64EncodedDmsSubmissionHtml: Option[String], now: Instant, registrationType: RegistrationType)(
+    implicit hc: HeaderCarrier
   ): EitherT[Future, DmsSubmissionError, CreateEclSubscriptionResponsePayload] =
     for {
       pdf      <- createPdf(base64EncodedDmsSubmissionHtml)
-      body     <- createBody(pdf, now)
+      body     <- createBody(pdf, now, registrationType)
       response <- sendPdf(body, now)(hc)
     } yield response
 
@@ -80,10 +82,9 @@ class DmsService @Inject() (
 
   private def createBody(
     pdf: ByteArrayOutputStream,
-    now: Instant
-  ): EitherT[Future, DmsSubmissionError.InternalUnexpectedError, Source[MultipartFormData.Part[
-    Source[ByteString, NotUsed]
-  ], NotUsed]] =
+    now: Instant,
+    registrationType: RegistrationType
+  ) =
     EitherT {
       Future.successful(
         Try(
@@ -91,7 +92,7 @@ class DmsService @Inject() (
             LocalDateTime.ofInstant(now, ZoneOffset.UTC)
           )
         ) match {
-          case Success(result) => Right(assembleBodySource(pdf, result))
+          case Success(result) => Right(assembleBodySource(pdf, result, registrationType))
           case Failure(e)      => Left(DmsSubmissionError.InternalUnexpectedError(Some(e.getCause)))
         }
       )
@@ -99,14 +100,20 @@ class DmsService @Inject() (
 
   private def assembleBodySource(
     pdf: ByteArrayOutputStream,
-    dateOfReceipt: String
-  ): Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed] =
+    dateOfReceipt: String,
+    registrationType: RegistrationType
+  ): Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed] = {
+    val formId =
+      if (registrationType == DeRegistration) {
+        appConfig.dmsSubmissionDeregistrationFormId
+      } else { appConfig.dmsSubmissionFormId }
+
     Source(
       Seq(
         DataPart("callbackUrl", appConfig.dmsSubmissionCallbackUrl),
         DataPart("metadata.source", appConfig.dmsSubmissionSource),
         DataPart("metadata.timeOfReceipt", dateOfReceipt),
-        DataPart("metadata.formId", appConfig.dmsSubmissionFormId),
+        DataPart("metadata.formId", formId),
         DataPart("metadata.customerId", appConfig.dmsSubmissionCustomerId),
         DataPart("metadata.classificationType", appConfig.dmsSubmissionClassificationType),
         DataPart("metadata.businessArea", appConfig.dmsSubmissionBusinessArea),
@@ -118,6 +125,7 @@ class DmsService @Inject() (
         )
       )
     )
+  }
 
   def sendPdf(
     body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed],

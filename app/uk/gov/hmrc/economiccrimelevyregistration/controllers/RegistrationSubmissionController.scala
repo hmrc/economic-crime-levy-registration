@@ -20,6 +20,7 @@ import cats.data.EitherT
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Amendment
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
@@ -72,26 +73,31 @@ class RegistrationSubmissionController @Inject() (
     request: AuthorisedRequest[_]
   ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
     for {
-      _              <- registrationValidationService
-                          .validateRegistration(EclRegistrationModel(registration, registrationAdditionalInfo))
-                          .asResponseError
-      now             = Instant.now().truncatedTo(ChronoUnit.SECONDS)
-      response       <- dmsService
-                          .submitToDms(registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml), now)
-                          .asResponseError
-      _               = if (appConfig.amendRegistrationNrsEnabled) {
-                          nrsService.submitToNrs(
-                            registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+      _                <- registrationValidationService
+                            .validateRegistration(EclRegistrationModel(registration, registrationAdditionalInfo))
+                            .asResponseError
+      now               = Instant.now().truncatedTo(ChronoUnit.SECONDS)
+      registrationType <- valueOrError(registration.registrationType, "Registration type")
+      response         <- dmsService
+                            .submitToDms(
+                              registration.base64EncodedFields.flatMap(_.dmsSubmissionHtml),
+                              now,
+                              registrationType
+                            )
+                            .asResponseError
+      _                 = if (appConfig.amendRegistrationNrsEnabled && registration.registrationType.contains(Amendment)) {
+                            nrsService.submitToNrs(
+                              registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                              response.eclReference,
+                              appConfig.eclAmendRegistrationNotableEvent
+                            )
+                          }
+      additionalInfo   <- valueOrError(registrationAdditionalInfo, "Registration additional info")
+      _                 = auditService.successfulSubscriptionAndEnrolment(
+                            registration,
                             response.eclReference,
-                            appConfig.eclAmendRegistrationNotableEvent
+                            additionalInfo.liabilityYear
                           )
-                        }
-      additionalInfo <- valueOrError(registrationAdditionalInfo, "Registration additional info")
-      _               = auditService.successfulSubscriptionAndEnrolment(
-                          registration,
-                          response.eclReference,
-                          additionalInfo.liabilityYear
-                        )
     } yield response
 
   def subscribeToEcl(registration: Registration, additionalInfo: RegistrationAdditionalInfo)(implicit
@@ -108,7 +114,7 @@ class RegistrationSubmissionController @Inject() (
                       .submitToNrs(
                         registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
                         response.success.eclReference,
-                        appConfig.eclAmendRegistrationNotableEvent
+                        appConfig.eclFirstTimeRegistrationNotableEvent
                       )
                       .asResponseError
                   }
