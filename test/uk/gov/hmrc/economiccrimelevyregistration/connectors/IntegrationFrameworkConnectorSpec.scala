@@ -32,7 +32,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.Config
 import org.mockito.{ArgumentMatcher, ArgumentMatchers}
 import org.mockito.ArgumentMatchers.any
@@ -62,7 +62,7 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
       val subStatusResponseJson =
         "{\"subscriptionStatus\": \"REG_FORM_RECEIVED\", \"idType\": \"test\", \"idValue\": \"test\", \"channel\": \"Online\"}"
       when(mockHttpClient.get(any())(any())).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.setHeader(any(), any(), any(), any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.execute[HttpResponse](any(), any()))
         .thenReturn(
           Future.successful(HttpResponse.apply(ACCEPTED, subStatusResponseJson))
@@ -90,7 +90,7 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
           url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"
 
         when(mockHttpClient.post(ArgumentMatchers.eq(expectedUrl))(any())).thenReturn(mockRequestBuilder)
-        when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.setHeader(any(), any(), any(), any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.execute[HttpResponse](any(), any()))
           .thenReturn(
@@ -109,14 +109,8 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
         val expectedUrl =
           s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/$eclReference"
 
-        val expectedHeaders: Seq[(String, String)] = Seq(
-          (HeaderNames.AUTHORIZATION, s"Bearer ${appConfig.getSubscriptionStatusBearerToken}"),
-          (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
-          (CustomHeaderNames.CorrelationId, correlationId)
-        )
-
         when(mockHttpClient.get(any())(any())).thenReturn(mockRequestBuilder)
-        when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.setHeader(any(), any(), any(), any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.execute[HttpResponse](any(), any()))
           .thenReturn(
             Future.successful(HttpResponse.apply(ACCEPTED, Json.toJson(getSubscriptionResponse).toString()))
