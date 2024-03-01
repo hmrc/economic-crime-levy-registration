@@ -50,7 +50,7 @@ class DeregistrationSubmissionController @Inject() (
       response       <- dmsService
                           .submitToDms(deregistration.dmsSubmissionHtml, now, DeRegistration)
                           .asResponseError
-    } yield response).convertToResult(OK)
+    } yield ()).convertToResult(OK)
   }
 
 }
