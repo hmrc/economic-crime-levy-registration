@@ -19,6 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.DmsConnector
+import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DmsSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
 import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
@@ -42,7 +43,7 @@ class DmsServiceSpec extends SpecBase {
 
       when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.successful(Right(expectedResponse)))
 
-      val result = await(service.submitToDms(Some(encoded), now).value)
+      val result = await(service.submitToDms(Some(encoded), now, RegistrationType.Initial).value)
 
       result shouldBe Right(CreateEclSubscriptionResponsePayload(now, ""))
     }
@@ -53,14 +54,14 @@ class DmsServiceSpec extends SpecBase {
       val upstream5xxResponse = UpstreamErrorResponse.apply("Error message", BAD_GATEWAY)
       when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.failed(upstream5xxResponse))
 
-      val result = await(service.submitToDms(Some(encoded), now).value)
+      val result = await(service.submitToDms(Some(encoded), now, RegistrationType.Initial).value)
 
       result shouldBe Left(DmsSubmissionError.BadGateway("Error message", BAD_GATEWAY))
     }
 
     "return upstream error if no data to submit" in {
 
-      val result = await(service.submitToDms(None, now).value)
+      val result = await(service.submitToDms(None, now, RegistrationType.Initial).value)
 
       result shouldBe Left(
         DmsSubmissionError.BadGateway("base64EncodedDmsSubmissionHtml field not provided", BAD_GATEWAY)

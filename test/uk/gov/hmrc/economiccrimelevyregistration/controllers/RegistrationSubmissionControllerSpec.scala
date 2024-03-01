@@ -205,7 +205,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
           when(mockRegistrationValidationService.validateRegistration(any()))
             .thenReturn(EitherT.rightT(registration))
 
-          when(mockDmsService.submitToDms(any(), any())(any()))
+          when(mockDmsService.submitToDms(any(), any(), any())(any()))
             .thenReturn(EitherT.rightT(subscriptionResponse.success))
 
           val result: Future[Result] =
@@ -283,7 +283,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             when(mockRegistrationValidationService.validateRegistration(any()))
               .thenReturn(EitherT.rightT(registration))
 
-            when(mockDmsService.submitToDms(any(), any())(any()))
+            when(mockDmsService.submitToDms(any(), any(), any())(any()))
               .thenReturn(EitherT.rightT(subscriptionResponse.success))
 
             val result: Future[Result] =
@@ -333,7 +333,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             when(mockRegistrationValidationService.validateRegistration(any()))
               .thenReturn(EitherT.rightT(registration))
 
-            when(mockDmsService.submitToDms(any(), any())(any()))
+            when(mockDmsService.submitToDms(any(), any(), any())(any()))
               .thenReturn(EitherT.rightT(subscriptionResponse.success))
 
             val result: Future[Result] =

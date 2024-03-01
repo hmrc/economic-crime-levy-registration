@@ -35,7 +35,7 @@ class DeregistrationServiceSpec extends SpecBase {
 
   "upsertDeregistration" should {
     "return the deregistration if successful" in forAll { deregistration: Deregistration =>
-      when(mockRepository.upsert(any())).thenReturn(Future.successful())
+      when(mockRepository.upsert(any())).thenReturn(Future.successful(()))
 
       val result = await(service.upsertDeregistration(deregistration).value)
 
@@ -79,7 +79,7 @@ class DeregistrationServiceSpec extends SpecBase {
 
   "deleteDeregistration" should {
     "return if deregistration successfully deleted" in forAll { deregistration: Deregistration =>
-      when(mockRepository.deleteRecord(anyString())).thenReturn(Future.successful())
+      when(mockRepository.deleteRecord(anyString())).thenReturn(Future.successful(()))
 
       val result = await(service.deleteDeregistration(deregistration.internalId).value)
 
