@@ -32,7 +32,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.Config
 import org.mockito.ArgumentMatchers.any
 import play.api.libs.json.Json
@@ -59,7 +59,7 @@ class NrsConnectorSpec extends SpecBase {
         val expectedResponse = HttpResponse.apply(ACCEPTED, Json.stringify(Json.toJson(nrsSubmissionResponse)))
 
         when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
-        when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.setHeader(any(), any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.execute[HttpResponse](any(), any()))
           .thenReturn(Future.successful(expectedResponse))
