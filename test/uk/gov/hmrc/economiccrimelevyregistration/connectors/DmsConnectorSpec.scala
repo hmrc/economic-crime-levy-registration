@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.Source
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.Config
 import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase

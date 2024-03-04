@@ -20,20 +20,21 @@ import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
+import uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes._
 
 class DeregistrationISpec extends ISpecBase {
+
+  private val testInternalId: String = alphaNumericString
 
   s"PUT ${DeregistrationController.upsertDeregistration.url}"           should {
     "create or update a deregistration and return 200 OK with the deregistration" in {
       stubAuthorised()
 
       val deregistration = random[Deregistration]
+        .copy(internalId = testInternalId)
 
       lazy val putResult = callRoute(
         FakeRequest(
@@ -60,6 +61,7 @@ class DeregistrationISpec extends ISpecBase {
       stubAuthorised()
 
       val deregistration = random[Deregistration]
+        .copy(internalId = testInternalId)
 
       callRoute(
         FakeRequest(
@@ -82,19 +84,19 @@ class DeregistrationISpec extends ISpecBase {
     "return 404 NOT_FOUND when trying to get a deregistration that doesn't exist" in {
       stubAuthorised()
 
-      val deregistration      = random[Deregistration]
-      val validDeregistration = deregistration.copy(internalId = "internalId")
+      val deregistration = random[Deregistration]
+        .copy(internalId = alphaNumericString)
 
       val result = callRoute(
         FakeRequest(
           DeregistrationController
-            .getDeregistration(validDeregistration.internalId)
+            .getDeregistration(deregistration.internalId)
         )
       )
 
       status(result)        shouldBe NOT_FOUND
       contentAsJson(result) shouldBe Json.toJson(
-        ResponseError.notFoundError(s"Unable to find record with id: ${validDeregistration.internalId}")
+        ResponseError.notFoundError(s"Unable to find record with id: ${deregistration.internalId}")
       )
     }
   }
@@ -104,6 +106,7 @@ class DeregistrationISpec extends ISpecBase {
       stubAuthorised()
 
       val deregistration = random[Deregistration]
+        .copy(internalId = testInternalId)
 
       callRoute(
         FakeRequest(

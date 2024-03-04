@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
-import akka.NotUsed
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import cats.data.EitherT
 import play.api.http.Status.BAD_GATEWAY
 import play.api.mvc.MultipartFormData

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import cats.data.EitherT
 import play.api.Logging
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.EnrolmentStoreProxyConnector
