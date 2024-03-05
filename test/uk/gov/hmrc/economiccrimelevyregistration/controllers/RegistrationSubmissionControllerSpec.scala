@@ -205,7 +205,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
           when(mockRegistrationValidationService.validateRegistration(any()))
             .thenReturn(EitherT.rightT(registration))
 
-          when(mockDmsService.submitToDms(any(), any())(any()))
+          when(mockDmsService.submitToDms(any(), any(), any())(any()))
             .thenReturn(EitherT.rightT(subscriptionResponse.success))
 
           val result: Future[Result] =
@@ -251,12 +251,14 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
         "and amend NRS is enabled" in forAll(
           Arbitrary.arbitrary[Registration],
           Arbitrary.arbitrary[CreateEclSubscriptionResponse],
-          Arbitrary.arbitrary[EntityType].retryUntil(!EntityType.isOther(_))
+          Arbitrary.arbitrary[EntityType].retryUntil(!EntityType.isOther(_)),
+          Arbitrary.arbitrary[NrsSubmissionResponse]
         ) {
           (
             aRegistration: Registration,
             subscriptionResponse: CreateEclSubscriptionResponse,
-            entityType: EntityType
+            entityType: EntityType,
+            nrsSubmissionResponse: NrsSubmissionResponse
           ) =>
             reset(mockNrsService)
             reset(mockAppConfig)
@@ -283,8 +285,11 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             when(mockRegistrationValidationService.validateRegistration(any()))
               .thenReturn(EitherT.rightT(registration))
 
-            when(mockDmsService.submitToDms(any(), any())(any()))
+            when(mockDmsService.submitToDms(any(), any(), any())(any()))
               .thenReturn(EitherT.rightT(subscriptionResponse.success))
+
+            when(mockNrsService.submitToNrs(any(), any(), any())(any(), any()))
+              .thenReturn(EitherT.rightT(nrsSubmissionResponse))
 
             val result: Future[Result] =
               controller.submitRegistration(registration.internalId)(fakeRequest)
@@ -333,7 +338,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             when(mockRegistrationValidationService.validateRegistration(any()))
               .thenReturn(EitherT.rightT(registration))
 
-            when(mockDmsService.submitToDms(any(), any())(any()))
+            when(mockDmsService.submitToDms(any(), any(), any())(any()))
               .thenReturn(EitherT.rightT(subscriptionResponse.success))
 
             val result: Future[Result] =

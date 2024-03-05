@@ -119,7 +119,7 @@ class SubscriptionServiceSpec extends SpecBase {
         reset(mockAuditService)
 
         when(mockTaxEnrolmentsConnector.enrol(any())(any()))
-          .thenReturn(Future.successful())
+          .thenReturn(Future.successful(()))
 
         when(mockAuditService.successfulSubscriptionFailedEnrolment(any(), any(), any(), any())(any()))
           .thenReturn(Future.successful(AuditResult.Success))
@@ -228,7 +228,7 @@ class SubscriptionServiceSpec extends SpecBase {
         .thenReturn(Future.successful(subscriptionResponse))
 
       when(mockTaxEnrolmentsConnector.enrol(any())(any()))
-        .thenReturn(Future.successful())
+        .thenReturn(Future.successful(()))
 
       when(mockAuditService.successfulSubscriptionAndEnrolment(any(), any(), any())(any()))
         .thenReturn(Future.successful(AuditResult.Success))
@@ -264,7 +264,7 @@ class SubscriptionServiceSpec extends SpecBase {
         .thenReturn(Future.successful(subscriptionResponse))
 
       when(mockTaxEnrolmentsConnector.enrol(any())(any()))
-        .thenReturn(Future.successful())
+        .thenReturn(Future.successful(()))
 
       when(mockAuditService.successfulSubscriptionAndEnrolment(any(), any(), any())(any()))
         .thenReturn(Future.successful(AuditResult.Failure(errorMessage, Some(exception))))

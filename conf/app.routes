@@ -24,3 +24,5 @@ POST          /dms-registration-callback                     uk.gov.hmrc.economi
 GET           /deregistration/:id                            uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.DeregistrationController.getDeregistration(id)
 PUT           /deregistration                                uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.DeregistrationController.upsertDeregistration
 DELETE        /deregistration/:id                            uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.DeregistrationController.deleteDeregistration(id)
+
+POST          /submit-deregistration/:id                     uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.DeregistrationSubmissionController.submitDeregistration(id)
