@@ -83,7 +83,7 @@ class DeregistrationServiceSpec extends SpecBase {
 
       val result = await(service.deleteDeregistration(deregistration.internalId).value)
 
-      result shouldBe Right()
+      result shouldBe Right(())
     }
 
     "return error if failure" in forAll { deregistration: Deregistration =>

@@ -22,4 +22,6 @@ object NrsSubmissionError {
   case class InternalUnexpectedError(cause: Option[Throwable]) extends NrsSubmissionError
 
   case class BadGateway(reason: String, code: Int) extends NrsSubmissionError
+
+  case class EclReferenceNotFound(message: String) extends NrsSubmissionError
 }

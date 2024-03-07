@@ -53,10 +53,11 @@ trait ErrorHandler extends Logging {
         case _                                       => Future.successful(())
       }
   }
-  def valueOrError[T](value: Option[T], valueType: String) =
+  def valueOrError[T](value: Option[T], valueType: String): EitherT[Future, ResponseError, T] =
     EitherT {
       Future.successful(value.map(Right(_)).getOrElse(Left(ResponseError.internalServiceError(s"Missing $valueType"))))
     }
+
   trait Converter[E] {
     def convert(error: E): ResponseError
   }
@@ -121,6 +122,7 @@ trait ErrorHandler extends Logging {
         case NrsSubmissionError.InternalUnexpectedError(cause) =>
           ResponseError.internalServiceError(cause = cause)
         case NrsSubmissionError.BadGateway(reason, code)       => ResponseError.badGateway(reason, code)
+        case NrsSubmissionError.EclReferenceNotFound(message)  => ResponseError.internalServiceError(message)
       }
     }
 }

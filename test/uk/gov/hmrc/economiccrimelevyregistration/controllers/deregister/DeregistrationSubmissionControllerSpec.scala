@@ -22,14 +22,13 @@ import org.scalacheck.Arbitrary
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.RegistrationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
-import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.services._
 import uk.gov.hmrc.economiccrimelevyregistration.services.deregister.DeregistrationService
 
-import java.util.Base64
 import scala.concurrent.Future
 
 class DeregistrationSubmissionControllerSpec extends SpecBase {

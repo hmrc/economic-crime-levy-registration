@@ -51,6 +51,7 @@ class RegistrationSubmissionController @Inject() (
     extends BackendController(cc)
     with BaseController
     with ErrorHandler {
+
   def submitRegistration(id: String): Action[AnyContent] = authorise.async { implicit request =>
     implicit val hc: HeaderCarrier = CorrelationIdHelper.headerCarrierWithCorrelationId(request)
 
@@ -64,6 +65,26 @@ class RegistrationSubmissionController @Inject() (
                         }
     } yield response).convertToResult(OK)
   }
+
+  private def subscribeToEcl(registration: Registration, additionalInfo: RegistrationAdditionalInfo)(implicit
+    hc: HeaderCarrier,
+    request: AuthorisedRequest[_]
+  ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
+    for {
+      sub      <- registrationValidationService
+                    .validateSubscription(EclRegistrationModel(registration, Some(additionalInfo)))
+                    .asResponseError
+      response <- subscriptionService.subscribeToEcl(sub, registration, None).asResponseError
+      _         = if (appConfig.nrsSubmissionEnabled) {
+                    nrsService
+                      .submitToNrs(
+                        registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                        response.success.eclReference,
+                        appConfig.eclFirstTimeRegistrationNotableEvent
+                      )
+                      .asResponseError
+                  }
+    } yield response.success
 
   private def registerForEcl(
     registration: Registration,
@@ -85,8 +106,9 @@ class RegistrationSubmissionController @Inject() (
                               registrationType
                             )
                             .asResponseError
-      _                <- submitToNrsIfAmendment(registration, response).asResponseError
-      additionalInfo   <- valueOrError(registrationAdditionalInfo, "Registration additional info")
+      additionalInfo   <-
+        valueOrError(registrationAdditionalInfo, "Registration additional info")
+      _                <- submitToNrsIfAmendment(registration, additionalInfo).asResponseError
       _                 = auditService.successfulSubscriptionAndEnrolment(
                             registration,
                             response.eclReference,
@@ -96,37 +118,33 @@ class RegistrationSubmissionController @Inject() (
 
   private def submitToNrsIfAmendment(
     registration: Registration,
-    response: CreateEclSubscriptionResponsePayload
-  )(implicit hc: HeaderCarrier, authorisedRequest: AuthorisedRequest[_]) =
+    additionalInfo: RegistrationAdditionalInfo
+  )(implicit hc: HeaderCarrier, authorisedRequest: AuthorisedRequest[_]): EitherT[Future, NrsSubmissionError, Unit] =
     if (appConfig.amendRegistrationNrsEnabled && registration.registrationType.contains(Amendment)) {
-      nrsService
-        .submitToNrs(
-          registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-          response.eclReference,
-          appConfig.eclAmendRegistrationNotableEvent
-        )
-        .map(_ => ())
+      for {
+        eclReference <- eclReferenceFromAdditionalInfoOrError(additionalInfo)
+        response     <- nrsService
+                          .submitToNrs(
+                            registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
+                            eclReference,
+                            appConfig.eclAmendRegistrationNotableEvent
+                          )
+                          .map(_ => ())
+      } yield response
     } else {
       EitherT[Future, NrsSubmissionError, Unit](Future.successful(Right(())))
     }
 
-  def subscribeToEcl(registration: Registration, additionalInfo: RegistrationAdditionalInfo)(implicit
-    hc: HeaderCarrier,
-    request: AuthorisedRequest[_]
-  ): EitherT[Future, ResponseError, CreateEclSubscriptionResponsePayload] =
-    for {
-      sub      <- registrationValidationService
-                    .validateSubscription(EclRegistrationModel(registration, Some(additionalInfo)))
-                    .asResponseError
-      response <- subscriptionService.subscribeToEcl(sub, registration, None).asResponseError
-      _         = if (appConfig.nrsSubmissionEnabled) {
-                    nrsService
-                      .submitToNrs(
-                        registration.base64EncodedFields.flatMap(_.nrsSubmissionHtml),
-                        response.success.eclReference,
-                        appConfig.eclFirstTimeRegistrationNotableEvent
-                      )
-                      .asResponseError
-                  }
-    } yield response.success
+  private def eclReferenceFromAdditionalInfoOrError(
+    additionalInfo: RegistrationAdditionalInfo
+  ): EitherT[Future, NrsSubmissionError.EclReferenceNotFound, String] =
+    EitherT {
+      Future.successful(
+        additionalInfo.eclReference
+          .map(Right(_))
+          .getOrElse(
+            Left(NrsSubmissionError.EclReferenceNotFound("Ecl Reference not found in RegistrationAdditionalInfo"))
+          )
+      )
+    }
 }
