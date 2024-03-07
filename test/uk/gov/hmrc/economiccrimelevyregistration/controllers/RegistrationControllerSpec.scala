@@ -41,7 +41,7 @@ class RegistrationControllerSpec extends SpecBase {
   "upsertRegistration" should {
     "return 200 OK with the registration that was upserted" in forAll { registration: Registration =>
       when(mockRegistrationService.upsertRegistration(ArgumentMatchers.eq(registration))(any()))
-        .thenReturn(EitherT.rightT(registration))
+        .thenReturn(EitherT.rightT(()))
 
       val result: Future[Result] =
         controller.upsertRegistration()(

@@ -384,6 +384,54 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
           )
 
       }
+
+      "return 500 INTERNAL_SERVER_ERROR with message in the JSON response body when the registration additional info data is invalid" in forAll(
+        Arbitrary.arbitrary[Registration],
+        Arbitrary.arbitrary[CreateEclSubscriptionResponse]
+      ) {
+        (
+          aRegistration: Registration,
+          subscriptionResponse: CreateEclSubscriptionResponse
+        ) =>
+          reset(mockNrsService)
+          reset(mockAppConfig)
+
+          when(mockAppConfig.amendRegistrationNrsEnabled)
+            .thenReturn(true)
+
+          val html         = "<html><head></head><body></body></html>"
+          val registration = aRegistration.copy(
+            registrationType = Some(Amendment),
+            entityType = Some(Charity),
+            base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
+          )
+
+          val registrationAdditionalInfo =
+            RegistrationAdditionalInfo.empty(registration.internalId)
+
+          when(mockRegistrationService.getRegistration(any())(any()))
+            .thenReturn(EitherT.rightT(registration))
+
+          when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
+            .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
+
+          when(mockRegistrationValidationService.validateRegistration(any()))
+            .thenReturn(EitherT.rightT(registration))
+
+          when(mockDmsService.submitToDms(any(), any(), any())(any()))
+            .thenReturn(EitherT.rightT(subscriptionResponse.success))
+
+          val result: Future[Result] =
+            controller.submitRegistration(registration.internalId)(fakeRequest)
+
+          status(result) shouldBe INTERNAL_SERVER_ERROR
+
+          verify(mockNrsService, times(0)).submitToNrs(
+            any(),
+            any(),
+            any()
+          )(any(), any())
+      }
     }
 
     "return 404 NOT_FOUND when there is no registration data to submit" in forAll { registration: Registration =>

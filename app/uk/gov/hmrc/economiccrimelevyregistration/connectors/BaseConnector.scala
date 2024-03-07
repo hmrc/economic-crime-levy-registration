@@ -19,6 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 import play.api.http.Status._
 import play.api.libs.json.{JsResult, Reads}
 import uk.gov.hmrc.http.client.RequestBuilder
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HttpResponse, Retries, UpstreamErrorResponse}
 
 import scala.concurrent.{ExecutionContext, Future}

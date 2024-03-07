@@ -32,18 +32,16 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.Config
-import org.mockito.{ArgumentMatcher, ArgumentMatchers}
+import org.apache.pekko.actor.ActorSystem
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import play.api.http.HeaderNames
 import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.http.{HttpClient, HttpResponse, StringContextOps, UpstreamErrorResponse}
-import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
+import uk.gov.hmrc.http.{HttpResponse, StringContextOps}
 
 import scala.concurrent.Future
 
@@ -106,9 +104,6 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
   "getSubscription" should {
     "return a subscription for user when we get one from http client" in forAll {
       (eclReference: String, correlationId: String, getSubscriptionResponse: GetSubscriptionResponse) =>
-        val expectedUrl =
-          s"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/$eclReference"
-
         when(mockHttpClient.get(any())(any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.setHeader(any(), any(), any(), any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.execute[HttpResponse](any(), any()))
