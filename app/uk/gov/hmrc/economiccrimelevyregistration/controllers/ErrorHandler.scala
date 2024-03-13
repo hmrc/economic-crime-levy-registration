@@ -32,7 +32,6 @@ trait ErrorHandler extends Logging {
             .map { ex =>
               s"""
                    |Message: ${ex.getMessage}
-                   |Trace: ${ex.getStackTrace.mkString(System.lineSeparator())}
                    |""".stripMargin
             }
             .getOrElse("No exception is available")
