@@ -59,6 +59,29 @@ class DmsServiceSpec extends SpecBase {
       result shouldBe Left(DmsSubmissionError.BadGateway("Error message", BAD_GATEWAY))
     }
 
+    "return upstream error if submission fails with 4xx code" in {
+      val encoded = Base64.getEncoder.encodeToString(html.getBytes)
+
+      val upstream4xxResponse = UpstreamErrorResponse.apply("Error message", BAD_REQUEST)
+      when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.failed(upstream4xxResponse))
+
+      val result = await(service.submitToDms(Some(encoded), now, RegistrationType.Initial).value)
+
+      result shouldBe Left(DmsSubmissionError.BadGateway("Error message", BAD_REQUEST))
+    }
+
+    "return upstream error if submission fails with NonFatal code" in {
+      val encoded = Base64.getEncoder.encodeToString(html.getBytes)
+
+      val nonFatalErrorResponse = new Exception("Error message")
+
+      when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.failed(nonFatalErrorResponse))
+
+      val result = await(service.submitToDms(Some(encoded), now, RegistrationType.Initial).value)
+
+      result shouldBe Left(DmsSubmissionError.InternalUnexpectedError(Some(nonFatalErrorResponse)))
+    }
+
     "return upstream error if no data to submit" in {
 
       val result = await(service.submitToDms(None, now, RegistrationType.Initial).value)

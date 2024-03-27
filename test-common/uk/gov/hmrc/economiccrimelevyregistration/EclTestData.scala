@@ -591,9 +591,10 @@ trait EclTestData {
             charityRegistrationNumber = Some(charityNumber),
             companyRegistrationNumber = Some(companyNumber),
             isCtUtrPresent = Some(isCtUtrPresent),
-            ctUtr = isCtUtrPresent match {
-              case true  => Some(utr)
-              case false => None
+            ctUtr = if (isCtUtrPresent) {
+              Some(utr)
+            } else {
+              None
             }
           )
         )
@@ -606,8 +607,6 @@ trait EclTestData {
     Arbitrary {
       for {
         businessName           <- Arbitrary.arbitrary[String]
-        ctUtr                  <- Arbitrary.arbitrary[String]
-        isCtUtrPresent         <- Arbitrary.arbitrary[Boolean]
         commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
         isUkCrnPresent         <- Arbitrary.arbitrary[Boolean]
         companyNumber          <- Arbitrary.arbitrary[String]
@@ -662,7 +661,6 @@ trait EclTestData {
       companyNumber          <- Arbitrary.arbitrary[String]
       utrType                <- Arbitrary.arbitrary[UtrType]
       utrNumber              <- Arbitrary.arbitrary[String]
-      taxIdentifier          <- Arbitrary.arbitrary[String]
       commonRegistrationData <- Arbitrary.arbitrary[CommonRegistrationData]
     } yield ValidNonUkEstablishmentRegistration(
       commonRegistrationData.registration.copy(

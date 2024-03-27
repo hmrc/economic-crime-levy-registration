@@ -22,7 +22,4 @@ object SubscriptionSubmissionError {
   case class InternalUnexpectedError(message: String, cause: Option[Throwable]) extends SubscriptionSubmissionError
 
   case class BadGateway(reason: String, code: Int) extends SubscriptionSubmissionError
-
-  case class NonFatalUnexpectedError(reason: String, cause: Option[Throwable]) extends SubscriptionSubmissionError
-
 }
