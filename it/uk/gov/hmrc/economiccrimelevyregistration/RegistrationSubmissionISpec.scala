@@ -1,17 +1,20 @@
 package uk.gov.hmrc.economiccrimelevyregistration
 
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
-import com.github.tomakehurst.wiremock.client.WireMock.{postRequestedFor, urlEqualTo, verify}
+import com.github.tomakehurst.wiremock.client.WireMock.{getRequestedFor, matching, postRequestedFor, urlEqualTo, verify}
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
 import uk.gov.hmrc.economiccrimelevyregistration.models.Base64EncodedFields
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Initial
+import uk.gov.hmrc.economiccrimelevyregistration.utils.HttpConstants
 
 import java.util.Base64
 
 class RegistrationSubmissionISpec extends ISpecBase {
+  val totalNumberOfCalls = 4
+
   s"POST ${routes.RegistrationSubmissionController.submitRegistration(":id").url}" should {
     "return 200 OK when the registration data for 'other' entity is valid" in {
       stubAuthorised()
@@ -53,7 +56,11 @@ class RegistrationSubmissionISpec extends ISpecBase {
       )
 
       status(result) shouldBe OK
-      verify(1, postRequestedFor(urlEqualTo("/dms-submission/submit")))
+      verify(
+        1,
+        postRequestedFor(urlEqualTo("/dms-submission/submit"))
+          .withHeader(HttpConstants.HEADER_X_CORRELATION_ID, matching(uuidRegex))
+      )
     }
 
     "return BAD_GATEWAY if call to DMS fails after three retries" in {
@@ -91,7 +98,12 @@ class RegistrationSubmissionISpec extends ISpecBase {
       )
 
       status(result) shouldBe BAD_GATEWAY
-      verify(4, postRequestedFor(urlEqualTo("/dms-submission/submit")))
+
+      verify(
+        totalNumberOfCalls,
+        postRequestedFor(urlEqualTo("/dms-submission/submit"))
+          .withHeader(HttpConstants.HEADER_X_CORRELATION_ID, matching(uuidRegex))
+      )
     }
   }
 }

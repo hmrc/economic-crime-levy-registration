@@ -61,67 +61,46 @@ trait ErrorHandler extends Logging {
     def convert(error: E): ResponseError
   }
 
-  implicit val dataRetrievalErrorConverter: Converter[DataRetrievalError] =
-    new Converter[DataRetrievalError] {
-      override def convert(error: DataRetrievalError): ResponseError = error match {
-        case DataRetrievalError.NotFound(id)                      => ResponseError.notFoundError(s"Unable to find record with id: $id")
-        case DataRetrievalError.InternalUnexpectedError(_, cause) =>
-          ResponseError.internalServiceError(cause = cause)
-      }
-    }
+  implicit val dataRetrievalErrorConverter: Converter[DataRetrievalError] = {
+    case DataRetrievalError.NotFound(id)                      => ResponseError.notFoundError(s"Unable to find record with id: $id")
+    case DataRetrievalError.InternalUnexpectedError(_, cause) =>
+      ResponseError.internalServiceError(cause = cause)
+  }
 
-  implicit val knownFactsErrorConverter: Converter[KnownFactsError] =
-    new Converter[KnownFactsError] {
-      override def convert(error: KnownFactsError): ResponseError = error match {
-        case KnownFactsError.UpsertKnownFactsError(message) => ResponseError.badRequestError(message)
-        case KnownFactsError.NotFound(message)              => ResponseError.badRequestError(message)
-      }
-    }
+  implicit val knownFactsErrorConverter: Converter[KnownFactsError] = {
+    case KnownFactsError.UpsertKnownFactsError(message) => ResponseError.badRequestError(message)
+    case KnownFactsError.NotFound(message)              => ResponseError.badRequestError(message)
+  }
 
-  implicit val dmsSubmissionErrorConverter: Converter[DmsSubmissionError] =
-    new Converter[DmsSubmissionError] {
-      override def convert(error: DmsSubmissionError): ResponseError = error match {
-        case DmsSubmissionError.InternalUnexpectedError(cause) =>
-          ResponseError.internalServiceError(cause = cause)
-        case DmsSubmissionError.BadGateway(reason, code)       => ResponseError.badGateway(reason, code)
-      }
-    }
+  implicit val dmsSubmissionErrorConverter: Converter[DmsSubmissionError] = {
+    case DmsSubmissionError.InternalUnexpectedError(cause) =>
+      ResponseError.internalServiceError(cause = cause)
+    case DmsSubmissionError.BadGateway(reason, code)       => ResponseError.badGateway(reason, code)
+  }
 
-  implicit val registrationErrorConverter: Converter[RegistrationError] =
-    new Converter[RegistrationError] {
-      override def convert(error: RegistrationError): ResponseError = error match {
-        case RegistrationError.InternalUnexpectedError(cause) =>
-          ResponseError.internalServiceError(cause = cause)
-        case RegistrationError.NotFound(id)                   => ResponseError.notFoundError(s"Unable to find record with id: $id")
-      }
-    }
+  implicit val registrationErrorConverter: Converter[RegistrationError] = {
+    case RegistrationError.InternalUnexpectedError(cause) =>
+      ResponseError.internalServiceError(cause = cause)
+    case RegistrationError.NotFound(id)                   => ResponseError.notFoundError(s"Unable to find record with id: $id")
+  }
 
-  implicit val subscriptionSubmissionErrorConverter: Converter[SubscriptionSubmissionError] =
-    new Converter[SubscriptionSubmissionError] {
-      override def convert(error: SubscriptionSubmissionError): ResponseError = error match {
-        case SubscriptionSubmissionError.InternalUnexpectedError(_, cause) =>
-          ResponseError.internalServiceError(cause = cause)
-        case SubscriptionSubmissionError.BadGateway(reason, code)          => ResponseError.badGateway(reason, code)
-      }
-    }
+  implicit val subscriptionSubmissionErrorConverter: Converter[SubscriptionSubmissionError] = {
+    case SubscriptionSubmissionError.InternalUnexpectedError(_, cause) =>
+      ResponseError.internalServiceError(cause = cause)
+    case SubscriptionSubmissionError.BadGateway(reason, code)          => ResponseError.badGateway(reason, code)
+  }
 
-  implicit val dataValidationErrorConverter: Converter[DataValidationError] =
-    new Converter[DataValidationError] {
-      override def convert(error: DataValidationError): ResponseError = error match {
-        case DataValidationError.DataInvalid(message)           => ResponseError.badRequestError(message)
-        case DataValidationError.SchemaValidationError(message) =>
-          ResponseError.badRequestError(message)
-        case DataValidationError.DataMissing(message)           => ResponseError.badRequestError(message)
-      }
-    }
+  implicit val dataValidationErrorConverter: Converter[DataValidationError] = {
+    case DataValidationError.DataInvalid(message)           => ResponseError.badRequestError(message)
+    case DataValidationError.SchemaValidationError(message) =>
+      ResponseError.badRequestError(message)
+    case DataValidationError.DataMissing(message)           => ResponseError.badRequestError(message)
+  }
 
-  implicit val nrsSubmissionErrorConverter: Converter[NrsSubmissionError] =
-    new Converter[NrsSubmissionError] {
-      override def convert(error: NrsSubmissionError): ResponseError = error match {
-        case NrsSubmissionError.InternalUnexpectedError(cause) =>
-          ResponseError.internalServiceError(cause = cause)
-        case NrsSubmissionError.BadGateway(reason, code)       => ResponseError.badGateway(reason, code)
-        case NrsSubmissionError.EclReferenceNotFound(message)  => ResponseError.internalServiceError(message)
-      }
-    }
+  implicit val nrsSubmissionErrorConverter: Converter[NrsSubmissionError] = {
+    case NrsSubmissionError.InternalUnexpectedError(cause) =>
+      ResponseError.internalServiceError(cause = cause)
+    case NrsSubmissionError.BadGateway(reason, code)       => ResponseError.badGateway(reason, code)
+    case NrsSubmissionError.EclReferenceNotFound(message)  => ResponseError.internalServiceError(message)
+  }
 }

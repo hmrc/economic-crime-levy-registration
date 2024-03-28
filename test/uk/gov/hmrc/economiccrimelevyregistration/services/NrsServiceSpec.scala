@@ -44,6 +44,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.NrsSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import java.time.{Clock, Instant, ZoneId}
 import scala.concurrent.Future
@@ -117,6 +118,42 @@ class NrsServiceSpec extends SpecBase {
         NrsSubmissionError
           .InternalUnexpectedError(None)
       )
+    }
+  }
+
+  "submit" should {
+    "return Left - NrsSubmissionError.BadGateway when call to nrsConnector fails with 4xx error" in forAll {
+      (nrsSubmission: NrsSubmission) =>
+        val errorMessage = "Error message"
+        when(mockNrsConnector.submitToNrs(any())(any()))
+          .thenReturn(Future.failed(UpstreamErrorResponse(errorMessage, BAD_REQUEST)))
+
+        val result = await(service.submit(nrsSubmission)(hc).value)
+
+        result shouldBe Left(NrsSubmissionError.BadGateway(errorMessage, BAD_REQUEST))
+    }
+
+    "return Left - NrsSubmissionError.BadGateway when call to nrsConnector fails with 5xx error" in forAll {
+      (nrsSubmission: NrsSubmission) =>
+        val errorMessage = "Error message"
+        when(mockNrsConnector.submitToNrs(any())(any()))
+          .thenReturn(Future.failed(UpstreamErrorResponse(errorMessage, BAD_GATEWAY)))
+
+        val result = await(service.submit(nrsSubmission)(hc).value)
+
+        result shouldBe Left(NrsSubmissionError.BadGateway(errorMessage, BAD_GATEWAY))
+    }
+
+    "return Left - NrsSubmissionError.InternalUnexpectedError when call to nrsConnector fails with NonFatal error" in forAll {
+      (nrsSubmission: NrsSubmission) =>
+        val errorMessage = "Error message"
+        val exception    = new Exception(errorMessage)
+        when(mockNrsConnector.submitToNrs(any())(any()))
+          .thenReturn(Future.failed(exception))
+
+        val result = await(service.submit(nrsSubmission)(hc).value)
+
+        result shouldBe Left(NrsSubmissionError.InternalUnexpectedError(Some(exception)))
     }
   }
 

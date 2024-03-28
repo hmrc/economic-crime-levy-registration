@@ -168,6 +168,14 @@ class RegistrationValidationServiceSpec extends SpecBase {
         result shouldBe Right(updatedExpectedEclSubscription)
     }
 
+    "return DataValidationError.DataMissing when additionalInfo is missing" in forAll {
+      (eclRegistrationModel: EclRegistrationModel) =>
+        val updatedModel = eclRegistrationModel.copy(additionalInfo = None)
+
+        val result = await(service.validateRegistration(updatedModel).value)
+
+        result shouldBe Left(DataValidationError.DataMissing("Additional information missing"))
+    }
     "return DataValidationError.DataMissing when unconditional mandatory registration data items are missing if registration type is Initial" in {
       val registration = Registration
         .empty("internalId")

@@ -22,14 +22,16 @@ import org.scalacheck.derive.MkArbitrary
 import uk.gov.hmrc.economiccrimelevyregistration.EclTestData
 import uk.gov.hmrc.economiccrimelevyregistration.models.audit.RequestStatus
 import uk.gov.hmrc.economiccrimelevyregistration.models._
-import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
+import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.{DeregisterReason, Deregistration}
 import uk.gov.hmrc.economiccrimelevyregistration.models.dms.DmsNotification
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd._
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ErrorCode
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 import uk.gov.hmrc.mongo.workitem.WorkItem
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 object CachedArbitraries extends EclTestData {
 
@@ -66,4 +68,8 @@ object CachedArbitraries extends EclTestData {
   implicit lazy val arbGetSubscriptionResponse: Arbitrary[GetSubscriptionResponse]                           = mkArb
   implicit lazy val arbDeregistration: Arbitrary[Deregistration]                                             = mkArb
   implicit lazy val arbCreateEclSubscriptionResponsePayload: Arbitrary[CreateEclSubscriptionResponsePayload] = mkArb
+  implicit lazy val arbErrorCode: Arbitrary[ErrorCode]                                                       = mkArb
+  implicit lazy val arbAuditResult: Arbitrary[AuditResult]                                                   = mkArb
+  implicit lazy val arbDeregisterReason: Arbitrary[DeregisterReason]                                         = mkArb
+  implicit lazy val arbEclRegistrationModel: Arbitrary[EclRegistrationModel]                                 = mkArb
 }

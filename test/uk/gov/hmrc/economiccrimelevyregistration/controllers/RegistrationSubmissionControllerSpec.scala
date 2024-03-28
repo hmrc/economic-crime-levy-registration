@@ -380,7 +380,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
           status(result)        shouldBe BAD_REQUEST
           contentAsJson(result) shouldBe Json.toJson(
-            ResponseError.badGateway("Invalid data", BAD_GATEWAY)
+            ResponseError.badRequestError("Invalid data")
           )
 
       }

@@ -31,7 +31,8 @@ import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneOffset}
+import java.time.{Instant, LocalDate, ZoneOffset}
+import java.util.UUID
 import javax.management.RuntimeErrorException
 import scala.concurrent.Future
 
@@ -281,5 +282,155 @@ class SubscriptionServiceSpec extends SpecBase {
 
       verify(mockAuditService, times(1))
         .successfulSubscriptionAndEnrolment(any(), any(), any())(any())
+  }
+  "executeCallToIntegrationFrameworkForSubscriptionStatus" should {
+    "return Left - SubscriptionSubmissionError.BadGateway with 5xx code when call to integrationFrameworkConnector fails" in {
+      val code       = BAD_GATEWAY
+      val internalId = UUID.randomUUID().toString
+      when(mockIntegrationFrameworkConnector.getSubscriptionStatus(any(), any())(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse.apply(errorMessage, code)))
+
+      val result =
+        await(service.getSubscriptionStatus("id-type", "id-value", internalId).value)
+
+      result shouldBe Left(SubscriptionSubmissionError.BadGateway(reason = errorMessage, code = code))
+    }
+  }
+
+  "executeCallToIntegrationFrameworkForSubscriptionStatus" should {
+    "return Left - SubscriptionSubmissionError.BadGateway with 4xx code when call to integrationFrameworkConnector fails" in {
+      val code       = BAD_REQUEST
+      val internalId = UUID.randomUUID().toString
+      when(mockIntegrationFrameworkConnector.getSubscriptionStatus(any(), any())(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse.apply(errorMessage, code)))
+
+      val result =
+        await(service.getSubscriptionStatus("id-type", "id-value", internalId).value)
+
+      result shouldBe Left(SubscriptionSubmissionError.BadGateway(reason = errorMessage, code = code))
+    }
+  }
+
+  "executeCallToIntegrationFrameworkForSubscriptionStatus" should {
+    "return Left - SubscriptionSubmissionError.InternalUnexpectedError when call to integrationFrameworkConnector fails" in {
+      val internalId = UUID.randomUUID().toString
+      val exception  = new Exception(errorMessage)
+
+      when(mockIntegrationFrameworkConnector.getSubscriptionStatus(any(), any())(any()))
+        .thenReturn(Future.failed(exception))
+
+      val result =
+        await(service.getSubscriptionStatus("id-type", "id-value", internalId).value)
+
+      result shouldBe Left(SubscriptionSubmissionError.InternalUnexpectedError(errorMessage, Some(exception)))
+    }
+  }
+
+  "executeCallToTaxEnrolment"         should {
+    "return Left - SubscriptionSubmissionError.BadGateway when call to taxEnrolmentsConnector fails with 4xx error" in forAll {
+      (
+        workItem: WorkItem[KnownFactsWorkItem],
+        auditResult: AuditResult,
+        enrolmentRequest: CreateEnrolmentRequest,
+        registration: Registration
+      ) =>
+        val code                   = BAD_REQUEST
+        val dateProcessed: Instant = Instant.now()
+
+        val knownFactsWorkItem = KnownFactsWorkItem(testEclRegistrationReference, dateFormatter.format(dateProcessed))
+
+        when(mockTaxEnrolmentsConnector.enrol(any())(any()))
+          .thenReturn(Future.failed(UpstreamErrorResponse.apply(errorMessage, code)))
+
+        when(mockKnownFactsQueueRepository.pushNew(ArgumentMatchers.eq(knownFactsWorkItem), any(), any()))
+          .thenReturn(Future.successful(workItem))
+
+        when(mockAuditService.successfulSubscriptionFailedEnrolment(any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(auditResult))
+
+        val result = await(
+          service
+            .executeCallToTaxEnrolment(
+              enrolmentRequest,
+              registration,
+              testEclRegistrationReference,
+              Some(LocalDate.now().getYear),
+              Instant.now()
+            )
+            .value
+        )
+        result shouldBe Left(SubscriptionSubmissionError.BadGateway(reason = errorMessage, code = code))
+    }
+
+    "return Left - SubscriptionSubmissionError.InternalUnexpectedError when call to taxEnrolmentsConnector fails with NonFatal error" in forAll {
+      (
+        workItem: WorkItem[KnownFactsWorkItem],
+        auditResult: AuditResult,
+        enrolmentRequest: CreateEnrolmentRequest,
+        registration: Registration
+      ) =>
+        val exception              = new Exception(errorMessage)
+        val dateProcessed: Instant = Instant.now()
+
+        val knownFactsWorkItem = KnownFactsWorkItem(testEclRegistrationReference, dateFormatter.format(dateProcessed))
+
+        when(mockTaxEnrolmentsConnector.enrol(any())(any()))
+          .thenReturn(Future.failed(exception))
+
+        when(mockKnownFactsQueueRepository.pushNew(ArgumentMatchers.eq(knownFactsWorkItem), any(), any()))
+          .thenReturn(Future.successful(workItem))
+
+        when(mockAuditService.successfulSubscriptionFailedEnrolment(any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(auditResult))
+
+        val result = await(
+          service
+            .executeCallToTaxEnrolment(
+              enrolmentRequest,
+              registration,
+              testEclRegistrationReference,
+              Some(LocalDate.now().getYear),
+              Instant.now()
+            )
+            .value
+        )
+
+        result shouldBe Left(SubscriptionSubmissionError.InternalUnexpectedError(errorMessage, Some(exception)))
+    }
+  }
+  "executeCallToIntegrationFramework" should {
+    "return Left - SubscriptionSubmissionError.BadGateway when call to integrationFrameworkConnector fails with 4xx error" in forAll {
+      (auditResult: AuditResult, eclSubscription: EclSubscription, registration: Registration, liabilityYear: Int) =>
+        when(
+          mockIntegrationFrameworkConnector
+            .subscribeToEcl(any(), any())(any())
+        ).thenReturn(Future.failed(UpstreamErrorResponse(errorMessage, BAD_REQUEST)))
+
+        when(mockAuditService.successfulSubscriptionFailedEnrolment(any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(auditResult))
+
+        val result =
+          await(service.executeCallToIntegrationFramework(eclSubscription, registration, Some(liabilityYear)).value)
+
+        result shouldBe Left(SubscriptionSubmissionError.BadGateway(reason = errorMessage, code = BAD_REQUEST))
+    }
+
+    "return Left - SubscriptionSubmissionError.InternalUnexpectedError when call to integrationFrameworkConnector fails with NonFatal error" in forAll {
+      (auditResult: AuditResult, eclSubscription: EclSubscription, registration: Registration, liabilityYear: Int) =>
+        val exception = new Exception(errorMessage)
+
+        when(
+          mockIntegrationFrameworkConnector
+            .subscribeToEcl(any(), any())(any())
+        ).thenReturn(Future.failed(exception))
+
+        when(mockAuditService.successfulSubscriptionFailedEnrolment(any(), any(), any(), any())(any()))
+          .thenReturn(Future.successful(auditResult))
+
+        val result =
+          await(service.executeCallToIntegrationFramework(eclSubscription, registration, Some(liabilityYear)).value)
+
+        result shouldBe Left(SubscriptionSubmissionError.InternalUnexpectedError(errorMessage, Some(exception)))
+    }
   }
 }

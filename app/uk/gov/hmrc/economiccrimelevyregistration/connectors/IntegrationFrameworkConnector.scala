@@ -23,8 +23,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
-import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdHelper
-import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdHelper.HEADER_X_CORRELATION_ID
+import uk.gov.hmrc.economiccrimelevyregistration.utils.HttpConstants.HEADER_X_CORRELATION_ID
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
@@ -79,7 +78,7 @@ class IntegrationFrameworkConnector @Inject() (
   }
 
   private def createCorrelationId(hc: HeaderCarrier): String =
-    hc.headers(Seq(CorrelationIdHelper.HEADER_X_CORRELATION_ID)) match {
+    hc.headers(Seq(HEADER_X_CORRELATION_ID)) match {
       case Nil                     => UUID.randomUUID().toString
       case Seq((_, correlationId)) => correlationId
     }
