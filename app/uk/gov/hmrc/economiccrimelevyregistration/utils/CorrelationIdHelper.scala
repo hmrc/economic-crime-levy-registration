@@ -24,13 +24,11 @@ import java.util.UUID
 
 object CorrelationIdHelper {
 
-  val HEADER_X_CORRELATION_ID: String = "X-Correlation-Id"
-
   def headerCarrierWithCorrelationId(request: Request[_]): HeaderCarrier = {
     val hcFromRequest = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-    val newHc: HeaderCarrier = hcFromRequest.headers(Seq(HEADER_X_CORRELATION_ID)) match {
-      case Nil => hcFromRequest.withExtraHeaders((HEADER_X_CORRELATION_ID, UUID.randomUUID().toString))
+    val newHc: HeaderCarrier = hcFromRequest.headers(Seq(HttpConstants.HEADER_X_CORRELATION_ID)) match {
+      case Nil => hcFromRequest.withExtraHeaders((HttpConstants.HEADER_X_CORRELATION_ID, UUID.randomUUID().toString))
       case _   => hcFromRequest
     }
 
