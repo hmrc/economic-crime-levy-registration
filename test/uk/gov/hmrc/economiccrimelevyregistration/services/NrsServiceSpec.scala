@@ -35,7 +35,6 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.scalacheck.Arbitrary
-import play.api.http.HeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.ValidNrsSubmission
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
