@@ -23,9 +23,13 @@ sealed abstract class RegistrationType(value: String)
 
 object RegistrationType {
 
-  case object Initial extends RegistrationType("Initial")
-  case object Amendment extends RegistrationType("Amendment")
-  case object DeRegistration extends RegistrationType("DeRegistration")
+  private val amendment      = "Amendment"
+  private val deRegistration = "DeRegistration"
+  private val initial        = "Initial"
+
+  case object Initial extends RegistrationType(initial)
+  case object Amendment extends RegistrationType(amendment)
+  case object DeRegistration extends RegistrationType(deRegistration)
 
   lazy val values: Set[RegistrationType] = Set(Initial, Amendment, DeRegistration)
 
@@ -33,25 +37,25 @@ object RegistrationType {
     override def reads(json: JsValue): JsResult[RegistrationType] = json.validate[String] match {
       case JsSuccess(value, _) =>
         value match {
-          case "Initial"        => JsSuccess(Initial)
           case "Amendment"      => JsSuccess(Amendment)
           case "DeRegistration" => JsSuccess(DeRegistration)
+          case "Initial"        => JsSuccess(Initial)
         }
       case e: JsError          => e
     }
 
     override def writes(o: RegistrationType): JsValue = o match {
-      case Initial        => JsString("Initial")
-      case Amendment      => JsString("Amendment")
-      case DeRegistration => JsString("DeRegistration")
+      case Amendment      => JsString(amendment)
+      case DeRegistration => JsString(deRegistration)
+      case Initial        => JsString(initial)
     }
   }
 
   implicit val jsLiteral: JavascriptLiteral[RegistrationType] = new JavascriptLiteral[RegistrationType] {
     override def to(value: RegistrationType): String = value match {
-      case Initial        => "Initial"
-      case Amendment      => "Amendment"
-      case DeRegistration => "DeRegistration"
+      case Amendment      => amendment
+      case DeRegistration => deRegistration
+      case Initial        => initial
     }
   }
 }

@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.utils
 
 import play.api.mvc.Request
+import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
@@ -27,8 +28,8 @@ object CorrelationIdHelper {
   def headerCarrierWithCorrelationId(request: Request[_]): HeaderCarrier = {
     val hcFromRequest = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-    val newHc: HeaderCarrier = hcFromRequest.headers(Seq(HttpConstants.HEADER_X_CORRELATION_ID)) match {
-      case Nil => hcFromRequest.withExtraHeaders((HttpConstants.HEADER_X_CORRELATION_ID, UUID.randomUUID().toString))
+    val newHc: HeaderCarrier = hcFromRequest.headers(Seq(CustomHeaderNames.xCorrelationId)) match {
+      case Nil => hcFromRequest.withExtraHeaders((CustomHeaderNames.xCorrelationId, UUID.randomUUID().toString))
       case _   => hcFromRequest
     }
 

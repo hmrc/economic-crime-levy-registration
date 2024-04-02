@@ -18,7 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import cats.data.EitherT
 import play.api.Logging
-import play.api.http.{HeaderNames, MimeTypes}
+import play.api.http.MimeTypes
 import play.api.libs.json.{JsObject, JsString}
 import play.api.mvc.Headers
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.NrsConnector
@@ -26,7 +26,8 @@ import uk.gov.hmrc.economiccrimelevyregistration.controllers.ErrorHandler
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.NrsSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, UpstreamErrorResponse}
+
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.{Clock, Instant}
@@ -51,7 +52,7 @@ class NrsService @Inject() (nrsConnector: NrsConnector, clock: Clock)(implicit
     request: AuthorisedRequest[_]
   ): EitherT[Future, NrsSubmissionError, NrsSubmissionResponse] =
     for {
-      authToken                      <- getUserAuthToken(request.headers, HeaderNames.AUTHORIZATION)
+      authToken                      <- getUserAuthToken(request.headers, HeaderNames.authorisation)
       headerData                      = new JsObject(request.headers.toMap.map(x => x._1 -> JsString(x._2 mkString ",")))
       base64EncodedNrsSubmissionHtml <- getBase64EncodedNrsSubmissionHtml(optBase64EncodedNrsSubmissionHtml)
       nrsSearchKeys                   = NrsSearchKeys(eclRegistrationReference = eclRegistrationReference)

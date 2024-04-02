@@ -52,7 +52,7 @@ class EnrolmentStoreProxyConnectorImpl @Inject() (
   ): Future[Unit] =
     retryFor[Unit]("Upsert known facts")(retryCondition) {
       httpClient
-        .put(url"$enrolmentStoreUrl/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}")
+        .put(url"$enrolmentStoreUrl/enrolments/${EclEnrolment.enrolmentKey(eclReference)}")
         .withBody(Json.toJson(upsertKnownFactsRequest))
         .executeAndContinue
     }

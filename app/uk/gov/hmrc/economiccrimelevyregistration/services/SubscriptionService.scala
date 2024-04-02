@@ -171,8 +171,8 @@ class SubscriptionService @Inject() (
 
   private def createEnrolmentRequest(subscriptionResponse: CreateEclSubscriptionResponse): CreateEnrolmentRequest =
     CreateEnrolmentRequest(
-      identifiers = Seq(KeyValue(IdentifierKey, subscriptionResponse.success.eclReference)),
-      verifiers = Seq(KeyValue(VerifierKey, dateFormatter.format(subscriptionResponse.success.processingDate)))
+      identifiers = Seq(KeyValue(identifierKey, subscriptionResponse.success.eclReference)),
+      verifiers = Seq(KeyValue(verifierKey, dateFormatter.format(subscriptionResponse.success.processingDate)))
     )
 
   private def executeExtendedAuditEvent(

@@ -24,39 +24,39 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.Etm
 sealed trait EtmpSubscriptionStatus
 
 object EtmpSubscriptionStatus {
+  case object ApprovedWithConditions extends EtmpSubscriptionStatus
+  case object ContractObjectInactive extends EtmpSubscriptionStatus
+  case object CreateFailed extends EtmpSubscriptionStatus
+  case object DeRegistered extends EtmpSubscriptionStatus
+  case object DsOutcomeInProgress extends EtmpSubscriptionStatus
+  case object InProcessing extends EtmpSubscriptionStatus
   case object NoFormBundleFound extends EtmpSubscriptionStatus
   case object RegFormReceived extends EtmpSubscriptionStatus
-  case object SentToDs extends EtmpSubscriptionStatus
-  case object DsOutcomeInProgress extends EtmpSubscriptionStatus
-  case object Successful extends EtmpSubscriptionStatus
   case object Rejected extends EtmpSubscriptionStatus
-  case object InProcessing extends EtmpSubscriptionStatus
-  case object CreateFailed extends EtmpSubscriptionStatus
-  case object Withdrawal extends EtmpSubscriptionStatus
-  case object SentToRcm extends EtmpSubscriptionStatus
-  case object ApprovedWithConditions extends EtmpSubscriptionStatus
   case object Revoked extends EtmpSubscriptionStatus
-  case object DeRegistered extends EtmpSubscriptionStatus
-  case object ContractObjectInactive extends EtmpSubscriptionStatus
+  case object SentToDs extends EtmpSubscriptionStatus
+  case object SentToRcm extends EtmpSubscriptionStatus
+  case object Successful extends EtmpSubscriptionStatus
+  case object Withdrawal extends EtmpSubscriptionStatus
 
   implicit val reads: Reads[EtmpSubscriptionStatus] = (json: JsValue) =>
     json.validate[String] match {
       case JsSuccess(value, _) =>
         value match {
+          case "APPROVED_WITH_CONDITIONS" => JsSuccess(ApprovedWithConditions)
+          case "CONTRACT_OBJECT_INACTIVE" => JsSuccess(ContractObjectInactive)
+          case "CREATE_FAILED"            => JsSuccess(CreateFailed)
+          case "DE-REGISTERED"            => JsSuccess(DeRegistered)
+          case "DS_OUTCOME_IN_PROGRESS"   => JsSuccess(DsOutcomeInProgress)
+          case "IN_PROCESSING"            => JsSuccess(InProcessing)
           case "NO_FORM_BUNDLE_FOUND"     => JsSuccess(NoFormBundleFound)
           case "REG_FORM_RECEIVED"        => JsSuccess(RegFormReceived)
-          case "SENT_TO_DS"               => JsSuccess(SentToDs)
-          case "DS_OUTCOME_IN_PROGRESS"   => JsSuccess(DsOutcomeInProgress)
-          case "SUCCESSFUL"               => JsSuccess(Successful)
           case "REJECTED"                 => JsSuccess(Rejected)
-          case "IN_PROCESSING"            => JsSuccess(InProcessing)
-          case "CREATE_FAILED"            => JsSuccess(CreateFailed)
-          case "WITHDRAWAL"               => JsSuccess(Withdrawal)
-          case "SENT_TO_RCM"              => JsSuccess(SentToRcm)
-          case "APPROVED_WITH_CONDITIONS" => JsSuccess(ApprovedWithConditions)
           case "REVOKED"                  => JsSuccess(Revoked)
-          case "DE-REGISTERED"            => JsSuccess(DeRegistered)
-          case "CONTRACT_OBJECT_INACTIVE" => JsSuccess(ContractObjectInactive)
+          case "SENT_TO_DS"               => JsSuccess(SentToDs)
+          case "SENT_TO_RCM"              => JsSuccess(SentToRcm)
+          case "SUCCESSFUL"               => JsSuccess(Successful)
+          case "WITHDRAWAL"               => JsSuccess(Withdrawal)
           case s                          => JsError(s"$s is not a valid SubscriptionStatus")
         }
       case e: JsError          => e

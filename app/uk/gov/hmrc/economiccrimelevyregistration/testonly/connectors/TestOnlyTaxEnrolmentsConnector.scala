@@ -35,7 +35,7 @@ class TestOnlyTaxEnrolmentsConnector @Inject() (appConfig: AppConfig, httpClient
   def deEnrol(groupId: String, eclReference: String)(implicit hc: HeaderCarrier): Future[Unit] =
     httpClient
       .DELETE[Either[UpstreamErrorResponse, HttpResponse]](
-        s"$taxEnrolmentsUrl/groups/$groupId/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}"
+        s"$taxEnrolmentsUrl/groups/$groupId/enrolments/${EclEnrolment.enrolmentKey(eclReference)}"
       )
       .map {
         case Left(e)  => throw e

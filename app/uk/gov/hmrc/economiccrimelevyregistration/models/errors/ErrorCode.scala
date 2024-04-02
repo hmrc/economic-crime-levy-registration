@@ -22,20 +22,21 @@ import play.api.libs.json._
 sealed abstract class ErrorCode(val code: String, val statusCode: Int) extends Product with Serializable
 
 object ErrorCode {
-  case object BadRequest extends ErrorCode("BAD_REQUEST", BAD_REQUEST)
   case object BadGateway extends ErrorCode("BAD_GATEWAY", BAD_GATEWAY)
 
-  case object NotFound extends ErrorCode("NOT_FOUND", NOT_FOUND)
+  case object BadRequest extends ErrorCode("BAD_REQUEST", BAD_REQUEST)
 
   case object InternalServerError extends ErrorCode("INTERNAL_SERVER_ERROR", INTERNAL_SERVER_ERROR)
+
+  case object NotFound extends ErrorCode("NOT_FOUND", NOT_FOUND)
 
   case object Unauthorized extends ErrorCode("UNAUTHORIZED", UNAUTHORIZED)
 
   private lazy val errorCodes: Seq[ErrorCode] = Seq(
-    BadRequest,
     BadGateway,
-    NotFound,
+    BadRequest,
     InternalServerError,
+    NotFound,
     Unauthorized
   )
 

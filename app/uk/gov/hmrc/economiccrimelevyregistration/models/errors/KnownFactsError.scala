@@ -19,7 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 trait KnownFactsError
 
 object KnownFactsError {
+  case class NotFound(message: String) extends KnownFactsError
 
   case class UpsertKnownFactsError(message: String) extends KnownFactsError
-  case class NotFound(message: String) extends KnownFactsError
 }

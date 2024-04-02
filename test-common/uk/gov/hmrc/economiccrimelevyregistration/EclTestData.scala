@@ -22,7 +22,7 @@ import org.scalacheck.Gen.{choose, listOfN}
 import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
-import play.api.http.{HeaderNames, MimeTypes}
+import play.api.http.MimeTypes
 import play.api.libs.json.{JsObject, JsString}
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
@@ -42,7 +42,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
 import uk.gov.hmrc.economiccrimelevyregistration.utils.StringUtils._
-import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderNames, HttpResponse, UpstreamErrorResponse}
 import wolfendale.scalacheck.regexp.RegexpGen
 
 import java.time.{Clock, Instant, LocalDate}
@@ -286,7 +286,7 @@ trait EclTestData {
             name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
             positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
             telephone =
-              commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace,
+              commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace(),
             emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
           ),
           secondaryContactDetails = None
@@ -338,7 +338,7 @@ trait EclTestData {
             name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
             positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
             telephone =
-              commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace,
+              commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace(),
             emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
           ),
           secondaryContactDetails = None
@@ -390,7 +390,7 @@ trait EclTestData {
             name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
             positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
             telephone =
-              commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace,
+              commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace(),
             emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
           ),
           secondaryContactDetails = None
@@ -446,7 +446,7 @@ trait EclTestData {
               name = commonRegistrationData.registration.contacts.firstContactDetails.name.get,
               positionInCompany = commonRegistrationData.registration.contacts.firstContactDetails.role.get,
               telephone =
-                commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace,
+                commonRegistrationData.registration.contacts.firstContactDetails.telephoneNumber.get.removeWhitespace(),
               emailAddress = commonRegistrationData.registration.contacts.firstContactDetails.emailAddress.get
             ),
             secondaryContactDetails = None
@@ -554,7 +554,7 @@ trait EclTestData {
             payloadSha256Checksum = nrsSubmissionHtmlSha256Checksum,
             userSubmissionTimestamp = Instant.now(clock),
             identityData = nrsIdentityData,
-            userAuthToken = authorisedRequest.headers.get(HeaderNames.AUTHORIZATION).get,
+            userAuthToken = authorisedRequest.headers.get(HeaderNames.authorisation).get,
             headerData = new JsObject(authorisedRequest.headers.toMap.map(x => x._1 -> JsString(x._2 mkString ","))),
             searchKeys = NrsSearchKeys(
               eclRegistrationReference = eclRegistrationReference

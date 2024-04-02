@@ -21,15 +21,16 @@ import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsVal
 sealed trait UtrType
 
 object UtrType {
-  case object SaUtr extends UtrType
   case object CtUtr extends UtrType
+
+  case object SaUtr extends UtrType
 
   implicit val format: Format[UtrType] = new Format[UtrType] {
     override def reads(json: JsValue): JsResult[UtrType] = json.validate[String] match {
       case JsSuccess(value, _) =>
         value match {
-          case "SaUtr" => JsSuccess(SaUtr)
           case "CtUtr" => JsSuccess(CtUtr)
+          case "SaUtr" => JsSuccess(SaUtr)
           case s       => JsError(s"$s is not a valid UtrType")
         }
       case e: JsError          => e

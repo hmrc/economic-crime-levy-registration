@@ -70,7 +70,7 @@ class KnownFactsQueuePullScheduler @Inject() (
   ): EitherT[Future, KnownFactsError, Unit] =
     EitherT {
       val upsertKnownFactsRequest = UpsertKnownFactsRequest(
-        verifiers = Seq(KeyValue(EclEnrolment.VerifierKey, workItem.item.eclRegistrationDate))
+        verifiers = Seq(KeyValue(EclEnrolment.verifierKey, workItem.item.eclRegistrationDate))
       )
 
       enrolmentStoreProxyConnector

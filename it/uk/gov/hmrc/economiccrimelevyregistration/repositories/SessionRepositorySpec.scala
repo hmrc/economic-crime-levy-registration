@@ -46,8 +46,8 @@ class SessionRepositorySpec
     "insert a new session with the last updated time set to `now`" in {
       val expectedResult = session.copy(lastUpdated = Some(now))
 
-      val setResult     = repository.upsert(session).futureValue
-      val updatedRecord = find(Filters.equal("internalId", session.internalId)).futureValue.headOption.value
+      val setResult: Unit = repository.upsert(session).futureValue
+      val updatedRecord   = find(Filters.equal("internalId", session.internalId)).futureValue.headOption.value
 
       setResult     shouldEqual ()
       updatedRecord shouldEqual expectedResult
@@ -58,8 +58,8 @@ class SessionRepositorySpec
 
       val expectedResult = session.copy(lastUpdated = Some(now))
 
-      val setResult     = repository.upsert(session).futureValue
-      val updatedRecord = find(Filters.equal("internalId", session.internalId)).futureValue.headOption.value
+      val setResult: Unit = repository.upsert(session).futureValue
+      val updatedRecord   = find(Filters.equal("internalId", session.internalId)).futureValue.headOption.value
 
       setResult     shouldEqual ()
       updatedRecord shouldEqual expectedResult
@@ -85,14 +85,14 @@ class SessionRepositorySpec
     "remove a record" in {
       insert(session).futureValue
 
-      val result = repository.deleteRecord(session.internalId).futureValue
+      val result: Unit = repository.deleteRecord(session.internalId).futureValue
 
       result                                    shouldEqual ()
       repository.get(session.internalId).futureValue should not be defined
     }
 
     "return true when there is no record to remove" in {
-      val result = repository.deleteRecord("id that does not exist").futureValue
+      val result: Unit = repository.deleteRecord("id that does not exist").futureValue
 
       result shouldEqual ()
     }

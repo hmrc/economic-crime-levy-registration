@@ -19,6 +19,6 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 trait DataRetrievalError
 
 object DataRetrievalError {
-  case class NotFound(id: String) extends DataRetrievalError
   case class InternalUnexpectedError(message: String, cause: Option[Throwable]) extends DataRetrievalError
+  case class NotFound(id: String) extends DataRetrievalError
 }

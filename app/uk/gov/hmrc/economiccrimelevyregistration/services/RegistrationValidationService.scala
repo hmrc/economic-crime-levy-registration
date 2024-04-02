@@ -139,7 +139,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
     } yield SubscriptionContactDetails(
       name = name,
       positionInCompany = role,
-      telephone = number.removeWhitespace,
+      telephone = number.removeWhitespace(),
       emailAddress = email
     )
 
@@ -225,7 +225,7 @@ class RegistrationValidationService @Inject() (clock: Clock, schemaValidator: Sc
           case (None, Some(p), None) =>
             (
               validateOptExists(p.sautr, "Partnership SA UTR"),
-              validateOptExists(p.postcode.map(_.removeWhitespace), "Partnership postcode"),
+              validateOptExists(p.postcode.map(_.removeWhitespace()), "Partnership postcode"),
               validateOptExists(registration.partnershipName, "Partnership name")
             ).mapN { (sautr, postcode, partnershipName) =>
               LegalEntityDetails(

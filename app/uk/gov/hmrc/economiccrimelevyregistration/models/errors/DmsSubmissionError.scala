@@ -19,6 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 trait DmsSubmissionError
 
 object DmsSubmissionError {
-  case class InternalUnexpectedError(cause: Option[Throwable]) extends DmsSubmissionError
   case class BadGateway(reason: String, code: Int) extends DmsSubmissionError
+
+  case class InternalUnexpectedError(cause: Option[Throwable]) extends DmsSubmissionError
 }

@@ -22,16 +22,18 @@ sealed trait DeregisterReason
 
 object DeregisterReason {
   case object NoAmlActivity extends DeregisterReason
-  case object RegulatedByFcaOrGa extends DeregisterReason
+
   case object NoLongerMeetsThreshold extends DeregisterReason
+
+  case object RegulatedByFcaOrGa extends DeregisterReason
 
   implicit val format: Format[DeregisterReason] = new Format[DeregisterReason] {
     override def reads(json: JsValue): JsResult[DeregisterReason] = json.validate[String] match {
       case JsSuccess(value, _) =>
         value match {
+          case "NoLongerMeetsThreshold" => JsSuccess(NoLongerMeetsThreshold)
           case "NoAmlActivity"          => JsSuccess(NoAmlActivity)
           case "RegulatedByFcaOrGa"     => JsSuccess(RegulatedByFcaOrGa)
-          case "NoLongerMeetsThreshold" => JsSuccess(NoLongerMeetsThreshold)
           case s                        => JsError(s"$s is not a valid DeregisterReason")
         }
       case e: JsError          => e

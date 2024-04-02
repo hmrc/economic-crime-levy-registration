@@ -22,7 +22,9 @@ sealed trait RegistrationStatus
 
 object RegistrationStatus {
   case object Registered extends RegistrationStatus
+
   case object RegistrationFailed extends RegistrationStatus
+
   case object RegistrationNotCalled extends RegistrationStatus
 
   implicit val format: Format[RegistrationStatus] = new Format[RegistrationStatus] {

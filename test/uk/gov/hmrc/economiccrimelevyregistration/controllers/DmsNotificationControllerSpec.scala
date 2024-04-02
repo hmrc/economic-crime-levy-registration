@@ -26,6 +26,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.dms.DmsNotification
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
+import uk.gov.hmrc.http.HeaderNames
 import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
 
@@ -55,7 +56,7 @@ class DmsNotificationControllerSpec extends SpecBase {
         .thenReturn(Future.unit)
 
       val request = FakeRequest(POST, routes.DmsNotificationController.dmsCallback().url)
-        .withHeaders(AUTHORIZATION -> "Some auth token")
+        .withHeaders(HeaderNames.authorisation -> "Some auth token")
         .withBody(Json.toJson(dmsNotification))
 
       val result = controller.dmsCallback()(request)
@@ -66,7 +67,7 @@ class DmsNotificationControllerSpec extends SpecBase {
       when(mockStubBehaviour.stubAuth[Unit](any(), any())).thenReturn(Future.unit)
 
       val request = FakeRequest(POST, routes.DmsNotificationController.dmsCallback().url)
-        .withHeaders(AUTHORIZATION -> "Some auth token")
+        .withHeaders(HeaderNames.authorisation -> "Some auth token")
         .withBody(Json.obj())
 
       val result = controller.dmsCallback()(request)
@@ -89,7 +90,7 @@ class DmsNotificationControllerSpec extends SpecBase {
         .thenReturn(Future.failed(new RuntimeException()))
 
       val request = FakeRequest(POST, routes.DmsNotificationController.dmsCallback().url)
-        .withHeaders(AUTHORIZATION -> "Some auth token")
+        .withHeaders(HeaderNames.authorisation -> "Some auth token")
         .withBody(Json.toJson(random[DmsNotification]))
 
       val result = controller.dmsCallback()(request)

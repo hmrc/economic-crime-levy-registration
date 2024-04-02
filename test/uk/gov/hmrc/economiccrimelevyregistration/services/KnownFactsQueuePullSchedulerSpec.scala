@@ -56,7 +56,7 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
 
         val expectedUpsertKnownFactsRequest =
           UpsertKnownFactsRequest(verifiers =
-            Seq(KeyValue(EclEnrolment.VerifierKey, knownFactsWorkItem.item.eclRegistrationDate))
+            Seq(KeyValue(EclEnrolment.verifierKey, knownFactsWorkItem.item.eclRegistrationDate))
           )
 
         when(
@@ -84,7 +84,7 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
 
         val expectedUpsertKnownFactsRequest =
           UpsertKnownFactsRequest(verifiers =
-            Seq(KeyValue(EclEnrolment.VerifierKey, knownFactsWorkItem.item.eclRegistrationDate))
+            Seq(KeyValue(EclEnrolment.verifierKey, knownFactsWorkItem.item.eclRegistrationDate))
           )
 
         when(
