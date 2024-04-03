@@ -14,7 +14,7 @@ object AppDependencies {
     "io.circe"          %% "circe-json-schema"                 % "0.2.0",
     "org.json"          %  "json"                              % "20240303",
     "io.circe"          %% "circe-parser"                      % "0.14.6",
-    "uk.gov.hmrc"       %% "internal-auth-client-play-30"      % "1.10.0",
+    "uk.gov.hmrc"       %% "internal-auth-client-play-30"      % "2.0.0",
     "com.beachape"      %% "enumeratum-play-json"              % "1.8.0",
     "uk.gov.hmrc"       %% "tax-year"                          % "4.0.0"
   )

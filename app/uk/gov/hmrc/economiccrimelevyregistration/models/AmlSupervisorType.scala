@@ -22,10 +22,14 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Other
 sealed trait AmlSupervisorType
 
 object AmlSupervisorType {
-  case object Hmrc extends AmlSupervisorType
-  case object GamblingCommission extends AmlSupervisorType
   case object FinancialConductAuthority extends AmlSupervisorType
+
+  case object Hmrc extends AmlSupervisorType
+
+  case object GamblingCommission extends AmlSupervisorType
+
   case object Other extends AmlSupervisorType
+
   case object Unknown extends AmlSupervisorType
 
   implicit val format: Format[AmlSupervisorType] = new Format[AmlSupervisorType] {

@@ -30,8 +30,8 @@ sealed abstract class ResponseError extends Product with Serializable {
 
 object ResponseError {
 
-  private val MessageFieldName = "message"
-  private val CodeFieldName    = "code"
+  private val codeFieldName    = "code"
+  private val messageFieldName = "message"
 
   def badRequestError(message: String): ResponseError =
     StandardError(message, ErrorCode.BadRequest)
@@ -63,14 +63,14 @@ object ResponseError {
 
   implicit val errorWrites: OWrites[ResponseError] =
     (
-      (__ \ MessageFieldName).write[String] and
-        (__ \ CodeFieldName).write[ErrorCode]
+      (__ \ messageFieldName).write[String] and
+        (__ \ codeFieldName).write[ErrorCode]
     )(unlift(ResponseError.unapply))
 
   implicit val standardErrorReads: Reads[StandardError] =
     (
-      (__ \ MessageFieldName).read[String] and
-        (__ \ CodeFieldName).read[ErrorCode]
+      (__ \ messageFieldName).read[String] and
+        (__ \ codeFieldName).read[ErrorCode]
     )(StandardError.apply _)
 
   def unapply(error: ResponseError): Option[(String, ErrorCode)] = Some((error.message, error.code))

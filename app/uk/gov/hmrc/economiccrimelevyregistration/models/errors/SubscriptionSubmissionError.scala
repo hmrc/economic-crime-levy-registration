@@ -19,7 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 trait SubscriptionSubmissionError
 
 object SubscriptionSubmissionError {
-  case class InternalUnexpectedError(message: String, cause: Option[Throwable]) extends SubscriptionSubmissionError
-
   case class BadGateway(reason: String, code: Int) extends SubscriptionSubmissionError
+
+  case class InternalUnexpectedError(message: String, cause: Option[Throwable]) extends SubscriptionSubmissionError
 }

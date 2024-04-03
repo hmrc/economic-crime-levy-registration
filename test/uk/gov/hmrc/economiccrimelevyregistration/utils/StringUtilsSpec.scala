@@ -22,7 +22,7 @@ class StringUtilsSpec extends SpecBase {
 
   "removeWhitespace" should {
     "remove any whitespace from a given string" in {
-      val result = "   ABC  123 DEF   ".removeWhitespace
+      val result = "   ABC  123 DEF   ".removeWhitespace()
 
       result shouldBe "ABC123DEF"
     }

@@ -23,34 +23,43 @@ sealed trait SubscriptionStatus
 final case class EclSubscriptionStatus(subscriptionStatus: SubscriptionStatus)
 
 object EclSubscriptionStatus {
+
+  private val deRegistered: String    = "DeRegistered"
+  private val eclRegReference: String = "eclRegistrationReference"
+  private val status: String          = "status"
+  private val subscribed: String      = "Subscribed"
+  private val notValidStatus: String  = "is not a valid SubscriptionStatus"
+
   case class DeRegistered(eclRegistrationReference: String) extends SubscriptionStatus
-  case class Subscribed(eclRegistrationReference: String) extends SubscriptionStatus
+
   case object NotSubscribed extends SubscriptionStatus
+
+  case class Subscribed(eclRegistrationReference: String) extends SubscriptionStatus
 
   implicit val subscriptionStatusFormat: Format[SubscriptionStatus] = new Format[SubscriptionStatus] {
     override def reads(json: JsValue): JsResult[SubscriptionStatus] = json match {
       case JsString(value) =>
         value match {
           case "NotSubscribed" => JsSuccess(NotSubscribed)
-          case s               => JsError(s"$s is not a valid SubscriptionStatus")
+          case s               => JsError(s"$s $notValidStatus")
         }
       case json            =>
-        (json \ "status", json \ "eclRegistrationReference") match {
+        (json \ status, json \ eclRegReference) match {
           case (JsDefined(status), JsDefined(eclRegistrationReference)) =>
             (status.as[String], eclRegistrationReference.as[String]) match {
               case ("Subscribed", eclRegistrationReference)   => JsSuccess(Subscribed(eclRegistrationReference))
               case ("DeRegistered", eclRegistrationReference) => JsSuccess(DeRegistered(eclRegistrationReference))
-              case (s, _)                                     => JsError(s"$s is not a valid SubscriptionStatus")
+              case (s, _)                                     => JsError(s"$s $notValidStatus")
             }
-          case _                                                        => JsError(s"$json is not a valid SubscriptionStatus")
+          case _                                                        => JsError(s"$json $notValidStatus")
         }
     }
 
     override def writes(o: SubscriptionStatus): JsValue = o match {
       case DeRegistered(eclRegistrationReference) =>
-        Json.obj("status" -> "DeRegistered", "eclRegistrationReference" -> eclRegistrationReference)
+        Json.obj(status -> deRegistered, eclRegReference -> eclRegistrationReference)
       case Subscribed(eclRegistrationReference)   =>
-        Json.obj("status" -> "Subscribed", "eclRegistrationReference" -> eclRegistrationReference)
+        Json.obj(status -> subscribed, eclRegReference -> eclRegistrationReference)
       case subscriptionStatus                     => JsString(subscriptionStatus.toString)
     }
   }

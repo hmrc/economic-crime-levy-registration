@@ -16,17 +16,16 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
+import com.typesafe.config.Config
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.typesafe.config.Config
-import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status.ACCEPTED
 import play.api.mvc.MultipartFormData
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,7 +39,7 @@ class DmsConnector @Inject() (
 )(implicit ec: ExecutionContext)
     extends BaseConnector {
 
-  private val dmsHeaders = AUTHORIZATION -> appConfig.internalAuthToken
+  private val dmsHeaders: (String, String) = HeaderNames.authorisation -> appConfig.internalAuthToken
 
   def sendPdf(
     body: Source[MultipartFormData.Part[Source[ByteString, NotUsed]], NotUsed]

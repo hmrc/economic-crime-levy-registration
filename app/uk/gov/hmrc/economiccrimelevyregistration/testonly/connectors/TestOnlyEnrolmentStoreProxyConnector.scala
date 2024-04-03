@@ -47,7 +47,7 @@ class TestOnlyEnrolmentStoreProxyConnector @Inject() (appConfig: AppConfig, http
   )(implicit hc: HeaderCarrier): Future[Option[EnrolmentGroupIdResponse]] =
     httpClient
       .GET[Option[EnrolmentGroupIdResponse]](
-        s"$enrolmentStoreUrl/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}/groups?type=principal&ignore-assignments=true"
+        s"$enrolmentStoreUrl/enrolments/${EclEnrolment.enrolmentKey(eclReference)}/groups?type=principal&ignore-assignments=true"
       )(readOptionOfNotFoundOrNoContent, hc, ec)
 
   def deEnrol(groupId: String, eclReference: String)(implicit
@@ -55,6 +55,6 @@ class TestOnlyEnrolmentStoreProxyConnector @Inject() (appConfig: AppConfig, http
   ): Future[Either[UpstreamErrorResponse, HttpResponse]] =
     httpClient
       .DELETE[Either[UpstreamErrorResponse, HttpResponse]](
-        s"$enrolmentStoreUrl/groups/$groupId/enrolments/${EclEnrolment.EnrolmentKey(eclReference)}"
+        s"$enrolmentStoreUrl/groups/$groupId/enrolments/${EclEnrolment.enrolmentKey(eclReference)}"
       )
 }

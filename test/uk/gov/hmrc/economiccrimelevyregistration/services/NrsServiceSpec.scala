@@ -35,7 +35,6 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.scalacheck.Arbitrary
-import play.api.http.HeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.ValidNrsSubmission
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
@@ -44,7 +43,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.NrsSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.{HeaderNames, UpstreamErrorResponse}
 
 import java.time.{Clock, Instant, ZoneId}
 import scala.concurrent.Future
@@ -54,7 +53,7 @@ class NrsServiceSpec extends SpecBase {
   val mockNrsConnector: NrsConnector       = mock[NrsConnector]
   private val fixedPointInTime             = Instant.parse("2007-12-25T10:15:30.00Z")
   private val stubClock: Clock             = Clock.fixed(fixedPointInTime, ZoneId.systemDefault)
-  private val fakeRequestWithAuthorisation = fakeRequest.withHeaders((HeaderNames.AUTHORIZATION, "test"))
+  private val fakeRequestWithAuthorisation = fakeRequest.withHeaders((HeaderNames.authorisation, "test"))
   val mockAppConfig: AppConfig             = mock[AppConfig]
   val service                              = new NrsService(mockNrsConnector, stubClock)
 

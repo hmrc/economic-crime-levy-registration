@@ -19,6 +19,7 @@ import play.api.mvc.{Result, Results}
 import play.api.test._
 import play.api.{Application, Mode}
 import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper._
+import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}
@@ -60,6 +61,8 @@ abstract class ISpecBase
 
   val now: Instant             = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
+
+  lazy val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
   val additionalAppConfig: Map[String, Any] = Map(
     "create-internal-auth-token-on-start" -> false,

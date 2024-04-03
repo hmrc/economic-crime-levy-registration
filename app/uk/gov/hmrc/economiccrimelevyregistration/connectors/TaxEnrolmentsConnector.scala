@@ -18,13 +18,12 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
 import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.Config
-import play.api.http.HeaderNames
 import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -47,7 +46,7 @@ class TaxEnrolmentsConnectorImpl @Inject() (
     with TaxEnrolmentsConnector {
 
   private val taxEnrolmentsUrl: String =
-    s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$ServiceName/enrolment"
+    s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments/service/$serviceName/enrolment"
 
   override def enrol(
     createEnrolmentRequest: CreateEnrolmentRequest
@@ -58,7 +57,7 @@ class TaxEnrolmentsConnectorImpl @Inject() (
         .withBody(Json.toJson(createEnrolmentRequest))
 
       hc.authorization
-        .map(auth => request.setHeader(HeaderNames.AUTHORIZATION -> auth.value))
+        .map(auth => request.setHeader(HeaderNames.authorisation -> auth.value))
         .getOrElse(request)
         .executeAndContinue
     }

@@ -18,14 +18,12 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
 import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.Config
-import play.api.http.HeaderNames
 import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.CustomHeaderNames
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
-import uk.gov.hmrc.economiccrimelevyregistration.utils.HttpConstants.HEADER_X_CORRELATION_ID
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, StringContextOps}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -40,11 +38,17 @@ class IntegrationFrameworkConnector @Inject() (
 )(implicit ec: ExecutionContext)
     extends BaseConnector {
 
+  private def createCorrelationId(hc: HeaderCarrier): String =
+    hc.headers(Seq(CustomHeaderNames.xCorrelationId)) match {
+      case Seq((_, correlationId)) => correlationId
+      case _                       => UUID.randomUUID().toString
+    }
+
   private def integrationFrameworkHeaders(correlationId: String, bearerToken: String): Seq[(String, String)] = Seq(
-    (HeaderNames.AUTHORIZATION, s"Bearer $bearerToken"),
-    (CustomHeaderNames.Environment, appConfig.integrationFrameworkEnvironment),
-    (CustomHeaderNames.CorrelationId, correlationId),
-    (HEADER_X_CORRELATION_ID, correlationId)
+    (HeaderNames.authorisation, s"Bearer $bearerToken"),
+    (CustomHeaderNames.environment, appConfig.integrationFrameworkEnvironment),
+    (CustomHeaderNames.correlationId, correlationId),
+    (CustomHeaderNames.xCorrelationId, correlationId)
   )
 
   def getSubscriptionStatus(
@@ -76,12 +80,6 @@ class IntegrationFrameworkConnector @Inject() (
         .executeAndDeserialise[CreateEclSubscriptionResponse]
     }
   }
-
-  private def createCorrelationId(hc: HeaderCarrier): String =
-    hc.headers(Seq(HEADER_X_CORRELATION_ID)) match {
-      case Nil                     => UUID.randomUUID().toString
-      case Seq((_, correlationId)) => correlationId
-    }
 
   def getSubscription(
     eclReference: String

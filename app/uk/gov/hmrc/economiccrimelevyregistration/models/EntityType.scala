@@ -21,21 +21,33 @@ import play.api.libs.json._
 sealed trait EntityType
 
 object EntityType {
-  case object UkLimitedCompany extends EntityType
-  case object SoleTrader extends EntityType
-  case object GeneralPartnership extends EntityType
-  case object ScottishPartnership extends EntityType
-  case object LimitedPartnership extends EntityType
-  case object ScottishLimitedPartnership extends EntityType
-  case object LimitedLiabilityPartnership extends EntityType
-  case object UnlimitedCompany extends EntityType
-  case object RegisteredSociety extends EntityType
   case object Charity extends EntityType
-  case object Trust extends EntityType
+
+  case object GeneralPartnership extends EntityType
+
+  case object LimitedLiabilityPartnership extends EntityType
+
+  case object LimitedPartnership extends EntityType
+
   case object NonUKEstablishment extends EntityType
+
+  case object RegisteredSociety extends EntityType
+
+  case object ScottishLimitedPartnership extends EntityType
+
+  case object ScottishPartnership extends EntityType
+
+  case object SoleTrader extends EntityType
+
+  case object Trust extends EntityType
+
+  case object UnlimitedCompany extends EntityType
+
+  case object UkLimitedCompany extends EntityType
+
   case object UnincorporatedAssociation extends EntityType
 
-  def isOther(entityType: EntityType) =
+  def isOther(entityType: EntityType): Boolean =
     Seq(
       Charity,
       Trust,
@@ -47,19 +59,19 @@ object EntityType {
     override def reads(json: JsValue): JsResult[EntityType] = json.validate[String] match {
       case JsSuccess(value, _) =>
         value match {
-          case "UkLimitedCompany"            => JsSuccess(UkLimitedCompany)
-          case "SoleTrader"                  => JsSuccess(SoleTrader)
-          case "GeneralPartnership"          => JsSuccess(GeneralPartnership)
-          case "ScottishPartnership"         => JsSuccess(ScottishPartnership)
-          case "LimitedPartnership"          => JsSuccess(LimitedPartnership)
-          case "ScottishLimitedPartnership"  => JsSuccess(ScottishLimitedPartnership)
-          case "LimitedLiabilityPartnership" => JsSuccess(LimitedLiabilityPartnership)
-          case "UnlimitedCompany"            => JsSuccess(UnlimitedCompany)
-          case "RegisteredSociety"           => JsSuccess(RegisteredSociety)
           case "Charity"                     => JsSuccess(Charity)
-          case "Trust"                       => JsSuccess(Trust)
+          case "GeneralPartnership"          => JsSuccess(GeneralPartnership)
+          case "LimitedLiabilityPartnership" => JsSuccess(LimitedLiabilityPartnership)
+          case "LimitedPartnership"          => JsSuccess(LimitedPartnership)
           case "NonUKEstablishment"          => JsSuccess(NonUKEstablishment)
+          case "RegisteredSociety"           => JsSuccess(RegisteredSociety)
+          case "ScottishLimitedPartnership"  => JsSuccess(ScottishLimitedPartnership)
+          case "ScottishPartnership"         => JsSuccess(ScottishPartnership)
+          case "SoleTrader"                  => JsSuccess(SoleTrader)
+          case "Trust"                       => JsSuccess(Trust)
+          case "UkLimitedCompany"            => JsSuccess(UkLimitedCompany)
           case "UnincorporatedAssociation"   => JsSuccess(UnincorporatedAssociation)
+          case "UnlimitedCompany"            => JsSuccess(UnlimitedCompany)
           case s                             => JsError(s"$s is not a valid EntityType")
         }
       case e: JsError          => e

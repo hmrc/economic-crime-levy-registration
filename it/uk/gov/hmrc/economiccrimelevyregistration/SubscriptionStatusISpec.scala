@@ -6,11 +6,10 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
+import uk.gov.hmrc.economiccrimelevyregistration.models.{CustomHeaderNames, EclSubscriptionStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.GetSubscriptionResponse
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.utils.HttpConstants
 
 class SubscriptionStatusISpec extends ISpecBase {
 
@@ -35,7 +34,7 @@ class SubscriptionStatusISpec extends ISpecBase {
       verify(
         1,
         getRequestedFor(urlEqualTo(s"/cross-regime/subscription/ECL/SAFE/$testBusinessPartnerId/status"))
-          .withHeader(HttpConstants.HEADER_X_CORRELATION_ID, matching(uuidRegex))
+          .withHeader(CustomHeaderNames.xCorrelationId, matching(uuidRegex))
       )
     }
 
@@ -57,7 +56,7 @@ class SubscriptionStatusISpec extends ISpecBase {
       verify(
         1,
         getRequestedFor(urlEqualTo(s"/cross-regime/subscription/ECL/SAFE/$testBusinessPartnerId/status"))
-          .withHeader(HttpConstants.HEADER_X_CORRELATION_ID, matching(uuidRegex))
+          .withHeader(CustomHeaderNames.xCorrelationId, matching(uuidRegex))
       )
     }
   }
@@ -79,7 +78,7 @@ class SubscriptionStatusISpec extends ISpecBase {
       verify(
         1,
         getRequestedFor(urlEqualTo(s"/economic-crime-levy/subscription/$testEclRegistrationReference"))
-          .withHeader(HttpConstants.HEADER_X_CORRELATION_ID, matching(uuidRegex))
+          .withHeader(CustomHeaderNames.xCorrelationId, matching(uuidRegex))
       )
     }
 
@@ -96,7 +95,7 @@ class SubscriptionStatusISpec extends ISpecBase {
       verify(
         totalNumberOfCalls,
         getRequestedFor(urlEqualTo(s"/economic-crime-levy/subscription/$testEclRegistrationReference"))
-          .withHeader(HttpConstants.HEADER_X_CORRELATION_ID, matching(uuidRegex))
+          .withHeader(CustomHeaderNames.xCorrelationId, matching(uuidRegex))
       )
     }
   }

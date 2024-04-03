@@ -51,7 +51,7 @@ class TestOnlyController @Inject() (
       .deEnrol(groupId, eclReference)
       .map(_ =>
         Ok(
-          s"Enrolment ${EclEnrolment.ServiceName} successfully de-allocated from group ID $groupId with ECL reference $eclReference. " +
+          s"Enrolment ${EclEnrolment.serviceName} successfully de-allocated from group ID $groupId with ECL reference $eclReference. " +
             s"The enrolment has also been de-assigned from all users within the group."
         )
       )
@@ -67,9 +67,9 @@ class TestOnlyController @Inject() (
               Future.traverse(enrolmentGroupIdResponse.principalGroupIds)(groupId =>
                 testOnlyEnrolmentStoreProxyConnector.deEnrol(groupId, reference).map {
                   case Right(_) =>
-                    s"Enrolment ${EclEnrolment.ServiceName} successfully de-allocated from group ID $groupId with ECL reference $reference."
+                    s"Enrolment ${EclEnrolment.serviceName} successfully de-allocated from group ID $groupId with ECL reference $reference."
                   case Left(e)  =>
-                    s"""Failed to de-allocate enrolment ${EclEnrolment.ServiceName} from group
+                    s"""Failed to de-allocate enrolment ${EclEnrolment.serviceName} from group
                     |ID $groupId with ECL reference $reference. Error: ${e.getMessage()}""".stripMargin
                 }
               )

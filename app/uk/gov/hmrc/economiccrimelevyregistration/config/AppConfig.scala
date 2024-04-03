@@ -26,74 +26,51 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 @Singleton
 class AppConfig @Inject() (configuration: Configuration, servicesConfig: ServicesConfig) {
 
-  val appName: String = configuration.get[String]("appName")
+  private val dmsBaseUrl: String                    = servicesConfig.baseUrl("dms-submission")
+  private val dmsSubmissionCallbackEndpoint: String =
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.callbackEndpoint")
+  private val appBaseUrl: String                    = servicesConfig.baseUrl("self")
 
-  val eclFirstTimeRegistrationNotableEvent: String =
+  val appName: String                                        = configuration.get[String]("appName")
+  val amendRegistrationNrsEnabled: Boolean                   = configuration.get[Boolean]("features.amendRegistrationNrsEnabled")
+  val dmsSubmissionBusinessArea: String                      =
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.businessArea")
+  val dmsSubmissionCallbackUrl: String                       = s"$appBaseUrl/$appName/$dmsSubmissionCallbackEndpoint"
+  val dmsSubmissionClassificationType: String                =
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.classificationType")
+  val dmsSubmissionCustomerId: String                        =
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.customerId")
+  val dmsSubmissionDeregistrationFormId: String              =
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.deregistrationFormId")
+  val dmsSubmissionFormId: String                            =
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.formId")
+  val dmsSubmissionSource: String                            =
+    configuration.get[String]("microservice.services.dms-submission.registration-submission.source")
+  val dmsSubmissionUrl: String                               = dmsBaseUrl + "/dms-submission/submit"
+  val eclFirstTimeRegistrationNotableEvent: String           =
     configuration.get[String]("microservice.services.nrs.notable-events.ecl-first-time-registration")
-
-  val eclAmendRegistrationNotableEvent: String =
+  val eclAmendRegistrationNotableEvent: String               =
     configuration.get[String]("microservice.services.nrs.notable-events.ecl-amend-registration")
-
-  val appBaseUrl: String = servicesConfig.baseUrl("self")
-
-  val mongoTtl: Int = configuration.get[Int]("mongodb.timeToLiveInSeconds")
-
-  val taxEnrolmentsBaseUrl: String = servicesConfig.baseUrl("tax-enrolments")
-
-  val integrationFrameworkUrl: String = servicesConfig.baseUrl("integration-framework")
-
-  val integrationFrameworkBearerToken: String =
-    configuration.get[String]("microservice.services.integration-framework.bearerToken")
-
-  val getSubscriptionStatusBearerToken: String =
+  val eclStubsBaseUrl: String                                = servicesConfig.baseUrl("economic-crime-levy-stubs")
+  val enrolmentStoreProxyBaseUrl: String                     = servicesConfig.baseUrl("enrolment-store-proxy")
+  val getSubscriptionStatusBearerToken: String               =
     configuration.get[String]("microservice.services.integration-framework.getSubscriptionStatusBearerToken")
-
-  val integrationFrameworkEnvironment: String =
+  val integrationFrameworkBearerToken: String                =
+    configuration.get[String]("microservice.services.integration-framework.bearerToken")
+  val integrationFrameworkEnvironment: String                =
     configuration.get[String]("microservice.services.integration-framework.environment")
-
   val integrationFrameworkGetSubscriptionBearerToken: String =
     configuration.get[String]("microservice.services.integration-framework.getSubscriptionBearerToken")
-
-  val enrolmentStoreProxyBaseUrl: String = servicesConfig.baseUrl("enrolment-store-proxy")
-
-  val eclStubsBaseUrl: String = servicesConfig.baseUrl("economic-crime-levy-stubs")
-
-  val knownFactsInProgressRetryAfter: FiniteDuration =
+  val integrationFrameworkUrl: String                        = servicesConfig.baseUrl("integration-framework")
+  val internalAuthBaseUrl: String                            = servicesConfig.baseUrl("internal-auth")
+  val internalAuthToken: String                              = configuration.get[String]("internal-auth.token")
+  val knownFactsInProgressRetryAfter: FiniteDuration         =
     configuration.get[FiniteDuration]("knownFactsQueue.inProgressRetryAfter")
-
-  val nrsBaseUrl: String = servicesConfig.baseUrl("nrs")
-
-  val nrsApiKey: String = configuration.get[String]("microservice.services.nrs.apiKey")
-
-  val internalAuthToken: String = configuration.get[String]("internal-auth.token")
-
-  val internalAuthBaseUrl: String = servicesConfig.baseUrl("internal-auth")
-
-  val retryDuration: Iterable[Duration] =
+  val mongoTtl: Int                                          = configuration.get[Int]("mongodb.timeToLiveInSeconds")
+  val nrsApiKey: String                                      = configuration.get[String]("microservice.services.nrs.apiKey")
+  val nrsBaseUrl: String                                     = servicesConfig.baseUrl("nrs")
+  val nrsSubmissionEnabled: Boolean                          = configuration.get[Boolean]("features.nrsSubmissionEnabled")
+  val retryDuration: Iterable[Duration]                      =
     configuration.underlying.getStringList("http-verbs.retries.intervals").asScala.map(Duration(_))
-
-  val dmsBaseUrl: String                      = servicesConfig.baseUrl("dms-submission")
-  val dmsSubmissionBusinessArea: String       =
-    configuration.get[String]("microservice.services.dms-submission.registration-submission.businessArea")
-  val dmsSubmissionCallbackEndpoint: String   =
-    configuration.get[String](
-      "microservice.services.dms-submission.registration-submission.callbackEndpoint"
-    )
-  val dmsSubmissionCallbackUrl: String        = s"$appBaseUrl/$appName/$dmsSubmissionCallbackEndpoint"
-  val dmsSubmissionClassificationType: String =
-    configuration.get[String]("microservice.services.dms-submission.registration-submission.classificationType")
-  val dmsSubmissionCustomerId: String         =
-    configuration.get[String]("microservice.services.dms-submission.registration-submission.customerId")
-  val dmsSubmissionFormId: String             =
-    configuration.get[String]("microservice.services.dms-submission.registration-submission.formId")
-  val dmsSubmissionSource: String             =
-    configuration.get[String]("microservice.services.dms-submission.registration-submission.source")
-  val dmsSubmissionUrl: String                = dmsBaseUrl + "/dms-submission/submit"
-
-  val dmsSubmissionDeregistrationFormId: String =
-    configuration.get[String]("microservice.services.dms-submission.registration-submission.deregistrationFormId")
-
-  val amendRegistrationNrsEnabled: Boolean = configuration.get[Boolean]("features.amendRegistrationNrsEnabled")
-
-  val nrsSubmissionEnabled: Boolean = configuration.get[Boolean]("features.nrsSubmissionEnabled")
+  val taxEnrolmentsBaseUrl: String                           = servicesConfig.baseUrl("tax-enrolments")
 }

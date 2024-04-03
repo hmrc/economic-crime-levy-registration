@@ -54,15 +54,15 @@ final case class NrsIdentityData(
 )
 
 object NrsIdentityData {
-  implicit val credentialsWrites: OWrites[Credentials]           = Json.writes[Credentials]
-  implicit val nameWrites: OWrites[Name]                         = Json.writes[Name]
+  implicit val affinityGroupWrites: Writes[AffinityGroup]        = (o: AffinityGroup) => JsString(o.toString)
   implicit val agentInformationWrites: OWrites[AgentInformation] = Json.writes[AgentInformation]
   implicit val credentialRoleWrites: Writes[CredentialRole]      = (o: CredentialRole) => JsString(o.toString)
-  implicit val mdtpInformationWrites: OWrites[MdtpInformation]   = Json.writes[MdtpInformation]
-  implicit val itmpNameWrites: OWrites[ItmpName]                 = Json.writes[ItmpName]
+  implicit val credentialsWrites: OWrites[Credentials]           = Json.writes[Credentials]
   implicit val itmpAddressWrites: OWrites[ItmpAddress]           = Json.writes[ItmpAddress]
-  implicit val affinityGroupWrites: Writes[AffinityGroup]        = (o: AffinityGroup) => JsString(o.toString)
+  implicit val itmpNameWrites: OWrites[ItmpName]                 = Json.writes[ItmpName]
   implicit val loginTimesWrites: OWrites[LoginTimes]             = Json.writes[LoginTimes]
+  implicit val mdtpInformationWrites: OWrites[MdtpInformation]   = Json.writes[MdtpInformation]
+  implicit val nameWrites: OWrites[Name]                         = Json.writes[Name]
   implicit val writes: OWrites[NrsIdentityData]                  = Json.writes[NrsIdentityData]
 }
 

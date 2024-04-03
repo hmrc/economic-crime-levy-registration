@@ -21,8 +21,10 @@ trait DataValidationError {
 }
 
 object DataValidationError {
-  case class SchemaValidationError(errorMessage: String) extends DataValidationError
-  case class DataMissing(errorMessage: String) extends DataValidationError
   case class DataInvalid(errorMessage: String) extends DataValidationError
+
+  case class DataMissing(errorMessage: String) extends DataValidationError
+
+  case class SchemaValidationError(errorMessage: String) extends DataValidationError
 
 }
