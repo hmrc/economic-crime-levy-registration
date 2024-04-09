@@ -47,9 +47,10 @@ class DeregistrationSubmissionController @Inject() (
     (for {
       deregistration <- deregistrationService.getDeregistration(id).asResponseError
       now             = Instant.now().truncatedTo(ChronoUnit.SECONDS)
-      response       <- dmsService
+      _              <- dmsService
                           .submitToDms(deregistration.dmsSubmissionHtml, now, DeRegistration)
                           .asResponseError
+      _               = deregistrationService.sendDeregistrationRequestedAuditEvent(deregistration)
     } yield ()).convertToResult(OK)
   }
 

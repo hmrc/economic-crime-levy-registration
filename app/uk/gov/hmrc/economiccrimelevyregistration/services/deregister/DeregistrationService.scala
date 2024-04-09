@@ -17,22 +17,27 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services.deregister
 
 import cats.data.EitherT
+import play.api.http.Status.BAD_GATEWAY
+import uk.gov.hmrc.economiccrimelevyregistration.models.audit.DeregistrationRequestedAuditEvent
 import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.RegistrationError
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{AuditError, RegistrationError}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.deregister.DeregistrationRepository
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 @Singleton
 class DeregistrationService @Inject() (
-  deregistrationRepository: DeregistrationRepository
-) {
-  def upsertDeregistration(
-    deregistration: Deregistration
-  )(implicit ec: ExecutionContext): EitherT[Future, RegistrationError, Deregistration] =
+  deregistrationRepository: DeregistrationRepository,
+  auditConnector: AuditConnector
+)(implicit ec: ExecutionContext) {
+
+  def deleteDeregistration(id: String)(implicit ec: ExecutionContext): EitherT[Future, RegistrationError, Unit] =
     EitherT {
-      deregistrationRepository.upsert(deregistration).map(_ => Right(deregistration)).recover { case e =>
+      deregistrationRepository.deleteRecord(id).map(response => Right(())).recover { case e =>
         Left(RegistrationError.InternalUnexpectedError(Some(e)))
       }
     }
@@ -50,9 +55,33 @@ class DeregistrationService @Inject() (
         }
     }
 
-  def deleteDeregistration(id: String)(implicit ec: ExecutionContext): EitherT[Future, RegistrationError, Unit] =
+  def sendDeregistrationRequestedAuditEvent(
+    deregistrationData: Deregistration
+  )(implicit hc: HeaderCarrier): EitherT[Future, AuditError, Unit] =
     EitherT {
-      deregistrationRepository.deleteRecord(id).map(response => Right(())).recover { case e =>
+      val auditEvent = DeregistrationRequestedAuditEvent(
+        deregistrationData.copy(dmsSubmissionHtml = None)
+      ).extendedDataEvent
+
+      auditConnector
+        .sendExtendedEvent(auditEvent)(hc, ec)
+        .map {
+          case AuditResult.Success            => Right(())
+          case AuditResult.Failure(reason, _) =>
+            Left(AuditError.BadGateway(reason = s"Deregistration Requested Audit Failed - $reason", code = BAD_GATEWAY))
+          case AuditResult.Disabled           =>
+            Left(AuditError.BadGateway(reason = "Audit is disabled for the audit connector", code = BAD_GATEWAY))
+        }
+        .recover { case NonFatal(e) =>
+          Left(AuditError.InternalUnexpectedError(Some(e)))
+        }
+    }
+
+  def upsertDeregistration(
+    deregistration: Deregistration
+  )(implicit ec: ExecutionContext): EitherT[Future, RegistrationError, Deregistration] =
+    EitherT {
+      deregistrationRepository.upsert(deregistration).map(_ => Right(deregistration)).recover { case e =>
         Left(RegistrationError.InternalUnexpectedError(Some(e)))
       }
     }
