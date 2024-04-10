@@ -20,16 +20,18 @@ import org.mockito.ArgumentMatchers.{any, anyString}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
 import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors.RegistrationError
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{AuditError, RegistrationError}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.deregister.DeregistrationRepository
+import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 
 import scala.concurrent.Future
 
 class DeregistrationServiceSpec extends SpecBase {
 
   val mockRepository: DeregistrationRepository = mock[DeregistrationRepository]
+  val mockAuditConnector: AuditConnector       = mock[AuditConnector]
 
-  val service = new DeregistrationService(mockRepository)
+  val service = new DeregistrationService(mockRepository, mockAuditConnector)
 
   val testException = new Exception("error")
 
@@ -92,6 +94,51 @@ class DeregistrationServiceSpec extends SpecBase {
       val result = await(service.deleteDeregistration(deregistration.internalId).value)
 
       result shouldBe Left(RegistrationError.InternalUnexpectedError(Some(testException)))
+    }
+  }
+
+  "sendDeregistrationRequestedAuditEvent" should {
+    "return unit when AuditResult.Success" in forAll { deregistration: Deregistration =>
+      when(mockAuditConnector.sendExtendedEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(service.sendDeregistrationRequestedAuditEvent(deregistration).value)
+
+      result shouldBe Right(())
+    }
+
+    "return AuditError.BadGateway if AuditResult.Failure" in forAll {
+      (deregistration: Deregistration, errorMessage: String) =>
+        when(mockAuditConnector.sendExtendedEvent(any())(any(), any()))
+          .thenReturn(Future.successful(AuditResult.Failure(errorMessage, None)))
+
+        val result =
+          await(service.sendDeregistrationRequestedAuditEvent(deregistration).value)
+
+        result shouldBe Left(
+          AuditError.BadGateway(s"Deregistration Requested Audit Failed - $errorMessage", BAD_GATEWAY)
+        )
+    }
+
+    "return AuditError.BadGateway if AuditResult.Disabled" in forAll { (deregistration: Deregistration) =>
+      when(mockAuditConnector.sendExtendedEvent(any())(any(), any()))
+        .thenReturn(Future.successful(AuditResult.Disabled))
+
+      val result = await(service.sendDeregistrationRequestedAuditEvent(deregistration).value)
+
+      result shouldBe Left(AuditError.BadGateway("Audit is disabled for the audit connector", BAD_GATEWAY))
+    }
+
+    "return AuditError.InternalUnexpectedError when error" in forAll {
+      (deregistration: Deregistration, errorMessage: String) =>
+        val throwable = new Exception(errorMessage)
+
+        when(mockAuditConnector.sendExtendedEvent(any())(any(), any()))
+          .thenReturn(Future.failed(throwable))
+
+        val result =
+          await(service.sendDeregistrationRequestedAuditEvent(deregistration).value)
+
+        result shouldBe Left(AuditError.InternalUnexpectedError(Some(throwable)))
     }
   }
 }

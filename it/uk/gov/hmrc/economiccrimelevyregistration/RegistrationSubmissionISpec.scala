@@ -1,13 +1,13 @@
 package uk.gov.hmrc.economiccrimelevyregistration
 
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
-import com.github.tomakehurst.wiremock.client.WireMock.{equalTo, getRequestedFor, matching, postRequestedFor, urlEqualTo, verify}
+import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, CustomHeaderNames}
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.Initial
+import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, CustomHeaderNames}
 import uk.gov.hmrc.http.HeaderNames
 
 import java.util.Base64

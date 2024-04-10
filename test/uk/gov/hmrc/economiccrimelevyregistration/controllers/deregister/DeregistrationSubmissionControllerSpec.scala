@@ -52,6 +52,8 @@ class DeregistrationSubmissionControllerSpec extends SpecBase {
         deregistration: Deregistration,
         subscriptionResponse: CreateEclSubscriptionResponsePayload
       ) =>
+        reset(mockDeregistrationService)
+
         when(mockDeregistrationService.getDeregistration(any())(any())).thenReturn(EitherT.rightT(deregistration))
 
         when(mockDmsService.submitToDms(any(), any(), any())(any())).thenReturn(EitherT.rightT(subscriptionResponse))
@@ -61,6 +63,8 @@ class DeregistrationSubmissionControllerSpec extends SpecBase {
 
         status(result) shouldBe OK
 
+        verify(mockDeregistrationService, times(1))
+          .sendDeregistrationRequestedAuditEvent(any())(any())
     }
 
     "return 404 NOT_FOUND when there is no deregistration data to submit" in forAll { registration: Registration =>
