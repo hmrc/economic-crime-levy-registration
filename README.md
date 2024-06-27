@@ -20,12 +20,12 @@ The service runs on port `14001` by default.
 
 ## Running dependencies
 
-Using [service manager](https://github.com/hmrc/service-manager)
+Using [sm2](https://github.com/hmrc/sm2)
 with the service manager profile `ECONOMIC_CRIME_LEVY_ALL` will start
 all of the Economic Crime Levy microservices as well as the services
 that they depend on.
 
-> `sm --start ECONOMIC_CRIME_LEVY_ALL`
+> `sm2 --start ECONOMIC_CRIME_LEVY_ALL`
 
 ## Running tests
 
