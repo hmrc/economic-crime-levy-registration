@@ -2,8 +2,8 @@ import sbt._
 
 object AppDependencies {
 
-  private val hmrcBootstrapVersion = "9.8.0"
-  private val hmrcMongoVersion     = "2.5.0"
+  private val hmrcBootstrapVersion = "9.11.0"
+  private val hmrcMongoVersion     = "2.6.0"
   private val openHtmlToPdfVersion = "1.0.10"
 
   val compile: Seq[ModuleID] = Seq(
@@ -15,7 +15,7 @@ object AppDependencies {
     "io.circe"          %% "circe-json-schema"                 % "0.2.0",
     "org.json"          %  "json"                              % "20240303",
     "io.circe"          %% "circe-parser"                      % "0.14.6",
-    "uk.gov.hmrc"       %% "internal-auth-client-play-30"      % "3.0.0",
+    "uk.gov.hmrc"       %% "internal-auth-client-play-30"      % "3.1.0",
     "com.beachape"      %% "enumeratum-play-json"              % "1.8.0",
     "uk.gov.hmrc"       %% "tax-year"                          % "5.0.0"
   )
