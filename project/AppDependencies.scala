@@ -2,7 +2,7 @@ import sbt._
 
 object AppDependencies {
 
-  private val hmrcBootstrapVersion = "9.11.0"
+  private val hmrcBootstrapVersion = "9.13.0"
   private val hmrcMongoVersion     = "2.6.0"
   private val openHtmlToPdfVersion = "1.0.10"
 
@@ -10,20 +10,20 @@ object AppDependencies {
     "uk.gov.hmrc"       %% "bootstrap-backend-play-30"         % hmrcBootstrapVersion,
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-work-item-repo-play-30" % hmrcMongoVersion,
     "com.openhtmltopdf"  %  "openhtmltopdf-pdfbox"             % openHtmlToPdfVersion,
-    "org.apache.pdfbox"  % "pdfbox"                            % "2.0.33",
-    "org.typelevel"     %% "cats-core"                         % "2.10.0",
+    "org.apache.pdfbox"  % "pdfbox"                            % "3.0.5",
+    "org.typelevel"     %% "cats-core"                         % "2.13.0",
     "io.circe"          %% "circe-json-schema"                 % "0.2.0",
-    "org.json"          %  "json"                              % "20240303",
-    "io.circe"          %% "circe-parser"                      % "0.14.6",
-    "uk.gov.hmrc"       %% "internal-auth-client-play-30"      % "3.1.0",
-    "com.beachape"      %% "enumeratum-play-json"              % "1.8.0",
-    "uk.gov.hmrc"       %% "tax-year"                          % "5.0.0"
+    "org.json"          %  "json"                              % "20250517",
+    "io.circe"          %% "circe-parser"                      % "0.14.14",
+    "uk.gov.hmrc"       %% "internal-auth-client-play-30"      % "4.0.0",
+    "com.beachape"      %% "enumeratum-play-json"              % "1.9.0",
+    "uk.gov.hmrc"       %% "tax-year"                          % "6.0.0"
   )
 
   val test: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"       %% "bootstrap-test-play-30"  % hmrcBootstrapVersion,
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-test-play-30" % hmrcMongoVersion,
-    "org.mockito"       %% "mockito-scala"           % "1.17.30",
+    "org.mockito"       %% "mockito-scala"           % "2.0.0",
     "org.scalatestplus" %% "scalacheck-1-17"         % "3.2.18.0",
     "com.danielasfregola" %% "random-data-generator"  % "2.9",
     "io.circe"          %% "circe-json-schema"       % "0.2.0",
