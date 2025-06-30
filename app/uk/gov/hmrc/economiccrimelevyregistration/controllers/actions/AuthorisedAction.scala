@@ -49,12 +49,12 @@ class BaseAuthorisedAction @Inject() (
     authorised().retrieve(
       Retrievals.internalId and Retrievals.externalId and Retrievals.confidenceLevel and Retrievals.nino and Retrievals.saUtr and
         Retrievals.mdtpInformation and Retrievals.credentialStrength and Retrievals.loginTimes and
-        Retrievals.credentials and Retrievals.name and Retrievals.dateOfBirth and Retrievals.email and
+        Retrievals.credentials and Retrievals.dateOfBirth and Retrievals.email and
         Retrievals.affinityGroup and Retrievals.agentCode and Retrievals.agentInformation and Retrievals.credentialRole and Retrievals.groupIdentifier and
         Retrievals.itmpName and Retrievals.itmpDateOfBirth and Retrievals.itmpAddress
     ) {
       case optInternalId ~ optExternalId ~ confidenceLevel ~ optNino ~ optSaUtr ~
-          optMdtpInformation ~ optCredentialStrength ~ loginTimes ~ optCredentials ~ optName ~ optDateOfBirth ~
+          optMdtpInformation ~ optCredentialStrength ~ loginTimes ~ optCredentials ~ optDateOfBirth ~
           optEmail ~ optAffinityGroup ~ optAgentCode ~ agentInformation ~ optCredentialRole ~ optGroupIdentifier ~
           optItmpName ~ optItmpDateOfBirth ~ optItmpAddress =>
         val internalId = optInternalId.getOrElse(throw new UnauthorizedException("Unable to retrieve internalId"))
@@ -67,7 +67,7 @@ class BaseAuthorisedAction @Inject() (
           confidenceLevel = confidenceLevel.level,
           nino = optNino,
           saUtr = optSaUtr,
-          name = optName,
+          name = None,
           dateOfBirth = optDateOfBirth,
           email = optEmail,
           agentInformation = agentInformation,
