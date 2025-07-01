@@ -41,7 +41,7 @@ class AuthorisedActionSpec extends SpecBase {
   private val expectedRetrievals =
     Retrievals.internalId and Retrievals.externalId and Retrievals.confidenceLevel and Retrievals.nino and Retrievals.saUtr and
       Retrievals.mdtpInformation and Retrievals.credentialStrength and Retrievals.loginTimes and
-      Retrievals.credentials and Retrievals.name and Retrievals.dateOfBirth and Retrievals.email and
+      Retrievals.credentials and Retrievals.dateOfBirth and Retrievals.email and
       Retrievals.affinityGroup and Retrievals.agentCode and Retrievals.agentInformation and Retrievals.credentialRole and Retrievals.groupIdentifier and
       Retrievals.itmpName and Retrievals.itmpDateOfBirth and Retrievals.itmpAddress
 
