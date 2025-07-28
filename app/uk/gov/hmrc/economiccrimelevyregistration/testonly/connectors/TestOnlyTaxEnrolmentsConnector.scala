@@ -19,26 +19,28 @@ package uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TestOnlyTaxEnrolmentsConnector @Inject() (appConfig: AppConfig, httpClient: HttpClient)(implicit
+class TestOnlyTaxEnrolmentsConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(implicit
   ec: ExecutionContext
 ) {
 
   private val taxEnrolmentsUrl: String =
     s"${appConfig.taxEnrolmentsBaseUrl}/tax-enrolments"
 
-  def deEnrol(groupId: String, eclReference: String)(implicit hc: HeaderCarrier): Future[Unit] =
+  def deEnrol(groupId: String, eclReference: String)(implicit hc: HeaderCarrier): Future[Unit] = {
+    val url = s"$taxEnrolmentsUrl/groups/$groupId/enrolments/${EclEnrolment.enrolmentKey(eclReference)}"
     httpClient
-      .DELETE[Either[UpstreamErrorResponse, HttpResponse]](
-        s"$taxEnrolmentsUrl/groups/$groupId/enrolments/${EclEnrolment.enrolmentKey(eclReference)}"
-      )
+      .delete(url"$url")
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Left(e)  => throw e
         case Right(_) => ()
       }
+  }
 }

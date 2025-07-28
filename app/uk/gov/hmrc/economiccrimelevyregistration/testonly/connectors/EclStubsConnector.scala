@@ -18,21 +18,23 @@ package uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors
 
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class EclStubsConnector @Inject() (
-  httpClient: HttpClient,
+  httpClient: HttpClientV2,
   appConfig: AppConfig
 )(implicit ec: ExecutionContext) {
 
-  def getStubEclReferences(implicit hc: HeaderCarrier): Future[Seq[String]] =
+  def getStubEclReferences(implicit hc: HeaderCarrier): Future[Seq[String]] = {
+    val url = s"${appConfig.eclStubsBaseUrl}/enrolments/cleanup-references"
     httpClient
-      .GET[Seq[String]](
-        s"${appConfig.eclStubsBaseUrl}/enrolments/cleanup-references"
-      )
+      .get(url"$url")
+      .execute[Seq[String]]
+  }
 
 }
