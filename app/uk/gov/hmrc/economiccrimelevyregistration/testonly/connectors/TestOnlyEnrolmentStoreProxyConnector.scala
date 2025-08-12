@@ -22,13 +22,14 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment
 import uk.gov.hmrc.economiccrimelevyregistration.testonly.models.EnrolmentGroupIdResponse
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.HttpReadsInstances.readEitherOf
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TestOnlyEnrolmentStoreProxyConnector @Inject() (appConfig: AppConfig, httpClient: HttpClient)(implicit
+class TestOnlyEnrolmentStoreProxyConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(implicit
   ec: ExecutionContext
 ) {
 
@@ -44,17 +45,20 @@ class TestOnlyEnrolmentStoreProxyConnector @Inject() (appConfig: AppConfig, http
 
   def getAllocatedPrincipalGroupIds(
     eclReference: String
-  )(implicit hc: HeaderCarrier): Future[Option[EnrolmentGroupIdResponse]] =
+  )(implicit hc: HeaderCarrier): Future[Option[EnrolmentGroupIdResponse]] = {
+    val url =
+      s"$enrolmentStoreUrl/enrolments/${EclEnrolment.enrolmentKey(eclReference)}/groups?type=principal&ignore-assignments=true"
     httpClient
-      .GET[Option[EnrolmentGroupIdResponse]](
-        s"$enrolmentStoreUrl/enrolments/${EclEnrolment.enrolmentKey(eclReference)}/groups?type=principal&ignore-assignments=true"
-      )(readOptionOfNotFoundOrNoContent, hc, ec)
+      .get(url"$url")
+      .execute[Option[EnrolmentGroupIdResponse]](readOptionOfNotFoundOrNoContent, ec)
+  }
 
   def deEnrol(groupId: String, eclReference: String)(implicit
     hc: HeaderCarrier
-  ): Future[Either[UpstreamErrorResponse, HttpResponse]] =
+  ): Future[Either[UpstreamErrorResponse, HttpResponse]] = {
+    val url = s"$enrolmentStoreUrl/groups/$groupId/enrolments/${EclEnrolment.enrolmentKey(eclReference)}"
     httpClient
-      .DELETE[Either[UpstreamErrorResponse, HttpResponse]](
-        s"$enrolmentStoreUrl/groups/$groupId/enrolments/${EclEnrolment.enrolmentKey(eclReference)}"
-      )
+      .delete(url"$url")
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
+  }
 }
