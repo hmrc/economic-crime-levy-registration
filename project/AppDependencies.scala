@@ -7,7 +7,7 @@ object AppDependencies {
   private val openHtmlToPdfVersion = "1.0.10"
 
   val compile: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc"       %% "bootstrap-backend-play-30"         % hmrcBootstrapVersion,
+    "uk.gov.hmrc"       %% "bootstrap-backend-play-30"         % hmrcBootstrapVersion exclude("org.apache.commons", "commons-lang3"),
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-work-item-repo-play-30" % hmrcMongoVersion,
     "com.openhtmltopdf"  %  "openhtmltopdf-pdfbox"             % openHtmlToPdfVersion,
     "org.apache.pdfbox"  % "pdfbox"                            % "2.0.33",
@@ -17,7 +17,11 @@ object AppDependencies {
     "io.circe"          %% "circe-parser"                      % "0.14.14",
     "uk.gov.hmrc"       %% "internal-auth-client-play-30"      % "4.3.0",
     "com.beachape"      %% "enumeratum-play-json"              % "1.9.0",
-    "uk.gov.hmrc"       %% "tax-year"                          % "6.0.0"
+    "uk.gov.hmrc"       %% "tax-year"                          % "6.0.0",
+    "org.apache.commons" % "commons-lang3"    % "3.18.0",
+    "ch.qos.logback"     % "logback-core"     % "1.5.27",
+    "ch.qos.logback"     % "logback-classic"  % "1.5.27",
+    "org.lz4"            % "lz4-java"         % "1.10.3"
   )
 
   val test: Seq[ModuleID] = Seq(
