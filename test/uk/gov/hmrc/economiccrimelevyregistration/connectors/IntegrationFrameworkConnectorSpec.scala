@@ -35,11 +35,13 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.*
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 import uk.gov.hmrc.http.{HttpResponse, StringContextOps}
 
@@ -60,7 +62,7 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
       val subStatusResponseJson =
         "{\"subscriptionStatus\": \"REG_FORM_RECEIVED\", \"idType\": \"test\", \"idValue\": \"test\", \"channel\": \"Online\"}"
       when(mockHttpClient.get(any())(any())).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.setHeader(any(), any(), any(), any())).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.execute[HttpResponse](any(), any()))
         .thenReturn(
           Future.successful(HttpResponse.apply(ACCEPTED, subStatusResponseJson))
@@ -88,7 +90,7 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
           url"${appConfig.integrationFrameworkUrl}/economic-crime-levy/subscription/${eclSubscription.businessPartnerId}"
 
         when(mockHttpClient.post(ArgumentMatchers.eq(expectedUrl))(any())).thenReturn(mockRequestBuilder)
-        when(mockRequestBuilder.setHeader(any(), any(), any(), any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.execute[HttpResponse](any(), any()))
           .thenReturn(
@@ -105,7 +107,7 @@ class IntegrationFrameworkConnectorSpec extends SpecBase {
     "return a subscription for user when we get one from http client" in forAll {
       (eclReference: String, correlationId: String, getSubscriptionResponse: GetSubscriptionResponse) =>
         when(mockHttpClient.get(any())(any())).thenReturn(mockRequestBuilder)
-        when(mockRequestBuilder.setHeader(any(), any(), any(), any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.execute[HttpResponse](any(), any()))
           .thenReturn(
             Future.successful(HttpResponse.apply(ACCEPTED, Json.toJson(getSubscriptionResponse).toString()))

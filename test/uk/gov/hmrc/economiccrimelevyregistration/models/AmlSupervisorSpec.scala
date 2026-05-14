@@ -17,7 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Other
 
 class AmlSupervisorSpec extends SpecBase {

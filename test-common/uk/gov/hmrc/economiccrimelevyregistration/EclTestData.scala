@@ -16,10 +16,8 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.{derivedArbitrary, random}
 import org.bson.types.ObjectId
 import org.scalacheck.Gen.{choose, listOfN}
-import org.scalacheck.derive.MkArbitrary
 import org.scalacheck.{Arbitrary, Gen}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.http.MimeTypes
@@ -109,7 +107,7 @@ trait EclTestData {
   implicit val arbNonDeRegisteredEtmpSubscriptionStatus: Arbitrary[NonContractObjectInactiveEtmpSubscriptionStatus] =
     Arbitrary {
       for {
-        status <- MkArbitrary[EtmpSubscriptionStatus].arbitrary.arbitrary.retryUntil(s =>
+        status <- arbEtmpSubscriptionStatus.arbitrary.retryUntil(s =>
                     s match {
                       case ContractObjectInactive => false
                       case _                      => true
@@ -136,23 +134,8 @@ trait EclTestData {
 
   implicit def arbRevenue: Arbitrary[BigDecimal] =
     Arbitrary {
-      Gen.chooseNum[Double](0, 99999999999.99).map(BigDecimal.apply(_).setScale(2, RoundingMode.DOWN))
+      Gen.chooseNum[Long](0, 9999999999999L).map(n => BigDecimal(n, 2))
     }
-
-  implicit val arbRegistration: Arbitrary[Registration] = Arbitrary {
-    for {
-      registration <- MkArbitrary[Registration].arbitrary.arbitrary
-      internalId   <- Gen.nonEmptyListOf(Arbitrary.arbitrary[Char]).map(_.mkString)
-      revenue      <- arbRevenue.arbitrary
-    } yield registration.copy(internalId = internalId, relevantApRevenue = Some(revenue))
-  }
-
-  implicit val arbRegistrationAdditionalInfo: Arbitrary[RegistrationAdditionalInfo] = Arbitrary {
-    for {
-      registrationAdditionalInfo <- MkArbitrary[RegistrationAdditionalInfo].arbitrary.arbitrary
-      internalId                 <- Gen.nonEmptyListOf(Arbitrary.arbitrary[Char]).map(_.mkString)
-    } yield registrationAdditionalInfo.copy(internalId = internalId)
-  }
 
   def alphaNumStringsWithMaxLength(maxLength: Int): Gen[String] =
     for {
@@ -207,7 +190,7 @@ trait EclTestData {
           relevantAp12Months = Some(relevantAp12Months),
           relevantApLength = if (relevantAp12Months) None else Some(relevantApLength),
           relevantApRevenue = Some(relevantApRevenue),
-          revenueMeetsThreshold = Some(random[Boolean]),
+          revenueMeetsThreshold = Some(Arbitrary.arbitrary[Boolean].sample.get),
           contacts = Contacts.empty.copy(
             firstContactDetails = ContactDetails(
               name = Some(firstContactName),
@@ -236,14 +219,6 @@ trait EclTestData {
       postCode = Some("AB12 3DE"),
       countryCode = Some("GB")
     )
-
-  implicit val arbCompanyProfile: Arbitrary[CompanyProfile] = Arbitrary {
-    for {
-      companyProfile <- MkArbitrary[CompanyProfile].arbitrary.arbitrary
-      companyName    <- stringsWithMaxLength(160)
-      companyNumber  <- RegexpGen.from(Regex.customerIdentificationNumber)
-    } yield companyProfile.copy(companyName = companyName, companyNumber = companyNumber)
-  }
 
   implicit val arbValidIncorporatedEntityRegistration: Arbitrary[ValidIncorporatedEntityRegistration] = Arbitrary {
     for {
@@ -512,22 +487,22 @@ trait EclTestData {
 
   def arbAuthRetrievals(internalId: Option[String]): Arbitrary[AuthRetrievals] = Arbitrary {
     for {
-      confidenceLevel    <- Arbitrary.arbitrary[ConfidenceLevel]
+      confidenceLevel    <- Gen.oneOf(ConfidenceLevel.L50, ConfidenceLevel.L200, ConfidenceLevel.L250)
       externalId         <- Arbitrary.arbitrary[Option[String]]
       nino               <- Arbitrary.arbitrary[Option[String]]
       saUtr              <- Arbitrary.arbitrary[Option[String]]
-      mdtpInformation    <- Arbitrary.arbitrary[Option[MdtpInformation]]
+      mdtpInformation    <- Gen.option(Gen.const(MdtpInformation("deviceId", "sessionId")))
       credentialStrength <- Arbitrary.arbitrary[Option[String]]
-      loginTimes         <- Arbitrary.arbitrary[LoginTimes]
-      credentials        <- Arbitrary.arbitrary[Option[Credentials]]
+      loginTimes         <- Gen.const(LoginTimes(java.time.Instant.now, Some(java.time.Instant.now)))
+      credentials        <- Gen.option(Gen.const(Credentials("providerId", "providerType")))
       dateOfBirth        <- Arbitrary.arbitrary[Option[LocalDate]]
       email              <- Arbitrary.arbitrary[Option[String]]
-      affinityGroup      <- Arbitrary.arbitrary[Option[AffinityGroup]]
-      agentInformation   <- Arbitrary.arbitrary[AgentInformation]
-      credentialRole     <- Arbitrary.arbitrary[Option[CredentialRole]]
+      affinityGroup      <- Gen.option(Gen.oneOf(AffinityGroup.Individual, AffinityGroup.Organisation, AffinityGroup.Agent))
+      agentInformation   <- Gen.const(AgentInformation(None, None, None))
+      credentialRole     <- Gen.const(None: Option[CredentialRole])
       groupIdentifier    <- Arbitrary.arbitrary[Option[String]]
-      itmpName           <- Arbitrary.arbitrary[Option[ItmpName]]
-      itmpAddress        <- Arbitrary.arbitrary[Option[ItmpAddress]]
+      itmpName           <- Gen.option(Gen.const(ItmpName(None, None, None)))
+      itmpAddress        <- Gen.option(Gen.const(ItmpAddress(None, None, None, None, None, None, None, None)))
     } yield internalId and externalId and confidenceLevel and nino and saUtr and
       mdtpInformation and credentialStrength and loginTimes and
       credentials and dateOfBirth and email and

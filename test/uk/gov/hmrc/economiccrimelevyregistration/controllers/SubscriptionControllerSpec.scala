@@ -18,13 +18,16 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.IntegrationFrameworkConnector
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 import uk.gov.hmrc.economiccrimelevyregistration.services.SubscriptionService
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.GetSubscriptionResponse
 
@@ -44,7 +47,7 @@ class SubscriptionControllerSpec extends SpecBase {
     "return 200 OK with the subscription status for a given business partner ID" in forAll {
       (businessPartnerId: String, subscriptionStatus: EclSubscriptionStatus) =>
         when(mockSubscriptionService.getSubscriptionStatus(any(), ArgumentMatchers.eq(businessPartnerId), any())(any()))
-          .thenReturn(EitherT.rightT(subscriptionStatus))
+          .thenReturn(EitherT.rightT[Future, ResponseError](subscriptionStatus))
 
         val result: Future[Result] =
           controller.getSubscriptionStatus("SAFE", businessPartnerId)(fakeRequest)

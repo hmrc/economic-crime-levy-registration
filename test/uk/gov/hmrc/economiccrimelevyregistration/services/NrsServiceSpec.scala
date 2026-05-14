@@ -33,15 +33,17 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import org.scalacheck.Arbitrary
 import uk.gov.hmrc.economiccrimelevyregistration.ValidNrsSubmission
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.NrsConnector
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.NrsSubmissionError
-import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
+import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
 import uk.gov.hmrc.http.{HeaderNames, UpstreamErrorResponse}
 
@@ -96,7 +98,7 @@ class NrsServiceSpec extends SpecBase {
 
     "throw an IllegalStateException when there is no base64 encoded NRS submission HTML" in forAll(
       arbValidNrsSubmission(fakeRequestWithAuthorisation, stubClock).arbitrary
-    ) { validNrsSubmission: ValidNrsSubmission =>
+    ) { (validNrsSubmission: ValidNrsSubmission) =>
       val request = AuthorisedRequest(
         fakeRequestWithAuthorisation,
         validNrsSubmission.nrsSubmission.metadata.identityData.internalId,

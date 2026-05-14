@@ -18,21 +18,23 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import org.scalacheck.Arbitrary
 import play.api.Play.materializer
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.{Amendment, Initial}
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError, RegistrationError, ResponseError}
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription}
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.NrsSubmissionResponse
 import uk.gov.hmrc.economiccrimelevyregistration.models.{Base64EncodedFields, EntityType, Registration, RegistrationAdditionalInfo}
-import uk.gov.hmrc.economiccrimelevyregistration.services._
+import uk.gov.hmrc.economiccrimelevyregistration.services.*
 
 import java.util.Base64
 import scala.concurrent.Future
@@ -89,16 +91,17 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
           when(mockAppConfig.nrsSubmissionEnabled).thenReturn(true)
 
-          when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
+          when(mockRegistrationService.getRegistration(any())(any()))
+            .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
           when(mockRegistrationValidationService.validateSubscription(any()))
-            .thenReturn(EitherT.rightT(eclSubscription))
+            .thenReturn(EitherT.rightT[Future, ResponseError](eclSubscription))
 
           when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
           when(mockNrsService.submitToNrs(any(), any(), any())(any(), any()))
-            .thenReturn(EitherT.rightT(nrsSubmissionResponse))
+            .thenReturn(EitherT.rightT[Future, ResponseError](nrsSubmissionResponse))
 
           when(
             mockSubscriptionServiceService
@@ -108,7 +111,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
                 any()
               )(any())
           )
-            .thenReturn(EitherT.rightT(subscriptionResponse))
+            .thenReturn(EitherT.rightT[Future, ResponseError](subscriptionResponse))
 
           val result: Future[Result] =
             controller.submitRegistration(registration.internalId)(fakeRequest)
@@ -148,10 +151,11 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
 
           when(mockAppConfig.nrsSubmissionEnabled).thenReturn(false)
 
-          when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
+          when(mockRegistrationService.getRegistration(any())(any()))
+            .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
           when(mockRegistrationValidationService.validateSubscription(any()))
-            .thenReturn(EitherT.rightT(eclSubscription))
+            .thenReturn(EitherT.rightT[Future, ResponseError](eclSubscription))
 
           when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
@@ -164,7 +168,7 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
                 any()
               )(any())
           )
-            .thenReturn(EitherT.rightT(subscriptionResponse))
+            .thenReturn(EitherT.rightT[Future, ResponseError](subscriptionResponse))
 
           val result: Future[Result] =
             controller.submitRegistration(registration.internalId)(fakeRequest)
@@ -197,16 +201,17 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes))))
           )
 
-          when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
+          when(mockRegistrationService.getRegistration(any())(any()))
+            .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
           when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
           when(mockRegistrationValidationService.validateRegistration(any()))
-            .thenReturn(EitherT.rightT(registration))
+            .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
           when(mockDmsService.submitToDms(any(), any(), any())(any()))
-            .thenReturn(EitherT.rightT(subscriptionResponse.success))
+            .thenReturn(EitherT.rightT[Future, ResponseError](subscriptionResponse.success))
 
           val result: Future[Result] =
             controller.submitRegistration(registration.internalId)(fakeRequest)
@@ -228,13 +233,14 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             entityType = Some(Charity)
           )
 
-          when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
+          when(mockRegistrationService.getRegistration(any())(any()))
+            .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
           when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
           when(mockRegistrationValidationService.validateRegistration(any()))
-            .thenReturn(EitherT.leftT(DataValidationError.DataInvalid("Invalid data")))
+            .thenReturn(EitherT.leftT[Future, Registration](DataValidationError.DataInvalid("Invalid data")))
 
           val result: Future[Result] =
             controller.submitRegistration(registration.internalId)(fakeRequest)
@@ -277,19 +283,19 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
               RegistrationAdditionalInfo(aRegistration.internalId, None, Some("Test"), None, None, None, None)
 
             when(mockRegistrationService.getRegistration(any())(any()))
-              .thenReturn(EitherT.rightT(registration))
+              .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
             when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
               .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
             when(mockRegistrationValidationService.validateRegistration(any()))
-              .thenReturn(EitherT.rightT(registration))
+              .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
             when(mockDmsService.submitToDms(any(), any(), any())(any()))
-              .thenReturn(EitherT.rightT(subscriptionResponse.success))
+              .thenReturn(EitherT.rightT[Future, ResponseError](subscriptionResponse.success))
 
             when(mockNrsService.submitToNrs(any(), any(), any())(any(), any()))
-              .thenReturn(EitherT.rightT(nrsSubmissionResponse))
+              .thenReturn(EitherT.rightT[Future, ResponseError](nrsSubmissionResponse))
 
             val result: Future[Result] =
               controller.submitRegistration(registration.internalId)(fakeRequest)
@@ -330,16 +336,16 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
               RegistrationAdditionalInfo(registration.internalId, None, Some("Test"), None, None, None, None)
 
             when(mockRegistrationService.getRegistration(any())(any()))
-              .thenReturn(EitherT.rightT(registration))
+              .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
             when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
               .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
             when(mockRegistrationValidationService.validateRegistration(any()))
-              .thenReturn(EitherT.rightT(registration))
+              .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
             when(mockDmsService.submitToDms(any(), any(), any())(any()))
-              .thenReturn(EitherT.rightT(subscriptionResponse.success))
+              .thenReturn(EitherT.rightT[Future, ResponseError](subscriptionResponse.success))
 
             val result: Future[Result] =
               controller.submitRegistration(registration.internalId)(fakeRequest)
@@ -367,10 +373,11 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             entityType = Some(Charity)
           )
 
-          when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
+          when(mockRegistrationService.getRegistration(any())(any()))
+            .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
           when(mockRegistrationValidationService.validateRegistration(any()))
-            .thenReturn(EitherT.leftT(DataValidationError.DataInvalid("Invalid data")))
+            .thenReturn(EitherT.leftT[Future, Registration](DataValidationError.DataInvalid("Invalid data")))
 
           when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
@@ -410,16 +417,16 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
             RegistrationAdditionalInfo.empty(registration.internalId)
 
           when(mockRegistrationService.getRegistration(any())(any()))
-            .thenReturn(EitherT.rightT(registration))
+            .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
           when(mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.internalId))(any()))
             .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
           when(mockRegistrationValidationService.validateRegistration(any()))
-            .thenReturn(EitherT.rightT(registration))
+            .thenReturn(EitherT.rightT[Future, ResponseError](registration))
 
           when(mockDmsService.submitToDms(any(), any(), any())(any()))
-            .thenReturn(EitherT.rightT(subscriptionResponse.success))
+            .thenReturn(EitherT.rightT[Future, ResponseError](subscriptionResponse.success))
 
           val result: Future[Result] =
             controller.submitRegistration(registration.internalId)(fakeRequest)
@@ -434,9 +441,9 @@ class RegistrationSubmissionControllerSpec extends SpecBase {
       }
     }
 
-    "return 404 NOT_FOUND when there is no registration data to submit" in forAll { registration: Registration =>
+    "return 404 NOT_FOUND when there is no registration data to submit" in forAll { (registration: Registration) =>
       when(mockRegistrationService.getRegistration(any())(any()))
-        .thenReturn(EitherT.leftT(RegistrationError.NotFound(registration.internalId)))
+        .thenReturn(EitherT.leftT[Future, Registration](RegistrationError.NotFound(registration.internalId)))
 
       val result: Future[Result] =
         controller.submitRegistration(registration.internalId)(fakeRequest)

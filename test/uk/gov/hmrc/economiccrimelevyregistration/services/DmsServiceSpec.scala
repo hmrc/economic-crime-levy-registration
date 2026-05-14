@@ -17,6 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.DmsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType
@@ -41,7 +42,7 @@ class DmsServiceSpec extends SpecBase {
       val encoded          = Base64.getEncoder.encodeToString(html.getBytes)
       val expectedResponse = HttpResponse.apply(ACCEPTED, "")
 
-      when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.successful(Right(expectedResponse)))
+      when(mockDmsConnector.sendPdf(any())(any())).thenReturn(Future.successful(()))
 
       val result = await(service.submitToDms(Some(encoded), now, RegistrationType.Initial).value)
 

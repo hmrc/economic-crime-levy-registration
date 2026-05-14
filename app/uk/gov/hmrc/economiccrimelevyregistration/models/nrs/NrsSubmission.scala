@@ -17,7 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.models.nrs
 
 import play.api.libs.json.{JsObject, JsString, Json, OWrites, Writes}
-import uk.gov.hmrc.auth.core.retrieve._
+import uk.gov.hmrc.auth.core.retrieve.*
 import uk.gov.hmrc.auth.core.{AffinityGroup, CredentialRole}
 
 import java.time.{Instant, LocalDate}

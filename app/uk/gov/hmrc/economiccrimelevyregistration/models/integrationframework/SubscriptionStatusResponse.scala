@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
-import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus.ContractObjectInactive
 
 sealed trait EtmpSubscriptionStatus

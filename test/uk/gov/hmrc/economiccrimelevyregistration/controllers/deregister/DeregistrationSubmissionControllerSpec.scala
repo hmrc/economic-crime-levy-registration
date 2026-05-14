@@ -18,15 +18,17 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister
 
 import cats.data.EitherT
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import org.scalacheck.Arbitrary
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.RegistrationError
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.CreateEclSubscriptionResponsePayload
-import uk.gov.hmrc.economiccrimelevyregistration.services._
+import uk.gov.hmrc.economiccrimelevyregistration.services.*
 import uk.gov.hmrc.economiccrimelevyregistration.services.deregister.DeregistrationService
 
 import scala.concurrent.Future
@@ -54,9 +56,11 @@ class DeregistrationSubmissionControllerSpec extends SpecBase {
       ) =>
         reset(mockDeregistrationService)
 
-        when(mockDeregistrationService.getDeregistration(any())(any())).thenReturn(EitherT.rightT(deregistration))
+        when(mockDeregistrationService.getDeregistration(any())(any()))
+          .thenReturn(EitherT.rightT[Future, RegistrationError](deregistration))
 
-        when(mockDmsService.submitToDms(any(), any(), any())(any())).thenReturn(EitherT.rightT(subscriptionResponse))
+        when(mockDmsService.submitToDms(any(), any(), any())(any()))
+          .thenReturn(EitherT.rightT[Future, ResponseError](subscriptionResponse))
 
         val result: Future[Result] =
           controller.submitDeregistration(deregistration.internalId)(fakeRequest)
@@ -67,9 +71,9 @@ class DeregistrationSubmissionControllerSpec extends SpecBase {
           .sendDeregistrationRequestedAuditEvent(any())(any())
     }
 
-    "return 404 NOT_FOUND when there is no deregistration data to submit" in forAll { registration: Registration =>
+    "return 404 NOT_FOUND when there is no deregistration data to submit" in forAll { (registration: Registration) =>
       when(mockDeregistrationService.getDeregistration(any())(any()))
-        .thenReturn(EitherT.leftT(RegistrationError.NotFound(registration.internalId)))
+        .thenReturn(EitherT.leftT[Future, Deregistration](RegistrationError.NotFound(registration.internalId)))
 
       val result: Future[Result] =
         controller.submitDeregistration(registration.internalId)(fakeRequest)

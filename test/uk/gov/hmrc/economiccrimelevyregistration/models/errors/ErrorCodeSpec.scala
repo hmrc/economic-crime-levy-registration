@@ -18,7 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 
 import play.api.libs.json.{JsResultException, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 class ErrorCodeSpec extends SpecBase {
 
   "errorCodeReads" should {

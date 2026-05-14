@@ -19,8 +19,9 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.Config
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
@@ -39,7 +40,7 @@ class TaxEnrolmentsConnectorSpec extends SpecBase {
     "return successful empty response" in forAll { (createEnrolmentRequest: CreateEnrolmentRequest) =>
       val hc = HeaderCarrier(extraHeaders = Seq("Authorization" -> "123"))
       when(mockHttpClient.put(any())(any())).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.setHeader(any(), any(), any())).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
       when(mockRequestBuilder.execute[HttpResponse](any(), any()))
         .thenReturn(Future.successful(HttpResponse.apply(ACCEPTED, "")))

@@ -18,14 +18,14 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
 import play.api.Logging
-import uk.gov.hmrc.economiccrimelevyregistration.models.errors._
+import uk.gov.hmrc.economiccrimelevyregistration.models.errors.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ErrorHandler extends Logging {
 
   implicit class ErrorConvertor[E, R](value: EitherT[Future, E, R]) {
-    def asResponseError(implicit c: Converter[E], ec: ExecutionContext): EitherT[Future, ResponseError, R] =
+    def asResponseError(implicit c: ErrorConverter[E], ec: ExecutionContext): EitherT[Future, ResponseError, R] =
       value.leftMap(c.convert).leftSemiflatTap {
         case InternalServiceError(message, _, cause) =>
           val causeText = cause
@@ -57,47 +57,47 @@ trait ErrorHandler extends Logging {
       Future.successful(value.map(Right(_)).getOrElse(Left(ResponseError.internalServiceError(s"Missing $valueType"))))
     }
 
-  trait Converter[E] {
+  trait ErrorConverter[E] {
     def convert(error: E): ResponseError
   }
 
-  implicit val dataRetrievalErrorConverter: Converter[DataRetrievalError] = {
+  implicit val dataRetrievalErrorConverter: ErrorConverter[DataRetrievalError] = {
     case DataRetrievalError.NotFound(id)                      => ResponseError.notFoundError(s"Unable to find record with id: $id")
     case DataRetrievalError.InternalUnexpectedError(_, cause) =>
       ResponseError.internalServiceError(cause = cause)
   }
 
-  implicit val knownFactsErrorConverter: Converter[KnownFactsError] = {
+  implicit val knownFactsErrorConverter: ErrorConverter[KnownFactsError] = {
     case KnownFactsError.UpsertKnownFactsError(message) => ResponseError.badRequestError(message)
     case KnownFactsError.NotFound(message)              => ResponseError.badRequestError(message)
   }
 
-  implicit val dmsSubmissionErrorConverter: Converter[DmsSubmissionError] = {
+  implicit val dmsSubmissionErrorConverter: ErrorConverter[DmsSubmissionError] = {
     case DmsSubmissionError.InternalUnexpectedError(cause) =>
       ResponseError.internalServiceError(cause = cause)
     case DmsSubmissionError.BadGateway(reason, code)       => ResponseError.badGateway(reason, code)
   }
 
-  implicit val registrationErrorConverter: Converter[RegistrationError] = {
+  implicit val registrationErrorConverter: ErrorConverter[RegistrationError] = {
     case RegistrationError.InternalUnexpectedError(cause) =>
       ResponseError.internalServiceError(cause = cause)
     case RegistrationError.NotFound(id)                   => ResponseError.notFoundError(s"Unable to find record with id: $id")
   }
 
-  implicit val subscriptionSubmissionErrorConverter: Converter[SubscriptionSubmissionError] = {
+  implicit val subscriptionSubmissionErrorConverter: ErrorConverter[SubscriptionSubmissionError] = {
     case SubscriptionSubmissionError.InternalUnexpectedError(_, cause) =>
       ResponseError.internalServiceError(cause = cause)
     case SubscriptionSubmissionError.BadGateway(reason, code)          => ResponseError.badGateway(reason, code)
   }
 
-  implicit val dataValidationErrorConverter: Converter[DataValidationError] = {
+  implicit val dataValidationErrorConverter: ErrorConverter[DataValidationError] = {
     case DataValidationError.DataInvalid(message)           => ResponseError.badRequestError(message)
     case DataValidationError.SchemaValidationError(message) =>
       ResponseError.badRequestError(message)
     case DataValidationError.DataMissing(message)           => ResponseError.badRequestError(message)
   }
 
-  implicit val nrsSubmissionErrorConverter: Converter[NrsSubmissionError] = {
+  implicit val nrsSubmissionErrorConverter: ErrorConverter[NrsSubmissionError] = {
     case NrsSubmissionError.InternalUnexpectedError(cause) =>
       ResponseError.internalServiceError(cause = cause)
     case NrsSubmissionError.BadGateway(reason, code)       => ResponseError.badGateway(reason, code)

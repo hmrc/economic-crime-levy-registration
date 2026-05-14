@@ -24,7 +24,7 @@ import play.api.mvc.Headers
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.NrsConnector
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.ErrorHandler
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.NrsSubmissionError
-import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
+import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
 import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, UpstreamErrorResponse}
 

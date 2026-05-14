@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.errors
 
-import play.api.http.Status._
-import play.api.libs.json._
+import play.api.http.Status.*
+import play.api.libs.json.*
 
 sealed abstract class ErrorCode(val code: String, val statusCode: Int) extends Product with Serializable
 

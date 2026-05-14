@@ -18,11 +18,11 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
 import play.api.libs.json.{JsBoolean, JsError, JsString, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 
 class ChannelSpec extends SpecBase {
   "reads" should {
-    "return the channel deserialized from its JSON representation" in forAll { channel: Channel =>
+    "return the channel deserialized from its JSON representation" in forAll { (channel: Channel) =>
       val json = JsString(channel.toString)
 
       json.as[Channel] shouldBe channel
@@ -42,7 +42,7 @@ class ChannelSpec extends SpecBase {
   }
 
   "writes" should {
-    "return the channel serialized to its JSON representation" in forAll { channel: Channel =>
+    "return the channel serialized to its JSON representation" in forAll { (channel: Channel) =>
       Json.toJson(channel) shouldBe JsString(channel.toString)
     }
   }

@@ -17,9 +17,11 @@
 package uk.gov.hmrc.economiccrimelevyregistration.controllers.actions
 
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import play.api.mvc.{BodyParsers, Request, Result}
-import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.http.UnauthorizedException
@@ -48,7 +50,7 @@ class AuthorisedActionSpec extends SpecBase {
   "invokeBlock" should {
     "execute the block and return the result if authorised" in forAll(
       arbAuthRetrievals(Some(alphaNumericString)).arbitrary
-    ) { authRetrievals: AuthRetrievals =>
+    ) { (authRetrievals: AuthRetrievals) =>
       when(mockAuthConnector.authorise(any(), ArgumentMatchers.eq(expectedRetrievals))(any(), any()))
         .thenReturn(Future(authRetrievals))
 
@@ -81,7 +83,7 @@ class AuthorisedActionSpec extends SpecBase {
     }
 
     "throw an UnauthorizedException if there is no internal id" in forAll(arbAuthRetrievals(None).arbitrary) {
-      authRetrievals: AuthRetrievals =>
+      (authRetrievals: AuthRetrievals) =>
         when(mockAuthConnector.authorise(any(), ArgumentMatchers.eq(expectedRetrievals))(any(), any()))
           .thenReturn(Future(authRetrievals))
 

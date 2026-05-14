@@ -17,7 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.utils
 
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.utils.StringUtils._
+import uk.gov.hmrc.economiccrimelevyregistration.utils.StringUtils.*
 class StringUtilsSpec extends SpecBase {
 
   "removeWhitespace" should {

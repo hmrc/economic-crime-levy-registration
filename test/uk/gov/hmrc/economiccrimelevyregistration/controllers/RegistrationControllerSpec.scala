@@ -18,10 +18,13 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{RegistrationError, ResponseError}
 import uk.gov.hmrc.economiccrimelevyregistration.services.RegistrationService
@@ -39,9 +42,9 @@ class RegistrationControllerSpec extends SpecBase {
   )
 
   "upsertRegistration" should {
-    "return 200 OK with the registration that was upserted" in forAll { registration: Registration =>
+    "return 200 OK with the registration that was upserted" in forAll { (registration: Registration) =>
       when(mockRegistrationService.upsertRegistration(ArgumentMatchers.eq(registration))(any()))
-        .thenReturn(EitherT.rightT(()))
+        .thenReturn(EitherT.rightT[Future, RegistrationError](()))
 
       val result: Future[Result] =
         controller.upsertRegistration()(
@@ -53,21 +56,23 @@ class RegistrationControllerSpec extends SpecBase {
   }
 
   "getRegistration" should {
-    "return 200 OK with an existing registration when there is one for the id" in forAll { registration: Registration =>
-      when(mockRegistrationService.getRegistration(any())(any())).thenReturn(EitherT.rightT(registration))
+    "return 200 OK with an existing registration when there is one for the id" in forAll {
+      (registration: Registration) =>
+        when(mockRegistrationService.getRegistration(any())(any()))
+          .thenReturn(EitherT.rightT[Future, RegistrationError](registration))
 
-      val result: Future[Result] =
-        controller.getRegistration(registration.internalId)(fakeRequest)
+        val result: Future[Result] =
+          controller.getRegistration(registration.internalId)(fakeRequest)
 
-      status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(registration)
+        status(result)        shouldBe OK
+        contentAsJson(result) shouldBe Json.toJson(registration)
     }
 
     "return 404 NOT_FOUND when there is no registration for the id" in {
       val eclReference: String = "XMECL001"
 
       when(mockRegistrationService.getRegistration(any())(any()))
-        .thenReturn(EitherT.leftT(RegistrationError.NotFound(eclReference)))
+        .thenReturn(EitherT.leftT[Future, Registration](RegistrationError.NotFound(eclReference)))
 
       val result: Future[Result] =
         controller.getRegistration("id")(fakeRequest)
@@ -81,7 +86,8 @@ class RegistrationControllerSpec extends SpecBase {
 
   "deleteRegistration" should {
     "return 200 OK when a registration is deleted" in {
-      when(mockRegistrationService.deleteRegistration(any())(any())).thenReturn(EitherT.rightT(()))
+      when(mockRegistrationService.deleteRegistration(any())(any()))
+        .thenReturn(EitherT.rightT[Future, RegistrationError](()))
 
       val result: Future[Result] =
         controller.deleteRegistration("id")(fakeRequest)

@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus.*
 
 class SubscriptionStatusSpec extends SpecBase {
 

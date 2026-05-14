@@ -1,7 +1,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.base
 
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.client.{MappingBuilder, ResponseDefinitionBuilder, WireMock}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
@@ -73,7 +73,7 @@ object WireMockHelper {
 
 trait WireMockHelper {
 
-  import WireMockHelper._
+  import WireMockHelper.*
 
   lazy val wireMockConfiguration: WireMockConfiguration = wireMockConfig().port(wireMockPort)
   lazy val wireMockServer                               = new WireMockServer(wireMockConfiguration)

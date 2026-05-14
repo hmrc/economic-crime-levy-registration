@@ -20,7 +20,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.{BaseController, ErrorHandler}
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.DeRegistration
-import uk.gov.hmrc.economiccrimelevyregistration.services._
+import uk.gov.hmrc.economiccrimelevyregistration.services.*
 import uk.gov.hmrc.economiccrimelevyregistration.services.deregister.DeregistrationService
 import uk.gov.hmrc.economiccrimelevyregistration.utils.CorrelationIdHelper
 import uk.gov.hmrc.http.HeaderCarrier

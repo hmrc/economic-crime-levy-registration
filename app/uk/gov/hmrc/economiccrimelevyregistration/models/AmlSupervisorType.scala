@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.Other
 
 sealed trait AmlSupervisorType

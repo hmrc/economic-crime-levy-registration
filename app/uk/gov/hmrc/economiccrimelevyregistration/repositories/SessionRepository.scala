@@ -18,7 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.repositories
 
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model._
+import org.mongodb.scala.model.*
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 import uk.gov.hmrc.economiccrimelevyregistration.models.SessionData
@@ -46,7 +46,7 @@ class SessionRepository @Inject() (
           Indexes.ascending("lastUpdated"),
           IndexOptions()
             .name("lastUpdatedIdx")
-            .expireAfter(appConfig.mongoTtl, TimeUnit.SECONDS)
+            .expireAfter(appConfig.mongoTtl.toLong, TimeUnit.SECONDS)
         ),
         IndexModel(ascending("internalId"), IndexOptions().name("internalIdIdx").unique(true))
       )

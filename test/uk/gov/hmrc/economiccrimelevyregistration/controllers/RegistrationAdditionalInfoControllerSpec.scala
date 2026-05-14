@@ -18,10 +18,13 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataRetrievalError
 import uk.gov.hmrc.economiccrimelevyregistration.services.RegistrationAdditionalInfoService
@@ -40,7 +43,7 @@ class RegistrationAdditionalInfoControllerSpec extends SpecBase {
 
   "upsert" should {
     "return 200 OK when the registration additional upsert succeeds" in forAll {
-      registrationAdditionalInfo: RegistrationAdditionalInfo =>
+      (registrationAdditionalInfo: RegistrationAdditionalInfo) =>
         when(mockRegistrationAdditionalInfoService.upsert(ArgumentMatchers.eq(registrationAdditionalInfo))(any()))
           .thenReturn(EitherT.rightT[Future, DataRetrievalError](()))
 
@@ -53,7 +56,7 @@ class RegistrationAdditionalInfoControllerSpec extends SpecBase {
     }
 
     "return 500 INTERNAL_SERVER_ERROR when the registration additional upsert fails" in forAll {
-      registrationAdditionalInfo: RegistrationAdditionalInfo =>
+      (registrationAdditionalInfo: RegistrationAdditionalInfo) =>
         when(mockRegistrationAdditionalInfoService.upsert(ArgumentMatchers.eq(registrationAdditionalInfo))(any()))
           .thenReturn(
             EitherT.leftT[Future, Unit](DataRetrievalError.InternalUnexpectedError("Error", None))
@@ -70,7 +73,7 @@ class RegistrationAdditionalInfoControllerSpec extends SpecBase {
 
   "get" should {
     "return 200 OK with an existing registration when there is one for the id" in forAll {
-      registrationAdditionalInfo: RegistrationAdditionalInfo =>
+      (registrationAdditionalInfo: RegistrationAdditionalInfo) =>
         when(
           mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registrationAdditionalInfo.internalId))(any())
         )
@@ -86,7 +89,7 @@ class RegistrationAdditionalInfoControllerSpec extends SpecBase {
     }
 
     "return 404 NOT_FOUND when there is no registration for the id" in forAll {
-      registrationAdditionalInfo: RegistrationAdditionalInfo =>
+      (registrationAdditionalInfo: RegistrationAdditionalInfo) =>
         when(
           mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registrationAdditionalInfo.internalId))(any())
         )
@@ -103,7 +106,7 @@ class RegistrationAdditionalInfoControllerSpec extends SpecBase {
     }
 
     "return 500 INTERNAL_SERVER_ERROR when there is no registration for the id" in forAll {
-      registrationAdditionalInfo: RegistrationAdditionalInfo =>
+      (registrationAdditionalInfo: RegistrationAdditionalInfo) =>
         when(
           mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registrationAdditionalInfo.internalId))(any())
         )
@@ -122,7 +125,7 @@ class RegistrationAdditionalInfoControllerSpec extends SpecBase {
 
   "delete" should {
     "return 204 NO_CONTENT when deleting a registration additional info record succeeds" in forAll {
-      registrationAdditionalInfo: RegistrationAdditionalInfo =>
+      (registrationAdditionalInfo: RegistrationAdditionalInfo) =>
         when(
           mockRegistrationAdditionalInfoService.delete(ArgumentMatchers.eq(registrationAdditionalInfo.internalId))(
             any()
@@ -137,7 +140,7 @@ class RegistrationAdditionalInfoControllerSpec extends SpecBase {
     }
 
     "return 500 INTERNAL_SERVER_ERROR when deleting a registration additional info fails" in forAll {
-      registrationAdditionalInfo: RegistrationAdditionalInfo =>
+      (registrationAdditionalInfo: RegistrationAdditionalInfo) =>
         when(
           mockRegistrationAdditionalInfoService.delete(ArgumentMatchers.eq(registrationAdditionalInfo.internalId))(
             any()
