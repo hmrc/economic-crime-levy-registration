@@ -78,7 +78,7 @@ class DmsNotificationControllerSpec extends SpecBase {
       val request = FakeRequest(POST, routes.DmsNotificationController.dmsCallback().url)
         .withBody(
           Json.toJson(DmsNotification("testId", SubmissionItemStatus.Processed, None))
-        ) // No Authorization header
+        )
 
       val result = controller.dmsCallback()(request)
       Try(status(result)) match {

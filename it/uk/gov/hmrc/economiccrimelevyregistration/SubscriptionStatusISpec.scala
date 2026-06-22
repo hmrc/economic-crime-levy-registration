@@ -1,6 +1,9 @@
 package uk.gov.hmrc.economiccrimelevyregistration
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.rng.Seed
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
@@ -65,7 +68,8 @@ class SubscriptionStatusISpec extends ISpecBase {
     "return 200 OK with a subscription for provided eclReference" in {
       stubAuthorised()
 
-      val response = random[GetSubscriptionResponse]
+      val response =
+        LazyList.continually(Arbitrary.arbitrary[GetSubscriptionResponse].sample).flatten.head
 
       stubGetSubscription(response)
 

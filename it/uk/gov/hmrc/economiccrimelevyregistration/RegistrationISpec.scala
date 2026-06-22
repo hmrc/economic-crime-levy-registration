@@ -16,7 +16,10 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.rng.Seed
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
@@ -30,7 +33,8 @@ class RegistrationISpec extends ISpecBase {
     "create or update a registration and return 200 OK with the registration" in {
       stubAuthorised()
 
-      val registration = random[Registration]
+      val registration =
+        LazyList.continually(Arbitrary.arbitrary[Registration].sample).flatten.head
 
       lazy val putResult = callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(Json.toJson(registration))
@@ -49,7 +53,8 @@ class RegistrationISpec extends ISpecBase {
     "return 200 OK with a registration that is already in the database" in {
       stubAuthorised()
 
-      val registration = random[Registration]
+      val registration =
+        LazyList.continually(Arbitrary.arbitrary[Registration].sample).flatten.head
 
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(Json.toJson(registration))
@@ -65,7 +70,8 @@ class RegistrationISpec extends ISpecBase {
     "return 404 NOT_FOUND when trying to get a registration that doesn't exist" in {
       stubAuthorised()
 
-      val registration      = random[Registration]
+      val registration      =
+        LazyList.continually(Arbitrary.arbitrary[Registration].sample).flatten.head
       val validRegistration = registration.copy(internalId = "internalId")
 
       val result = callRoute(FakeRequest(routes.RegistrationController.getRegistration(validRegistration.internalId)))
@@ -81,7 +87,8 @@ class RegistrationISpec extends ISpecBase {
     "delete a registration and return 200 OK" in {
       stubAuthorised()
 
-      val registration = random[Registration]
+      val registration =
+        LazyList.continually(Arbitrary.arbitrary[Registration].sample).flatten.head
 
       callRoute(
         FakeRequest(routes.RegistrationController.upsertRegistration).withJsonBody(Json.toJson(registration))

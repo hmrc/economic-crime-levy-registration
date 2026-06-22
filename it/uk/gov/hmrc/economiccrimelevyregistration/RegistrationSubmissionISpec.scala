@@ -1,6 +1,9 @@
 package uk.gov.hmrc.economiccrimelevyregistration
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.rng.Seed
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
@@ -21,7 +24,8 @@ class RegistrationSubmissionISpec extends ISpecBase {
       stubAuthorised()
 
       val html                = "<html><head></head><body></body></html>"
-      val charityRegistration = random[ValidCharityRegistration]
+      val charityRegistration =
+        LazyList.continually(Arbitrary.arbitrary[ValidCharityRegistration].sample).flatten.head
       val validRegistration   = charityRegistration.copy(
         registration = charityRegistration.registration.copy(
           registrationType = Some(Initial),
@@ -70,7 +74,8 @@ class RegistrationSubmissionISpec extends ISpecBase {
       stubAuthorised()
 
       val html                = "<html><head></head><body></body></html>"
-      val charityRegistration = random[ValidCharityRegistration]
+      val charityRegistration =
+        LazyList.continually(Arbitrary.arbitrary[ValidCharityRegistration].sample).flatten.head
       val validRegistration   = charityRegistration.copy(
         registration = charityRegistration.registration.copy(
           base64EncodedFields = Some(Base64EncodedFields(None, Some(Base64.getEncoder.encodeToString(html.getBytes)))),
