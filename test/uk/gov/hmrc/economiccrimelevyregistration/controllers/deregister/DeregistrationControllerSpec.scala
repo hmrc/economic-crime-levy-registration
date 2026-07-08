@@ -18,11 +18,13 @@ package uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister
 
 import cats.data.EitherT
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{RegistrationError, ResponseError}
 import uk.gov.hmrc.economiccrimelevyregistration.services.deregister.DeregistrationService
@@ -40,9 +42,9 @@ class DeregistrationControllerSpec extends SpecBase {
   )
 
   "upsertDeregistration" should {
-    "return 204 NO_CONTENT" in forAll { deregistration: Deregistration =>
+    "return 204 NO_CONTENT" in forAll { (deregistration: Deregistration) =>
       when(mockDeregistrationService.upsertDeregistration(ArgumentMatchers.eq(deregistration))(any()))
-        .thenReturn(EitherT.rightT(deregistration))
+        .thenReturn(EitherT.rightT[Future, RegistrationError](deregistration))
 
       val result: Future[Result] =
         controller.upsertDeregistration()(
@@ -55,8 +57,9 @@ class DeregistrationControllerSpec extends SpecBase {
 
   "getDeregistration" should {
     "return 200 OK with an existing deregistration when there is one for the id" in forAll {
-      deregistration: Deregistration =>
-        when(mockDeregistrationService.getDeregistration(any())(any())).thenReturn(EitherT.rightT(deregistration))
+      (deregistration: Deregistration) =>
+        when(mockDeregistrationService.getDeregistration(any())(any()))
+          .thenReturn(EitherT.rightT[Future, RegistrationError](deregistration))
 
         val result: Future[Result] =
           controller.getDeregistration(deregistration.internalId)(fakeRequest)
@@ -69,7 +72,7 @@ class DeregistrationControllerSpec extends SpecBase {
       val eclReference: String = "XMECL001"
 
       when(mockDeregistrationService.getDeregistration(any())(any()))
-        .thenReturn(EitherT.leftT(RegistrationError.NotFound(eclReference)))
+        .thenReturn(EitherT.leftT[Future, Deregistration](RegistrationError.NotFound(eclReference)))
 
       val result: Future[Result] =
         controller.getDeregistration("id")(fakeRequest)
@@ -83,7 +86,8 @@ class DeregistrationControllerSpec extends SpecBase {
 
   "deleteDeregistration" should {
     "return 204 NO_CONTENT when a deregistration is deleted" in {
-      when(mockDeregistrationService.deleteDeregistration(any())(any())).thenReturn(EitherT.rightT(()))
+      when(mockDeregistrationService.deleteDeregistration(any())(any()))
+        .thenReturn(EitherT.rightT[Future, RegistrationError](()))
 
       val result: Future[Result] =
         controller.deleteDeregistration("id")(fakeRequest)

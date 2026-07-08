@@ -18,9 +18,9 @@ package uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework
 
 import uk.gov.hmrc.economiccrimelevyregistration.NonContractObjectInactiveEtmpSubscriptionStatus
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus
-import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.EtmpSubscriptionStatus.ContractObjectInactive
 
 class SubscriptionStatusResponseSpec extends SpecBase {

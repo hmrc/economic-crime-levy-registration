@@ -35,10 +35,11 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.Config
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.nrs._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
+import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.*
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
@@ -59,7 +60,7 @@ class NrsConnectorSpec extends SpecBase {
         val expectedResponse = HttpResponse.apply(ACCEPTED, Json.stringify(Json.toJson(nrsSubmissionResponse)))
 
         when(mockHttpClient.post(any())(any())).thenReturn(mockRequestBuilder)
-        when(mockRequestBuilder.setHeader(any(), any())).thenReturn(mockRequestBuilder)
+        when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.execute[HttpResponse](any(), any()))
           .thenReturn(Future.successful(expectedResponse))

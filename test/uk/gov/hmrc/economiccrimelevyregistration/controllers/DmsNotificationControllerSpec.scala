@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{POST, stubControllerComponents}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
-import uk.gov.hmrc.economiccrimelevyregistration.models.dms.DmsNotification
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
+import uk.gov.hmrc.economiccrimelevyregistration.models.dms.{DmsNotification, SubmissionItemStatus}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.RegistrationRepository
 import uk.gov.hmrc.economiccrimelevyregistration.services.{DmsService, NrsService, RegistrationValidationService, SubscriptionService}
 import uk.gov.hmrc.http.HeaderNames
@@ -51,7 +51,7 @@ class DmsNotificationControllerSpec extends SpecBase {
   )
 
   "dmsCallback" should {
-    "return OK when receiving a correct notifications from DMS" in forAll { dmsNotification: DmsNotification =>
+    "return OK when receiving a correct notifications from DMS" in forAll { (dmsNotification: DmsNotification) =>
       when(mockStubBehaviour.stubAuth[Unit](any(), any()))
         .thenReturn(Future.unit)
 
@@ -76,7 +76,9 @@ class DmsNotificationControllerSpec extends SpecBase {
 
     "fail for an unauthenticated user" in {
       val request = FakeRequest(POST, routes.DmsNotificationController.dmsCallback().url)
-        .withBody(Json.toJson(random[DmsNotification])) // No Authorization header
+        .withBody(
+          Json.toJson(DmsNotification("testId", SubmissionItemStatus.Processed, None))
+        )
 
       val result = controller.dmsCallback()(request)
       Try(status(result)) match {
@@ -91,7 +93,7 @@ class DmsNotificationControllerSpec extends SpecBase {
 
       val request = FakeRequest(POST, routes.DmsNotificationController.dmsCallback().url)
         .withHeaders(HeaderNames.authorisation -> "Some auth token")
-        .withBody(Json.toJson(random[DmsNotification]))
+        .withBody(Json.toJson(DmsNotification("testId", SubmissionItemStatus.Processed, None)))
 
       val result = controller.dmsCallback()(request)
       Try(status(result)) match {

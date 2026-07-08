@@ -12,13 +12,13 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{Status => _, _}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http._
+import play.api.http.*
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.{Result, Results}
-import play.api.test._
+import play.api.test.*
 import play.api.{Application, Mode}
-import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper._
+import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper.*
 import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
 
 import java.time.temporal.ChronoUnit

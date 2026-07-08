@@ -17,15 +17,19 @@
 package uk.gov.hmrc.economiccrimelevyregistration.controllers
 
 import cats.data.EitherT
-import cats.implicits._
+import cats.implicits.*
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.economiccrimelevyregistration.ValidScottishOrGeneralPartnershipRegistration
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationAdditionalInfo
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{DataRetrievalError, DataValidationError}
+import uk.gov.hmrc.economiccrimelevyregistration.models.Registration
 import uk.gov.hmrc.economiccrimelevyregistration.services.{RegistrationAdditionalInfoService, RegistrationService, RegistrationValidationService}
 
 import scala.concurrent.Future
@@ -51,7 +55,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
         when(mockRegistrationService.getRegistration(any())(any()))
-          .thenReturn(EitherT.rightT(registration.registration))
+          .thenReturn(EitherT.rightT[Future, DataValidationError](registration.registration))
 
         when(
           mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.registration.internalId))(any())
@@ -59,7 +63,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
           .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
         when(mockRegistrationValidationService.validateSubscription(any()))
-          .thenReturn(EitherT.rightT(registration.expectedEclSubscription))
+          .thenReturn(EitherT.rightT[Future, DataValidationError](registration.expectedEclSubscription))
 
         val result: Future[Result] =
           controller.checkForValidationErrors(registration.registration.internalId)(fakeRequest)
@@ -73,7 +77,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
         registrationAdditionalInfo: RegistrationAdditionalInfo
       ) =>
         when(mockRegistrationService.getRegistration(any())(any()))
-          .thenReturn(EitherT.rightT(registration.registration))
+          .thenReturn(EitherT.rightT[Future, DataValidationError](registration.registration))
 
         when(
           mockRegistrationAdditionalInfoService.get(ArgumentMatchers.eq(registration.registration.internalId))(any())
@@ -81,7 +85,7 @@ class RegistrationValidationControllerSpec extends SpecBase {
           .thenReturn(EitherT.rightT[Future, DataRetrievalError](registrationAdditionalInfo))
 
         when(mockRegistrationValidationService.validateSubscription(any()))
-          .thenReturn(EitherT.leftT(DataValidationError.DataInvalid("Invalid data")))
+          .thenReturn(EitherT.leftT[Future, Registration](DataValidationError.DataInvalid("Invalid data")))
 
         val result: Future[Result] =
           controller.checkForValidationErrors(registration.registration.internalId)(fakeRequest)

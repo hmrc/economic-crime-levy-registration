@@ -16,7 +16,10 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.rng.Seed
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
@@ -30,7 +33,8 @@ class RegistrationAdditionalInfoISpec extends ISpecBase {
     "create or update a registration additional info and return 200 OK with the registration" in {
       stubAuthorised()
 
-      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
+      val registrationAdditionalInfo =
+        LazyList.continually(Arbitrary.arbitrary[RegistrationAdditionalInfo].sample).flatten.head
 
       lazy val putResult = callRoute(
         FakeRequest(routes.RegistrationAdditionalInfoController.upsert)
@@ -50,7 +54,8 @@ class RegistrationAdditionalInfoISpec extends ISpecBase {
     "return 200 OK with registration additional info that is already in the database" in {
       stubAuthorised()
 
-      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
+      val registrationAdditionalInfo =
+        LazyList.continually(Arbitrary.arbitrary[RegistrationAdditionalInfo].sample).flatten.head
 
       callRoute(
         FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(
@@ -82,7 +87,8 @@ class RegistrationAdditionalInfoISpec extends ISpecBase {
     "delete a registration and return 200 OK" in {
       stubAuthorised()
 
-      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
+      val registrationAdditionalInfo =
+        LazyList.continually(Arbitrary.arbitrary[RegistrationAdditionalInfo].sample).flatten.head
 
       callRoute(
         FakeRequest(routes.RegistrationAdditionalInfoController.upsert).withJsonBody(

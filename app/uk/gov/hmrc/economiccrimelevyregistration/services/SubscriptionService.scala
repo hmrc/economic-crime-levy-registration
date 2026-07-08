@@ -20,7 +20,7 @@ import cats.data.EitherT
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.{IntegrationFrameworkConnector, TaxEnrolmentsConnector}
 import uk.gov.hmrc.economiccrimelevyregistration.models.audit.{AuditSubscriptionStatus, SubscriptionStatusRetrievedAuditEvent}
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
-import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment._
+import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.SubscriptionSubmissionError
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, SubscriptionStatusResponse}
 import uk.gov.hmrc.economiccrimelevyregistration.models.{EclSubscriptionStatus, KeyValue, KnownFactsWorkItem, Registration}

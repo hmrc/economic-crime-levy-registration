@@ -1,6 +1,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.repositories
 
-import org.mockito.MockitoSugar
+import org.mockito.Mockito.*
+import org.mockito.ArgumentMatchers.*
 import org.mongodb.scala.model.Filters
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -20,8 +21,7 @@ class SessionRepositorySpec
     with DefaultPlayMongoRepositorySupport[SessionData]
     with ScalaFutures
     with IntegrationPatience
-    with OptionValues
-    with MockitoSugar {
+    with OptionValues {
 
   private val now              = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
@@ -32,11 +32,11 @@ class SessionRepositorySpec
     lastUpdated = Some(Instant.ofEpochSecond(1))
   )
 
-  private val mockAppConfig = mock[AppConfig]
+  private val mockAppConfig = mock(classOf[AppConfig])
 
-  when(mockAppConfig.mongoTtl) thenReturn 1
+  when(mockAppConfig.mongoTtl).thenReturn(1)
 
-  protected override val repository = new SessionRepository(
+  protected override val repository: SessionRepository = new SessionRepository(
     mongoComponent = mongoComponent,
     appConfig = mockAppConfig,
     clock = stubClock

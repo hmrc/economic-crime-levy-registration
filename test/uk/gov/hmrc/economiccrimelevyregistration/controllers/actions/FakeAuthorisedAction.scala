@@ -15,23 +15,38 @@
  */
 
 package uk.gov.hmrc.economiccrimelevyregistration.controllers.actions
-
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
-import play.api.mvc._
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import play.api.mvc.*
+import uk.gov.hmrc.auth.core.retrieve.{AgentInformation, Credentials, LoginTimes}
 import uk.gov.hmrc.economiccrimelevyregistration.models.nrs.NrsIdentityData
 import uk.gov.hmrc.economiccrimelevyregistration.models.requests.AuthorisedRequest
-
 import javax.inject.Inject
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
-
 class FakeAuthorisedAction @Inject() (bodyParsers: PlayBodyParsers) extends AuthorisedAction {
-
-  override def parser: BodyParser[AnyContent] = bodyParsers.defaultBodyParser
-
+  private val nrsIdentityData: NrsIdentityData                                                                    = NrsIdentityData(
+    internalId = "internalId",
+    externalId = None,
+    agentCode = None,
+    credentials = None,
+    confidenceLevel = 200,
+    nino = None,
+    saUtr = None,
+    name = None,
+    dateOfBirth = None,
+    email = None,
+    agentInformation = AgentInformation(None, None, None),
+    groupIdentifier = None,
+    credentialRole = None,
+    mdtpInformation = None,
+    itmpName = None,
+    itmpDateOfBirth = None,
+    itmpAddress = None,
+    affinityGroup = None,
+    credentialStrength = None,
+    loginTimes = LoginTimes(Instant.now, None)
+  )
+  override def parser: BodyParser[AnyContent]                                                                     = bodyParsers.defaultBodyParser
   override def invokeBlock[A](request: Request[A], block: AuthorisedRequest[A] => Future[Result]): Future[Result] =
-    block(AuthorisedRequest(request, "id", random[NrsIdentityData]))
-
-  override protected def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
-
+    block(AuthorisedRequest(request, "id", nrsIdentityData))
+  override protected def executionContext: ExecutionContext                                                       = scala.concurrent.ExecutionContext.Implicits.global
 }

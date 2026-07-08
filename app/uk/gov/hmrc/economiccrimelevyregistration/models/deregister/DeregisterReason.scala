@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models.deregister
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 sealed trait DeregisterReason
 

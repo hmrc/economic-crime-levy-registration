@@ -16,7 +16,10 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.rng.Seed
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
@@ -30,7 +33,8 @@ class RegistrationValidationISpec extends ISpecBase {
     "return 200 OK when the registration data is valid" in {
       stubAuthorised()
 
-      val validRegistration   = random[ValidCharityRegistration]
+      val validRegistration   =
+        LazyList.continually(Arbitrary.arbitrary[ValidCharityRegistration].sample).flatten.head
       val updatedRegistration =
         validRegistration.registration
           .copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(true), registrationType = Some(Amendment))
@@ -61,8 +65,9 @@ class RegistrationValidationISpec extends ISpecBase {
     "return 200 OK with true in the JSON response body when the registration data is invalid" in {
       stubAuthorised()
 
-      val internalId                 = random[String]
-      val registrationAdditionalInfo = random[RegistrationAdditionalInfo]
+      val internalId                 = LazyList.continually(Arbitrary.arbitrary[String].sample).flatten.head
+      val registrationAdditionalInfo =
+        LazyList.continually(Arbitrary.arbitrary[RegistrationAdditionalInfo].sample).flatten.head
 
       val invalidRegistration =
         Registration.empty(internalId).copy(carriedOutAmlRegulatedActivityInCurrentFy = Some(false))
@@ -95,7 +100,7 @@ class RegistrationValidationISpec extends ISpecBase {
     "return 404 NOT_FOUND when there is no registration data to validate" in {
       stubAuthorised()
 
-      val internalId = random[String]
+      val internalId = LazyList.continually(Arbitrary.arbitrary[String].sample).flatten.head
 
       lazy val validationResult =
         callRoute(FakeRequest(routes.RegistrationValidationController.checkForValidationErrors(internalId)))

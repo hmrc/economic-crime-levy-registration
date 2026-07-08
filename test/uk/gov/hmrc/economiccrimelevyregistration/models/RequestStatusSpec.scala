@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.models
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.audit.RequestStatus
 
 class RequestStatusSpec extends SpecBase {
 
   "writes" should {
-    "return the request status serialized to its JSON representation" in forAll { requestStatus: RequestStatus =>
+    "return the request status serialized to its JSON representation" in forAll { (requestStatus: RequestStatus) =>
       val result = Json.toJson(requestStatus)
 
       result shouldBe JsString(requestStatus.toString)

@@ -1,15 +1,18 @@
 package uk.gov.hmrc.economiccrimelevyregistration
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
-import com.github.tomakehurst.wiremock.client.WireMock._
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.rng.Seed
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
 import uk.gov.hmrc.economiccrimelevyregistration.models.{CustomHeaderNames, EclSubscriptionStatus}
-import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus._
+import uk.gov.hmrc.economiccrimelevyregistration.models.EclSubscriptionStatus.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.GetSubscriptionResponse
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 
 class SubscriptionStatusISpec extends ISpecBase {
 
@@ -65,7 +68,8 @@ class SubscriptionStatusISpec extends ISpecBase {
     "return 200 OK with a subscription for provided eclReference" in {
       stubAuthorised()
 
-      val response = random[GetSubscriptionResponse]
+      val response =
+        LazyList.continually(Arbitrary.arbitrary[GetSubscriptionResponse].sample).flatten.head
 
       stubGetSubscription(response)
 

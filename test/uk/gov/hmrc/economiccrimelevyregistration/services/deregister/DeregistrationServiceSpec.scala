@@ -17,8 +17,9 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services.deregister
 
 import org.mockito.ArgumentMatchers.{any, anyString}
+import org.mockito.Mockito.*
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.{AuditError, RegistrationError}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.deregister.DeregistrationRepository
@@ -36,7 +37,7 @@ class DeregistrationServiceSpec extends SpecBase {
   val testException = new Exception("error")
 
   "upsertDeregistration" should {
-    "return the deregistration if successful" in forAll { deregistration: Deregistration =>
+    "return the deregistration if successful" in forAll { (deregistration: Deregistration) =>
       when(mockRepository.upsert(any())).thenReturn(Future.successful(()))
 
       val result = await(service.upsertDeregistration(deregistration).value)
@@ -44,7 +45,7 @@ class DeregistrationServiceSpec extends SpecBase {
       result shouldBe Right(deregistration)
     }
 
-    "return error if failure" in forAll { deregistration: Deregistration =>
+    "return error if failure" in forAll { (deregistration: Deregistration) =>
       when(mockRepository.upsert(any())).thenReturn(Future.failed(testException))
 
       val result = await(service.upsertDeregistration(deregistration).value)
@@ -54,7 +55,7 @@ class DeregistrationServiceSpec extends SpecBase {
   }
 
   "getDeregistration" should {
-    "return the deregistration if found" in forAll { deregistration: Deregistration =>
+    "return the deregistration if found" in forAll { (deregistration: Deregistration) =>
       when(mockRepository.get(anyString())).thenReturn(Future.successful(Some(deregistration)))
 
       val result = await(service.getDeregistration(deregistration.internalId).value)
@@ -62,7 +63,7 @@ class DeregistrationServiceSpec extends SpecBase {
       result shouldBe Right(deregistration)
     }
 
-    "return not found error if deregistration not found" in forAll { deregistration: Deregistration =>
+    "return not found error if deregistration not found" in forAll { (deregistration: Deregistration) =>
       when(mockRepository.get(anyString())).thenReturn(Future.successful(None))
 
       val result = await(service.getDeregistration(deregistration.internalId).value)
@@ -70,7 +71,7 @@ class DeregistrationServiceSpec extends SpecBase {
       result shouldBe Left(RegistrationError.NotFound(deregistration.internalId))
     }
 
-    "return error if failure" in forAll { deregistration: Deregistration =>
+    "return error if failure" in forAll { (deregistration: Deregistration) =>
       when(mockRepository.get(anyString())).thenReturn(Future.failed(testException))
 
       val result = await(service.getDeregistration(deregistration.internalId).value)
@@ -80,7 +81,7 @@ class DeregistrationServiceSpec extends SpecBase {
   }
 
   "deleteDeregistration" should {
-    "return if deregistration successfully deleted" in forAll { deregistration: Deregistration =>
+    "return if deregistration successfully deleted" in forAll { (deregistration: Deregistration) =>
       when(mockRepository.deleteRecord(anyString())).thenReturn(Future.successful(()))
 
       val result = await(service.deleteDeregistration(deregistration.internalId).value)
@@ -88,7 +89,7 @@ class DeregistrationServiceSpec extends SpecBase {
       result shouldBe Right(())
     }
 
-    "return error if failure" in forAll { deregistration: Deregistration =>
+    "return error if failure" in forAll { (deregistration: Deregistration) =>
       when(mockRepository.deleteRecord(anyString())).thenReturn(Future.failed(testException))
 
       val result = await(service.deleteDeregistration(deregistration.internalId).value)
@@ -98,7 +99,7 @@ class DeregistrationServiceSpec extends SpecBase {
   }
 
   "sendDeregistrationRequestedAuditEvent" should {
-    "return unit when AuditResult.Success" in forAll { deregistration: Deregistration =>
+    "return unit when AuditResult.Success" in forAll { (deregistration: Deregistration) =>
       when(mockAuditConnector.sendExtendedEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(service.sendDeregistrationRequestedAuditEvent(deregistration).value)

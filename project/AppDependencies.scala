@@ -1,19 +1,16 @@
 import sbt._
-
 object AppDependencies {
-
   private val hmrcBootstrapVersion = "10.7.0"
   private val hmrcMongoVersion     = "2.12.0"
   private val openHtmlToPdfVersion = "1.0.10"
-
   val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"       %% "bootstrap-backend-play-30"         % hmrcBootstrapVersion,
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-work-item-repo-play-30" % hmrcMongoVersion,
     "com.openhtmltopdf"  %  "openhtmltopdf-pdfbox"             % openHtmlToPdfVersion,
     "org.apache.pdfbox"  % "pdfbox"                            % "2.0.33",
     "org.typelevel"     %% "cats-core"                         % "2.13.0",
-    "io.circe"          %% "circe-json-schema"                 % "0.2.0",
-    "org.json"          %  "json"                              % "20250517",
+    "io.circe"           % "circe-json-schema_2.13"            % "0.2.0" exclude("io.circe", "circe-core_2.13") exclude("io.circe", "circe-numbers_2.13"),
+    "org.json"           %  "json"                             % "20250517",
     "io.circe"          %% "circe-parser"                      % "0.14.14",
     "uk.gov.hmrc"       %% "internal-auth-client-play-30"      % "4.3.0",
     "com.beachape"      %% "enumeratum-play-json"              % "1.9.0",
@@ -22,17 +19,16 @@ object AppDependencies {
     "ch.qos.logback"     % "logback-classic"                   % "1.5.27",
     "org.apache.commons" % "commons-lang3"                     % "3.18.0"
   )
-
   val test: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc"       %% "bootstrap-test-play-30"  % hmrcBootstrapVersion,
-    "uk.gov.hmrc.mongo" %% "hmrc-mongo-test-play-30" % hmrcMongoVersion,
-    "org.mockito"       %% "mockito-scala"           % "2.0.0",
-    "org.scalatestplus" %% "scalacheck-1-17"         % "3.2.18.0",
-    "com.danielasfregola" %% "random-data-generator"  % "2.9",
-    "io.circe"          %% "circe-json-schema"       % "0.2.0",
-    "io.github.wolfendale" %% "scalacheck-gen-regexp"  % "1.1.0"
+    "uk.gov.hmrc"          %% "bootstrap-test-play-30"  % hmrcBootstrapVersion,
+    "uk.gov.hmrc.mongo"    %% "hmrc-mongo-test-play-30" % hmrcMongoVersion,
+    "org.mockito"           % "mockito-core"            % "5.18.0",
+    "org.scalatestplus"    %% "mockito-5-18"            % "3.2.19.0",
+    "org.scalatestplus"    %% "scalacheck-1-17"         % "3.2.18.0",
+    "com.danielasfregola"   % "random-data-generator_2.13" % "2.9" exclude("org.typelevel", "cats-core_2.13") exclude("org.typelevel", "cats-kernel_2.13") exclude("org.scalacheck", "scalacheck_2.13") exclude("org.scalactic", "scalactic_2.13"),
+    "io.circe"              % "circe-json-schema_2.13"  % "0.2.0" exclude("io.circe", "circe-core_2.13") exclude("io.circe", "circe-numbers_2.13"),
+    "io.github.wolfendale" %% "scalacheck-gen-regexp"   % "1.1.0",
+    "io.chrisdavenport"    %% "cats-scalacheck"      % "0.3.2",
   ).map(_ % "test, it")
-
   def apply(): Seq[ModuleID] = compile ++ test
-
 }

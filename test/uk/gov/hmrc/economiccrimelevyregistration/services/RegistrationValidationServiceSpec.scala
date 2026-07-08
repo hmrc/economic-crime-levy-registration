@@ -17,19 +17,20 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import org.scalacheck.{Arbitrary, Gen}
-import uk.gov.hmrc.economiccrimelevyregistration._
+import uk.gov.hmrc.economiccrimelevyregistration.*
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.AmlSupervisorType.{FinancialConductAuthority, GamblingCommission}
 import uk.gov.hmrc.economiccrimelevyregistration.models.EntityType.Charity
 import uk.gov.hmrc.economiccrimelevyregistration.models.RegistrationType.{Amendment, Initial}
-import uk.gov.hmrc.economiccrimelevyregistration.models._
+import uk.gov.hmrc.economiccrimelevyregistration.models.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 import uk.gov.hmrc.economiccrimelevyregistration.models.grs.IncorporatedEntityJourneyData
 import uk.gov.hmrc.economiccrimelevyregistration.utils.SchemaValidator
 
-import java.time._
+import java.time.*
 
 class RegistrationValidationServiceSpec extends SpecBase {
 
@@ -491,7 +492,7 @@ class RegistrationValidationServiceSpec extends SpecBase {
     }
 
     "return errors if the registration for a other entity is invalid" in forAll {
-      additionalInfo: RegistrationAdditionalInfo =>
+      (additionalInfo: RegistrationAdditionalInfo) =>
         val invalidRegistration = Registration
           .empty("")
           .copy(

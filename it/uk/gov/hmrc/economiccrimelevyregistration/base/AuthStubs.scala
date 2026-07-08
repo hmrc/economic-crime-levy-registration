@@ -1,9 +1,9 @@
 package uk.gov.hmrc.economiccrimelevyregistration.base
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.http.Status.OK
-import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper._
+import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper.*
 
 trait AuthStubs { self: WireMockStubs =>
   def stubAuthorised(): StubMapping =

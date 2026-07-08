@@ -18,10 +18,12 @@ package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import org.apache.pekko.actor.ActorSystem
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.connectors.EnrolmentStoreProxyConnector
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.{EclEnrolment, UpsertKnownFactsRequest}
 import uk.gov.hmrc.economiccrimelevyregistration.models.{KeyValue, KnownFactsWorkItem}
 import uk.gov.hmrc.economiccrimelevyregistration.repositories.KnownFactsQueueRepository
@@ -50,7 +52,7 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
     }
 
     "if there is something to process, upsert the known fact and if successful, mark it as completed and delete from the queue" in forAll {
-      knownFactsWorkItem: WorkItem[KnownFactsWorkItem] =>
+      (knownFactsWorkItem: WorkItem[KnownFactsWorkItem]) =>
         when(mockKnownFactsQueueRepository.pullOutstanding(any(), any()))
           .thenReturn(Future.successful(Some(knownFactsWorkItem)))
 
@@ -69,16 +71,16 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
         when(mockKnownFactsQueueRepository.completeAndDelete(ArgumentMatchers.eq(knownFactsWorkItem.id)))
           .thenReturn(Future.successful(true))
 
-        val result: Unit = scheduler.processKnownFacts
+        val result = await(scheduler.processKnownFacts.value)
 
-        result shouldBe ()
+        result shouldBe Right(())
 
         reset(mockEnrolmentStoreProxyConnector)
         reset(mockKnownFactsQueueRepository)
     }
 
     "if there is something to process, upsert the known fact and if unsuccessful, mark it as failed" in forAll {
-      knownFactsWorkItem: WorkItem[KnownFactsWorkItem] =>
+      (knownFactsWorkItem: WorkItem[KnownFactsWorkItem]) =>
         when(mockKnownFactsQueueRepository.pullOutstanding(any(), any()))
           .thenReturn(Future.successful(Some(knownFactsWorkItem)))
 
@@ -93,9 +95,7 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
             ArgumentMatchers.eq(knownFactsWorkItem.item.eclReference)
           )(any())
         ).thenReturn(
-          Future.successful(
-            Left(UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR))
-          )
+          Future.failed(UpstreamErrorResponse("Internal server error", INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR))
         )
 
         when(
@@ -104,9 +104,9 @@ class KnownFactsQueuePullSchedulerSpec extends SpecBase {
         )
           .thenReturn(Future.successful(true))
 
-        val result: Unit = scheduler.processKnownFacts
+        val result = await(scheduler.processKnownFacts.value)
 
-        result shouldBe ()
+        result.isLeft shouldBe true
 
         reset(mockEnrolmentStoreProxyConnector)
         reset(mockKnownFactsQueueRepository)

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.economiccrimelevyregistration.utils
 
 import io.circe.schema.Schema
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.DataValidationError
 

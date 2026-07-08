@@ -18,7 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.config
 
 import com.google.inject.AbstractModule
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.economiccrimelevyregistration.connectors._
+import uk.gov.hmrc.economiccrimelevyregistration.connectors.*
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.actions.{AuthorisedAction, BaseAuthorisedAction}
 import uk.gov.hmrc.economiccrimelevyregistration.services.KnownFactsQueuePullScheduler
 import uk.gov.hmrc.economiccrimelevyregistration.testonly.connectors.{StubEnrolmentStoreProxyConnector, StubTaxEnrolmentsConnector}

@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.repositories.deregister
 
-import org.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.Mockito.*
 import org.mongodb.scala.model.Filters
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -52,7 +53,7 @@ class DeregistrationRepositorySpec
 
   when(mockAppConfig.mongoTtl) thenReturn 1
 
-  protected override val repository = new DeregistrationRepository(
+  protected override val repository: DeregistrationRepository = new DeregistrationRepository(
     mongoComponent = mongoComponent,
     appConfig = mockAppConfig,
     clock = stubClock

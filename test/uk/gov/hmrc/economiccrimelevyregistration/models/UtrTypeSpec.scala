@@ -18,7 +18,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.models
 
 import play.api.libs.json.{JsBoolean, JsError, JsString, Json}
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 
 class UtrTypeSpec extends SpecBase {
   "writes" should {

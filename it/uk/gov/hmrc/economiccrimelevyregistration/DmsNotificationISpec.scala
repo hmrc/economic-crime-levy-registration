@@ -1,16 +1,20 @@
 package uk.gov.hmrc.economiccrimelevyregistration
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.rng.Seed
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.controllers.routes
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.dms.{DmsNotification, SubmissionItemStatus}
 import uk.gov.hmrc.http.HeaderNames
 
 class DmsNotificationISpec extends ISpecBase {
-  val dmsNotification: DmsNotification = random[DmsNotification]
+  val dmsNotification: DmsNotification =
+    LazyList.continually(Arbitrary.arbitrary[DmsNotification].sample).flatten.head
 
   s"POST ${routes.DmsNotificationController.dmsCallback().url}" should {
     "process a notification message from DMS" in {

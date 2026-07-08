@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.deregister
 
-import com.danielasfregola.randomdatagenerator.RandomDataGenerator.random
+import org.scalacheck.Arbitrary
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.economiccrimelevyregistration.base.ISpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes._
-import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries._
+import uk.gov.hmrc.economiccrimelevyregistration.controllers.deregister.routes.*
+import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.deregister.Deregistration
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.ResponseError
 
@@ -33,7 +34,10 @@ class DeregistrationISpec extends ISpecBase {
     "create or update a deregistration and return 200 OK with the deregistration" in {
       stubAuthorised()
 
-      val deregistration = random[Deregistration]
+      val deregistration = LazyList
+        .continually(Arbitrary.arbitrary[Deregistration].sample)
+        .flatten
+        .head
         .copy(internalId = testInternalId)
 
       lazy val putResult = callRoute(
@@ -60,7 +64,10 @@ class DeregistrationISpec extends ISpecBase {
     "return 200 OK with a deregistration that is already in the database" in {
       stubAuthorised()
 
-      val deregistration = random[Deregistration]
+      val deregistration = LazyList
+        .continually(Arbitrary.arbitrary[Deregistration].sample)
+        .flatten
+        .head
         .copy(internalId = testInternalId)
 
       callRoute(
@@ -84,7 +91,10 @@ class DeregistrationISpec extends ISpecBase {
     "return 404 NOT_FOUND when trying to get a deregistration that doesn't exist" in {
       stubAuthorised()
 
-      val deregistration = random[Deregistration]
+      val deregistration = LazyList
+        .continually(Arbitrary.arbitrary[Deregistration].sample)
+        .flatten
+        .head
         .copy(internalId = alphaNumericString)
 
       val result = callRoute(
@@ -105,7 +115,10 @@ class DeregistrationISpec extends ISpecBase {
     "delete a deregistration and return 200 OK" in {
       stubAuthorised()
 
-      val deregistration = random[Deregistration]
+      val deregistration = LazyList
+        .continually(Arbitrary.arbitrary[Deregistration].sample)
+        .flatten
+        .head
         .copy(internalId = testInternalId)
 
       callRoute(
