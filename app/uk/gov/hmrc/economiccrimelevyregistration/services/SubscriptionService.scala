@@ -17,7 +17,8 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import cats.data.EitherT
-import uk.gov.hmrc.economiccrimelevyregistration.connectors.{IntegrationFrameworkConnector, TaxEnrolmentsConnector}
+import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
+import uk.gov.hmrc.economiccrimelevyregistration.connectors.{HipSubscriptionConnector, IntegrationFrameworkConnector, SubscriptionConnector, TaxEnrolmentsConnector}
 import uk.gov.hmrc.economiccrimelevyregistration.models.audit.{AuditSubscriptionStatus, SubscriptionStatusRetrievedAuditEvent}
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.EclEnrolment.*
@@ -37,11 +38,20 @@ import scala.util.control.NonFatal
 
 class SubscriptionService @Inject() (
   integrationFrameworkConnector: IntegrationFrameworkConnector,
+  hipSubscriptionConnector: HipSubscriptionConnector,
   taxEnrolmentsConnector: TaxEnrolmentsConnector,
   knownFactsQueueRepository: KnownFactsQueueRepository,
   auditService: AuditService,
-  auditConnector: AuditConnector
+  auditConnector: AuditConnector,
+  appConfig: AppConfig
 )(implicit ec: ExecutionContext) {
+
+  private val subscriptionConnector: SubscriptionConnector =
+    if (appConfig.hipSubscriptions) {
+      hipSubscriptionConnector
+    } else {
+      integrationFrameworkConnector
+    }
 
   private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC)
 
@@ -195,6 +205,6 @@ class SubscriptionService @Inject() (
     )
 
   def getSubscription(eclRegistrationReference: String)(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] =
-    integrationFrameworkConnector.getSubscription(eclRegistrationReference)
+    subscriptionConnector.getSubscription(eclRegistrationReference)
 
 }

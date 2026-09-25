@@ -30,6 +30,11 @@ object GetSubscriptionResponse {
   implicit val format: OFormat[GetSubscriptionResponse] = Json.format[GetSubscriptionResponse]
 }
 
+case class HipGetSubscriptionResponse(success: GetSubscriptionResponse)
+case object HipGetSubscriptionResponse {
+  implicit val format: OFormat[HipGetSubscriptionResponse] = Json.format[HipGetSubscriptionResponse]
+}
+
 case class GetLegalEntityDetails(
   customerIdentification1: String,
   customerIdentification2: Option[String],

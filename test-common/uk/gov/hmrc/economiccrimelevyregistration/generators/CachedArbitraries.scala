@@ -542,4 +542,9 @@ object CachedArbitraries extends EclTestData {
       arbGetAdditionalDetails.arbitrary
     ).mapN(GetSubscriptionResponse.apply)
   )
+
+  implicit lazy val arbHipGetSubscriptionResponse: Arbitrary[HipGetSubscriptionResponse] = Arbitrary(
+    arbGetSubscriptionResponse.arbitrary.map(HipGetSubscriptionResponse.apply)
+  )
+
 }

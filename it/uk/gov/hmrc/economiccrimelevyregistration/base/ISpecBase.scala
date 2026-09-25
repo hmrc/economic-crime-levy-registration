@@ -59,8 +59,8 @@ abstract class ISpecBase
 
   implicit def ec: ExecutionContext = global
 
-  val now: Instant             = Instant.now.truncatedTo(ChronoUnit.MILLIS)
-  private val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
+  val now: Instant     = Instant.now.truncatedTo(ChronoUnit.MILLIS)
+  val stubClock: Clock = Clock.fixed(now, ZoneId.systemDefault)
 
   lazy val appConfig: AppConfig = app.injector.instanceOf[AppConfig]
 
@@ -76,7 +76,8 @@ abstract class ISpecBase
     "integration-framework",
     "nrs",
     "dms-submission",
-    "internal-auth"
+    "internal-auth",
+    "hip"
   )
 
   override def fakeApplication(): Application =
@@ -85,12 +86,6 @@ abstract class ISpecBase
       .overrides(bind(classOf[Clock]).toInstance(stubClock))
       .in(Mode.Test)
       .build()
-
-  /*
-  This is to initialise the app before running any tests, as it is lazy by default in org.scalatestplus.play.BaseOneAppPerSuite.
-  It enables us to include behaviour tests that call routes within the `should` part of a test but before `in`.
-   */
-  locally { val _ = app }
 
   override def beforeAll(): Unit = {
     startWireMock()

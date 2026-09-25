@@ -5,7 +5,7 @@ import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.base.WireMockHelper.*
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, GetSubscriptionResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, GetSubscriptionResponse, HipGetSubscriptionResponse}
 
 trait IntegrationFrameworkStubs { self: WireMockStubs =>
 
@@ -58,9 +58,27 @@ trait IntegrationFrameworkStubs { self: WireMockStubs =>
         .withBody(Json.toJson(getSubscriptionResponse).toString())
     )
 
+  def stubHipGetSubscription(
+    getSubscriptionResponse: HipGetSubscriptionResponse
+  ): StubMapping =
+    stub(
+      get(urlEqualTo(s"/etmp/RESTAdaptor/economic-crime-levy/subscription/$testEclRegistrationReference")),
+      aResponse()
+        .withStatus(OK)
+        .withBody(Json.toJson(getSubscriptionResponse).toString())
+    )
+
   def stubGetSubscriptionFailed(): StubMapping =
     stub(
       get(urlEqualTo(s"/economic-crime-levy/subscription/$testEclRegistrationReference")),
+      aResponse()
+        .withStatus(INTERNAL_SERVER_ERROR)
+        .withBody("")
+    )
+
+  def stubHipGetSubscriptionFailed(): StubMapping =
+    stub(
+      get(urlEqualTo(s"/etmp/RESTAdaptor/economic-crime-levy/subscription/$testEclRegistrationReference")),
       aResponse()
         .withStatus(INTERNAL_SERVER_ERROR)
         .withBody("")
