@@ -31,7 +31,7 @@ import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class HipSubscriptionConnector @Inject()(
+class HipSubscriptionConnector @Inject() (
   appConfig: AppConfig,
   httpClient: HttpClientV2,
   override val configuration: Config,
@@ -42,14 +42,14 @@ class HipSubscriptionConnector @Inject()(
 
   private def hipHeaders(correlationId: String): Seq[(String, String)] =
     Seq(
-      HeaderNames.ACCEPT -> MimeTypes.JSON,
-      "correlationid" -> correlationId,
-      "X-Originating-System" -> "ECL",
-      "X-Receipt-Date" -> DateTimeFormatter.ISO_INSTANT.format(Instant.now().truncatedTo(ChronoUnit.SECONDS)),
+      HeaderNames.ACCEPT      -> MimeTypes.JSON,
+      "correlationid"         -> correlationId,
+      "X-Originating-System"  -> "ECL",
+      "X-Receipt-Date"        -> DateTimeFormatter.ISO_INSTANT.format(Instant.now().truncatedTo(ChronoUnit.SECONDS)),
       "X-Transmitting-System" -> "HIP",
-      "Authorization" -> s"Basic ${appConfig.hipAuthorizationToken}"
+      "Authorization"         -> s"Basic ${appConfig.hipAuthorizationToken}"
     )
-  
+
   override def getSubscriptionStatus(idType: String, idValue: String)(implicit
     hc: HeaderCarrier
   ): Future[SubscriptionStatusResponse] = ???
@@ -65,9 +65,10 @@ class HipSubscriptionConnector @Inject()(
       httpClient
         .get(url"${appConfig.hipBaseUrl}/etmp/RESTAdaptor/economic-crime-levy/subscription/$eclReference")
         .setHeader(
-          hipHeaders(correlationId)*
+          hipHeaders(correlationId) *
         )
-        .executeAndDeserialise[HipGetSubscriptionResponse].map(_.success)
+        .executeAndDeserialise[HipGetSubscriptionResponse]
+        .map(_.success)
     }
   }
 }

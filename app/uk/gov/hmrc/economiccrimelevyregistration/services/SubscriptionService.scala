@@ -90,7 +90,7 @@ class SubscriptionService @Inject() (
     hc: HeaderCarrier
   ): EitherT[Future, SubscriptionSubmissionError, SubscriptionStatusResponse] =
     EitherT {
-      integrationFrameworkConnector
+      integrationFrameworkConnector // TODO will be subscriptionConnector when getSubscriptionStatus is implemented
         .getSubscriptionStatus(idType, idValue)
         .map { response =>
           executeExtendedAuditEvent(idType, idValue, response, internalId)
@@ -163,7 +163,7 @@ class SubscriptionService @Inject() (
     liabilityYear: Option[Int]
   )(implicit hc: HeaderCarrier): EitherT[Future, SubscriptionSubmissionError, CreateEclSubscriptionResponse] =
     EitherT {
-      integrationFrameworkConnector
+      integrationFrameworkConnector // TODO will be subscriptionConnector when subscribeToEcl is implemented
         .subscribeToEcl(eclSubscription.businessPartnerId, eclSubscription.subscription)
         .map(response => Right(response))
         .recover {

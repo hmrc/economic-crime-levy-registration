@@ -16,11 +16,7 @@
 
 package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{
-  CreateEclSubscriptionResponse,
-  GetSubscriptionResponse,
-  Subscription,
-  SubscriptionStatusResponse}
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, GetSubscriptionResponse, Subscription, SubscriptionStatusResponse}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future

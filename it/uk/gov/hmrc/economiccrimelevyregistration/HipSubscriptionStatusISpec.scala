@@ -31,7 +31,7 @@ import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 
 import java.time.Clock
 
-class HipSubscriptionStatusISpec  extends ISpecBase {
+class HipSubscriptionStatusISpec extends ISpecBase {
 
   val config: Map[String, Any] = Map(
     "features.hip.subscriptions" -> true
@@ -134,4 +134,3 @@ class HipSubscriptionStatusISpec  extends ISpecBase {
     }
   }
 }
-
