@@ -18,13 +18,14 @@ package uk.gov.hmrc.economiccrimelevyregistration.connectors
 
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import play.api.libs.json.Json
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
-import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{GetSubscriptionResponse, HipGetSubscriptionResponse}
-import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{CreateEclSubscriptionResponse, EclSubscription, GetSubscriptionResponse, HipGetSubscriptionResponse}
+import uk.gov.hmrc.http.{HttpResponse, StringContextOps}
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
 import scala.concurrent.Future
@@ -40,7 +41,7 @@ class HipSubscriptionConnectorSpec extends SpecBase {
   val connector                    = new HipSubscriptionConnector(appConfig, mockHttpClient, config, actorSystem)
 
   "getSubscription" should {
-    "return a subscription for user when we get one from http client" in forAll {
+    "successfully return a subscription from the success wrapper when using the hip connector " in forAll {
       (eclReference: String, correlationId: String, getSubscriptionResponse: HipGetSubscriptionResponse) =>
         when(mockHttpClient.get(any())(any())).thenReturn(mockRequestBuilder)
         when(mockRequestBuilder.setHeader(any())).thenReturn(mockRequestBuilder)
@@ -53,6 +54,5 @@ class HipSubscriptionConnectorSpec extends SpecBase {
 
         result shouldBe getSubscriptionResponse.success
     }
-
   }
 }

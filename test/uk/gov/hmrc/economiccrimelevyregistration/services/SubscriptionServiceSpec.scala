@@ -76,7 +76,7 @@ class SubscriptionServiceSpec extends SpecBase {
           .thenReturn(Future.successful(subscriptionResponse))
 
         val result =
-          await(service.executeCallToIntegrationFramework(eclSubscription, registration, Some(liabilityYear)).value)
+          await(service.executeCallToSubscriptionCreateApi(eclSubscription, registration, Some(liabilityYear)).value)
 
         result shouldBe Right(subscriptionResponse)
 
@@ -103,7 +103,7 @@ class SubscriptionServiceSpec extends SpecBase {
           .thenReturn(Future.successful(AuditResult.Success))
 
         val result =
-          await(service.executeCallToIntegrationFramework(eclSubscription, registration, Some(liabilityYear)).value)
+          await(service.executeCallToSubscriptionCreateApi(eclSubscription, registration, Some(liabilityYear)).value)
 
         result shouldBe Left(SubscriptionSubmissionError.BadGateway(errorMessage, INTERNAL_SERVER_ERROR))
 
@@ -416,7 +416,7 @@ class SubscriptionServiceSpec extends SpecBase {
           .thenReturn(Future.successful(auditResult))
 
         val result =
-          await(service.executeCallToIntegrationFramework(eclSubscription, registration, Some(liabilityYear)).value)
+          await(service.executeCallToSubscriptionCreateApi(eclSubscription, registration, Some(liabilityYear)).value)
 
         result shouldBe Left(SubscriptionSubmissionError.BadGateway(reason = errorMessage, code = BAD_REQUEST))
     }
@@ -434,7 +434,7 @@ class SubscriptionServiceSpec extends SpecBase {
           .thenReturn(Future.successful(auditResult))
 
         val result =
-          await(service.executeCallToIntegrationFramework(eclSubscription, registration, Some(liabilityYear)).value)
+          await(service.executeCallToSubscriptionCreateApi(eclSubscription, registration, Some(liabilityYear)).value)
 
         result shouldBe Left(SubscriptionSubmissionError.InternalUnexpectedError(errorMessage, Some(exception)))
     }
