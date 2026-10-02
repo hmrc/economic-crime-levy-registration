@@ -19,6 +19,7 @@ package uk.gov.hmrc.economiccrimelevyregistration.config
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -73,4 +74,11 @@ class AppConfig @Inject() (configuration: Configuration, servicesConfig: Service
   val retryDuration: Iterable[Duration]                      =
     configuration.underlying.getStringList("http-verbs.retries.intervals").asScala.map(Duration(_))
   val taxEnrolmentsBaseUrl: String                           = servicesConfig.baseUrl("tax-enrolments")
+  val hipSubscriptions: Boolean                              = configuration.get[Boolean]("features.hip.subscriptions")
+  val hipBaseUrl: String                                     = servicesConfig.baseUrl("hip")
+  private val hipClientIdV1: String                          = configuration.get[String]("microservice.services.hip.clientId")
+  private val hipSecretV1: String                            = configuration.get[String]("microservice.services.hip.secret")
+
+  def hipAuthorizationToken: String = Base64.getEncoder.encodeToString(s"$hipClientIdV1:$hipSecretV1".getBytes("UTF-8"))
+
 }

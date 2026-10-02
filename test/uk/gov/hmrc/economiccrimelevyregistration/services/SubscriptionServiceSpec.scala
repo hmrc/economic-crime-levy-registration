@@ -17,11 +17,11 @@
 package uk.gov.hmrc.economiccrimelevyregistration.services
 
 import org.mockito.ArgumentMatchers
-import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import uk.gov.hmrc.economiccrimelevyregistration.base.SpecBase
-import uk.gov.hmrc.economiccrimelevyregistration.connectors.{IntegrationFrameworkConnector, TaxEnrolmentsConnector}
+import uk.gov.hmrc.economiccrimelevyregistration.config.AppConfig
+import uk.gov.hmrc.economiccrimelevyregistration.connectors.{HipSubscriptionConnector, IntegrationFrameworkConnector, TaxEnrolmentsConnector}
 import uk.gov.hmrc.economiccrimelevyregistration.generators.CachedArbitraries.*
 import uk.gov.hmrc.economiccrimelevyregistration.models.eacd.CreateEnrolmentRequest
 import uk.gov.hmrc.economiccrimelevyregistration.models.errors.SubscriptionSubmissionError
@@ -41,20 +41,24 @@ import scala.concurrent.Future
 class SubscriptionServiceSpec extends SpecBase {
 
   val mockIntegrationFrameworkConnector: IntegrationFrameworkConnector = mock[IntegrationFrameworkConnector]
+  val mockHipSubscriptionConnector: HipSubscriptionConnector           = mock[HipSubscriptionConnector]
   val mockTaxEnrolmentsConnector: TaxEnrolmentsConnector               = mock[TaxEnrolmentsConnector]
   val mockKnownFactsQueueRepository: KnownFactsQueueRepository         = mock[KnownFactsQueueRepository]
   val mockAuditService: AuditService                                   = mock[AuditService]
   val mockAuditConnector: AuditConnector                               = mock[AuditConnector]
+  val mockAppConfig: AppConfig                                         = mock[AppConfig]
   val errorMessage                                                     = "Error message"
   val upstreamErrorResponse: UpstreamErrorResponse                     = UpstreamErrorResponse(errorMessage, INTERNAL_SERVER_ERROR)
   private val dateFormatter                                            = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC)
 
-  val service = new SubscriptionService(
+  lazy val service = new SubscriptionService(
     mockIntegrationFrameworkConnector,
+    mockHipSubscriptionConnector,
     mockTaxEnrolmentsConnector,
     mockKnownFactsQueueRepository,
     mockAuditService,
-    mockAuditConnector
+    mockAuditConnector,
+    mockAppConfig
   )
 
   "subscribe to ECL" should {

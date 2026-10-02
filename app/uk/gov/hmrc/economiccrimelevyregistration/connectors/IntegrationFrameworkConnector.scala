@@ -37,7 +37,8 @@ class IntegrationFrameworkConnector @Inject() (
   override val configuration: Config,
   override val actorSystem: ActorSystem
 )(implicit ec: ExecutionContext)
-    extends BaseConnector {
+    extends BaseConnector
+    with SubscriptionConnector {
 
   private def createCorrelationId(hc: HeaderCarrier): String =
     hc.headers(Seq(CustomHeaderNames.xCorrelationId)) match {
