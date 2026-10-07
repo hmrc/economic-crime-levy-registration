@@ -23,6 +23,7 @@ import scala.concurrent.Future
 
 trait SubscriptionConnector {
 
+  // TODO cross-regime API#1534 to be implemented in tranche 7
   def getSubscriptionStatus(
     idType: String,
     idValue: String

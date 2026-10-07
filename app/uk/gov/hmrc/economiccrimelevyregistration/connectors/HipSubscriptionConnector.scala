@@ -23,6 +23,8 @@ import uk.gov.hmrc.economiccrimelevyregistration.models.integrationframework.{Cr
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.http.client.HttpClientV2
 import play.api.http.{HeaderNames, MimeTypes}
+import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -50,17 +52,27 @@ class HipSubscriptionConnector @Inject() (
       "Authorization"         -> s"Basic ${appConfig.hipAuthorizationToken}"
     )
 
+  private def correlationId: String = UUID.randomUUID().toString
+
+  // TODO cross-regime API#1534 to be implemented in tranche 7
   override def getSubscriptionStatus(idType: String, idValue: String)(implicit
     hc: HeaderCarrier
   ): Future[SubscriptionStatusResponse] = ???
 
-  override def subscribeToEcl(businessPartnerId: String, subscription: Subscription)(implicit
+  override def subscribeToEcl(safeId: String, subscription: Subscription)(implicit
     hc: HeaderCarrier
-  ): Future[CreateEclSubscriptionResponse] = ???
+  ): Future[CreateEclSubscriptionResponse] =
+    retryFor[CreateEclSubscriptionResponse]("Subscribe to ECL")(retryCondition) {
+      httpClient
+        .post(
+          url"${appConfig.hipBaseUrl}/etmp/RESTAdaptor/economic-crime-levy/subscription/$safeId"
+        )
+        .withBody(Json.toJson(subscription))
+        .setHeader(hipHeaders(correlationId) *)
+        .executeAndDeserialise[CreateEclSubscriptionResponse]
+    }
 
-  override def getSubscription(eclReference: String)(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] = {
-    val correlationId: String = UUID.randomUUID().toString
-
+  override def getSubscription(eclReference: String)(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] =
     retryFor[GetSubscriptionResponse]("Get subscription")(retryCondition) {
       httpClient
         .get(url"${appConfig.hipBaseUrl}/etmp/RESTAdaptor/economic-crime-levy/subscription/$eclReference")
@@ -70,5 +82,4 @@ class HipSubscriptionConnector @Inject() (
         .executeAndDeserialise[HipGetSubscriptionResponse]
         .map(_.success)
     }
-  }
 }

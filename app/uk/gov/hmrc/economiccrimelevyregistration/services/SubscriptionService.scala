@@ -61,7 +61,7 @@ class SubscriptionService @Inject() (
     liabilityYear: Option[Int]
   )(implicit hc: HeaderCarrier): EitherT[Future, SubscriptionSubmissionError, CreateEclSubscriptionResponse] =
     for {
-      integrationFrameworkResult <- executeCallToIntegrationFramework(eclSubscription, registration, liabilityYear)
+      integrationFrameworkResult <- executeCallToSubscriptionCreateApi(eclSubscription, registration, liabilityYear)
       eclReference                = integrationFrameworkResult.success.eclReference
       processingDate              = integrationFrameworkResult.success.processingDate
       _                          <- executeCallToTaxEnrolment(
@@ -90,7 +90,8 @@ class SubscriptionService @Inject() (
     hc: HeaderCarrier
   ): EitherT[Future, SubscriptionSubmissionError, SubscriptionStatusResponse] =
     EitherT {
-      integrationFrameworkConnector // TODO will be subscriptionConnector when getSubscriptionStatus is implemented
+      // TODO will be subscriptionConnector when cross-regime API#1534 getSubscriptionStatus is implemented [Tranche 7]
+      integrationFrameworkConnector
         .getSubscriptionStatus(idType, idValue)
         .map { response =>
           executeExtendedAuditEvent(idType, idValue, response, internalId)
@@ -157,13 +158,13 @@ class SubscriptionService @Inject() (
         }
     }
 
-  def executeCallToIntegrationFramework(
+  def executeCallToSubscriptionCreateApi(
     eclSubscription: EclSubscription,
     registration: Registration,
     liabilityYear: Option[Int]
   )(implicit hc: HeaderCarrier): EitherT[Future, SubscriptionSubmissionError, CreateEclSubscriptionResponse] =
     EitherT {
-      integrationFrameworkConnector // TODO will be subscriptionConnector when subscribeToEcl is implemented
+      subscriptionConnector
         .subscribeToEcl(eclSubscription.businessPartnerId, eclSubscription.subscription)
         .map(response => Right(response))
         .recover {
