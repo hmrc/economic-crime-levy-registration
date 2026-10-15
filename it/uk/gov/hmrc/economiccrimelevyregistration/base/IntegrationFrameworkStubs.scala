@@ -62,7 +62,7 @@ trait IntegrationFrameworkStubs { self: WireMockStubs =>
     getSubscriptionResponse: HipGetSubscriptionResponse
   ): StubMapping =
     stub(
-      get(urlEqualTo(s"/etmp/RESTAdaptor/economic-crime-levy/subscription/$testEclRegistrationReference")),
+      get(urlEqualTo(s"/etmp/RESTAdapter/economic-crime-levy/subscription/$testEclRegistrationReference")),
       aResponse()
         .withStatus(OK)
         .withBody(Json.toJson(getSubscriptionResponse).toString())
@@ -78,7 +78,7 @@ trait IntegrationFrameworkStubs { self: WireMockStubs =>
 
   def stubHipGetSubscriptionFailed(): StubMapping =
     stub(
-      get(urlEqualTo(s"/etmp/RESTAdaptor/economic-crime-levy/subscription/$testEclRegistrationReference")),
+      get(urlEqualTo(s"/etmp/RESTAdapter/economic-crime-levy/subscription/$testEclRegistrationReference")),
       aResponse()
         .withStatus(INTERNAL_SERVER_ERROR)
         .withBody("")

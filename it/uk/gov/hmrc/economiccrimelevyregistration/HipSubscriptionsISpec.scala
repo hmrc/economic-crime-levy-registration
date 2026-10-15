@@ -57,7 +57,7 @@ class HipSubscriptionsISpec extends ISpecBase with FutureAwaits with ScalaCheckP
             |""".stripMargin
 
         WireMockHelper.stubPost(
-          s"/etmp/RESTAdaptor/economic-crime-levy/subscription/$safeId",
+          s"/etmp/RESTAdapter/economic-crime-levy/subscription/$safeId",
           400,
           expectedJson,
           ("foo", "bar")
@@ -98,7 +98,7 @@ class HipSubscriptionsISpec extends ISpecBase with FutureAwaits with ScalaCheckP
         val expected: CreateEclSubscriptionResponse = Json.parse(expectedJson).as[CreateEclSubscriptionResponse]
 
         WireMockHelper.stubPost(
-          s"/etmp/RESTAdaptor/economic-crime-levy/subscription/$safeId",
+          s"/etmp/RESTAdapter/economic-crime-levy/subscription/$safeId",
           201,
           expectedJson,
           ("foo", "bar")
@@ -185,7 +185,7 @@ class HipSubscriptionsISpec extends ISpecBase with FutureAwaits with ScalaCheckP
 
       verify(
         1,
-        getRequestedFor(urlEqualTo(s"/etmp/RESTAdaptor/economic-crime-levy/subscription/$testEclRegistrationReference"))
+        getRequestedFor(urlEqualTo(s"/etmp/RESTAdapter/economic-crime-levy/subscription/$testEclRegistrationReference"))
           .withHeader(correlationidHeaderName, matching(uuidRegex))
       )
     }
@@ -202,7 +202,7 @@ class HipSubscriptionsISpec extends ISpecBase with FutureAwaits with ScalaCheckP
 
       verify(
         totalNumberOfCalls,
-        getRequestedFor(urlEqualTo(s"/etmp/RESTAdaptor/economic-crime-levy/subscription/$testEclRegistrationReference"))
+        getRequestedFor(urlEqualTo(s"/etmp/RESTAdapter/economic-crime-levy/subscription/$testEclRegistrationReference"))
           .withHeader(correlationidHeaderName, matching(uuidRegex))
       )
     }
