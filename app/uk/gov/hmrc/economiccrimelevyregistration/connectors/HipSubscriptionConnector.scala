@@ -65,7 +65,7 @@ class HipSubscriptionConnector @Inject() (
     retryFor[CreateEclSubscriptionResponse]("Subscribe to ECL")(retryCondition) {
       httpClient
         .post(
-          url"${appConfig.hipBaseUrl}/etmp/RESTAdaptor/economic-crime-levy/subscription/$safeId"
+          url"${appConfig.hipBaseUrl}/etmp/RESTAdapter/economic-crime-levy/subscription/$safeId"
         )
         .withBody(Json.toJson(subscription))
         .setHeader(hipHeaders(correlationId) *)
@@ -75,7 +75,7 @@ class HipSubscriptionConnector @Inject() (
   override def getSubscription(eclReference: String)(implicit hc: HeaderCarrier): Future[GetSubscriptionResponse] =
     retryFor[GetSubscriptionResponse]("Get subscription")(retryCondition) {
       httpClient
-        .get(url"${appConfig.hipBaseUrl}/etmp/RESTAdaptor/economic-crime-levy/subscription/$eclReference")
+        .get(url"${appConfig.hipBaseUrl}/etmp/RESTAdapter/economic-crime-levy/subscription/$eclReference")
         .setHeader(
           hipHeaders(correlationId) *
         )
